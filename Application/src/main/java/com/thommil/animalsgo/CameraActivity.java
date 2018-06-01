@@ -18,10 +18,25 @@ package com.thommil.animalsgo;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 
 import com.thommil.animalsgo.R;
 
+import org.opencv.android.OpenCVLoader;
+
 public class CameraActivity extends AppCompatActivity {
+
+    static {
+        System.loadLibrary("opencv_java3");
+    }
+
+    static {
+        if (OpenCVLoader.initDebug()) {
+            Log.i("OPENCV", "OpenCV initialize success");
+        } else {
+            Log.i("OPENCV", "OpenCV initialize failed");
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

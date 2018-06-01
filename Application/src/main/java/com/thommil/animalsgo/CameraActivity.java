@@ -23,6 +23,7 @@ import android.util.Log;
 import com.thommil.animalsgo.R;
 
 import org.opencv.android.OpenCVLoader;
+import org.opencv.osgi.OpenCVNativeLoader;
 
 public class CameraActivity extends AppCompatActivity {
 

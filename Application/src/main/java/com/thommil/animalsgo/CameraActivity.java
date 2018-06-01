@@ -14,9 +14,24 @@
  * limitations under the License.
  */
 
-@file:JvmName("Constants")
+package com.thommil.animalsgo;
 
-package com.example.android.camera2basic
+import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 
-@JvmField val REQUEST_CAMERA_PERMISSION = 1
-@JvmField val PIC_FILE_NAME = "pic.jpg"
+import com.thommil.animalsgo.R;
+
+public class CameraActivity extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_camera);
+        if (null == savedInstanceState) {
+            getSupportFragmentManager().beginTransaction()
+                    .replace(R.id.container, Camera2BasicFragment.newInstance())
+                    .commit();
+        }
+    }
+
+}

@@ -28,10 +28,6 @@ import org.opencv.osgi.OpenCVNativeLoader;
 public class CameraActivity extends AppCompatActivity {
 
     static {
-        System.loadLibrary("opencv_java3");
-    }
-
-    static {
         if (OpenCVLoader.initDebug()) {
             Log.i("OPENCV", "OpenCV initialize success");
         } else {

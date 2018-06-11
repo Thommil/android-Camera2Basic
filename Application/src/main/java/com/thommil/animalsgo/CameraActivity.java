@@ -20,30 +20,14 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 
-import com.thommil.animalsgo.R;
-
-import org.opencv.android.OpenCVLoader;
-import org.opencv.osgi.OpenCVNativeLoader;
-
 public class CameraActivity extends AppCompatActivity {
 
-    static {
-        if (OpenCVLoader.initDebug()) {
-            Log.i("OPENCV", "OpenCV initialize success");
-        } else {
-            Log.i("OPENCV", "OpenCV initialize failed");
-        }
-    }
+    private static final String TAG = MainActivity.TAG;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
-        if (null == savedInstanceState) {
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.container, Camera2BasicFragment.newInstance())
-                    .commit();
-        }
     }
 
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.grafika.gles;
+package com.androidexperiments.shadercam.gl;
 
 import android.opengl.GLES20;
 import android.opengl.GLES30;
@@ -26,10 +26,10 @@ import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 
 /**
- * Some OpenGL utility functions.
+ * Some OpenGL utility functions. From Grafika
  */
 public class GlUtil {
-    public static final String TAG = "Grafika";
+    public static final String TAG = "GlUtil";
 
     /** Identity matrix for general use.  Don't modify or life will get weird. */
     public static final float[] IDENTITY_MATRIX;

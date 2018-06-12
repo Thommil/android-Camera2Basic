@@ -18,11 +18,13 @@ public class MainActivity extends AppCompatActivity {
 
         Button button = findViewById(R.id.button);
 
+        OpenCVUtils.init();
+
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                final Intent intent = new Intent(MainActivity.this, CameraActivity.class);
-                MainActivity.this.startActivity(intent);
+                //final Intent intent = new Intent(MainActivity.this, CameraActivity.class);
+                //MainActivity.this.startActivity(intent);
             }
         });
     }

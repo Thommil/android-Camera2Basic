@@ -24,6 +24,15 @@ public class OpenCVUtils {
     }
 
     /**
+     * Initialize OpenCV
+     *
+     * @return true if available and initialized
+     */
+    public static boolean init() {
+        return OPENCV_AVAILABLE;
+    }
+
+    /**
      * Indicates if OpenCV is available in app
      *
      * @return true if available and initialized

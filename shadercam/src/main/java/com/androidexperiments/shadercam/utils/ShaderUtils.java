@@ -14,6 +14,9 @@ import java.io.InputStreamReader;
  */
 public class ShaderUtils
 {
+
+    private static final String TAG = "A_GO/ShaderUtils";
+
     /**
      * Helper for getting strings from any file type in /assets/ folder. Primarily used for shaders.
      *

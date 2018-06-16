@@ -39,12 +39,11 @@ import java.util.ArrayList;
  *
  * Subclass this and add any kind of fun stuff u want, new shaders, textures, uniforms - go to town!
  *
- * TODO: add methods for users to create their own mediarecorders/change basic settings of default mr
  */
 
 public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvailableListener
 {
-    private static final String TAG = CameraRenderer.class.getSimpleName();
+    private static final String TAG = "A_GO/CameraRenderer";
     private static final String THREAD_NAME = "CameraRendererThread";
 
     /**
@@ -68,7 +67,7 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
      * main texture for display, based on TextureView that is created in activity or fragment
      * and passed in after onSurfaceTextureAvailable is called, guaranteeing its existence.
      */
-    private SurfaceTexture mSurfaceTexture;
+    private Surface mSurface;
 
     /**
      * EGLCore used for creating {@link WindowSurface}s for preview and recording
@@ -78,12 +77,7 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
     /**
      * Primary {@link WindowSurface} for rendering to screen
      */
-    private WindowSurface mWindowSurface;
-
-    /**
-     * primary {@link WindowSurface} for use with mediarecorder
-     */
-    private WindowSurface mRecordSurface;
+    protected WindowSurface mWindowSurface;
 
     /**
      * Texture created for GLES rendering of camera data
@@ -129,6 +123,10 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
     private int textureCoordinateHandle;
 
     private int positionHandle;
+
+    private long lastTime = 0;
+    private long lastLog = 0;
+    private int fps = 0;
 
     /**
      * "arbitrary" maximum number of textures. seems that most phones dont like more than 16
@@ -193,64 +191,10 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
     private OnRendererReadyListener mOnRendererReadyListener;
 
     /**
-     * Width and height storage of our viewport size, so we can properly accomodate any size View
-     * used to display our preview on screen.
-     */
-    private int mViewportWidth, mViewportHeight;
-
-    /**
-     * boolean for recording so we cans wap the recording buffer into place
-     */
-    private boolean mIsRecording = false;
-
-    /**
      * Reference to our users CameraFragment to ease setting viewport size. Thought about decoupling but wasn't
      * worth the listener/callback hastle
      */
     private CameraFragment mCameraFragment;
-
-    /**
-     * Default {@link MediaRecorder} instance so we can record all the cool shit we make. You can override this,
-     * but make sure you handle the deletion of temp files yourself.
-     */
-    private MediaRecorder mMediaRecorder;
-
-    /**
-     * Bitrate of our recorded video passed to our default {@link MediaRecorder}
-     */
-    private static final int VIDEO_BIT_RATE = 10000000;
-
-    private static final int VIDEO_WIDTH = 720;
-
-    /**
-     * Height of our recorded video - notice that if we use {@link com.androidexperiments.shadercam.view.SquareTextureView} that
-     * we can pss in the same value as the width here to make sure we render out a square movie. Otherwise, it will stretch the square
-     * textureview preview into a fullsize video. Play with the numbers here and the size of the TextureView you use to see the different types
-     * of output depending on scale values
-     */
-    private static final int VIDEO_HEIGHT = 1280;
-
-    /**
-     * Array of ints for use with screen orientation hint in our MediaRecorder.
-     * See {@link #setupMediaRecorder()} for more info on its usage.
-     */
-    private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
-    static {
-        ORIENTATIONS.append(Surface.ROTATION_0, 90);
-        ORIENTATIONS.append(Surface.ROTATION_90, 0);
-        ORIENTATIONS.append(Surface.ROTATION_180, 270);
-        ORIENTATIONS.append(Surface.ROTATION_270, 180);
-    }
-
-    /**
-     * temp file we write to for recording, then copy to where user wants to save video file
-     */
-    private File mTempOutputFile;
-
-    /**
-     * file passed by user where to save the video upon completion of recording
-     */
-    private File mOutputFile = null;
 
     private String mFragmentShaderPath;
     private String mVertexShaderPath;
@@ -258,28 +202,31 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
     /**
      * Simple ctor to use default shaders
      */
-    public CameraRenderer(Context context, SurfaceTexture texture, int width, int height)
+    public CameraRenderer(Context context, Surface surface, int width, int height)
     {
-        init(context, texture, width, height, DEFAULT_FRAGMENT_SHADER, DEFAULT_VERTEX_SHADER);
+        Log.d(TAG, "CameraRenderer - "+width+", "+height);
+        init(context, surface, width, height, DEFAULT_FRAGMENT_SHADER, DEFAULT_VERTEX_SHADER);
     }
 
     /**
      * Main constructor for passing in shaders to override the default shader.
-     * Context, texture, width, and height are passed in automatically by CameraTextureListener
+     * Context, surface, width, and height are passed in automatically by CameraTextureListener
      * @param fragPath the file name of your fragment shader, ex: "lip_service.frag" if it is top-level /assets/ folder. Add subdirectories if needed
      * @param vertPath the file name of your vertex shader, ex: "lip_service.vert" if it is top-level /assets/ folder. Add subdirectories if needed
      */
-    public CameraRenderer(Context context, SurfaceTexture texture, int width, int height, String fragPath, String vertPath)
+    public CameraRenderer(Context context, Surface surface, int width, int height, String fragPath, String vertPath)
     {
-        init(context, texture, width, height, fragPath, vertPath);
+        Log.d(TAG, "CameraRenderer - "+width+", "+height+", "+fragPath+", "+vertPath);
+        init(context, surface, width, height, fragPath, vertPath);
     }
 
-    private void init(Context context, SurfaceTexture texture, int width, int height, String fragPath, String vertPath)
+    private void init(Context context, Surface surface, int width, int height, String fragPath, String vertPath)
     {
+        Log.d(TAG, "init - "+width+", "+height+", "+fragPath+", "+vertPath);
         this.setName(THREAD_NAME);
 
         this.mContext = context;
-        this.mSurfaceTexture = texture;
+        this.mSurface = surface;
 
         this.mSurfaceWidth = width;
         this.mSurfaceHeight = height;
@@ -287,14 +234,14 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
 
         this.mFragmentShaderPath = fragPath;
         this.mVertexShaderPath = vertPath;
+
     }
 
     private void initialize() {
+        Log.d(TAG, "initialize");
         mTextureArray = new ArrayList<>();
 
         setupCameraFragment();
-        setupMediaRecorder();
-        setViewport(mSurfaceWidth, mSurfaceHeight);
 
         if(fragmentShaderCode == null || vertexShaderCode == null) {
             loadFromShadersFromAssets(mFragmentShaderPath, mVertexShaderPath);
@@ -302,21 +249,15 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
     }
 
     private void setupCameraFragment() {
+        Log.d(TAG, "setupCameraFragment");
         if(mCameraFragment == null) {
             throw new RuntimeException("CameraFragment is null! Please call setCameraFragment prior to initialization.");
         }
-
-        mCameraFragment.setOnViewportSizeUpdatedListener(new CameraFragment.OnViewportSizeUpdatedListener() {
-            @Override
-            public void onViewportSizeUpdated(int viewportWidth, int viewportHeight) {
-                mViewportWidth = viewportWidth;
-                mViewportHeight = viewportHeight;
-            }
-        });
-    }
+        }
 
     private void loadFromShadersFromAssets(String pathToFragment, String pathToVertex)
     {
+        Log.d(TAG, "loadFromShadersFromAssets - "+pathToFragment+", "+pathToVertex);
         try {
             fragmentShaderCode = ShaderUtils.getStringFromFileInAssets(mContext, pathToFragment);
             vertexShaderCode = ShaderUtils.getStringFromFileInAssets(mContext, pathToVertex);
@@ -326,105 +267,24 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
         }
     }
 
-    /**
-     * In order to properly make use of our awesome camera fragment and its renderers, we want
-     * to record the cool shit we do - so lets use the stock {@link MediaRecorder} class to do that.
-     * Because, i mean, why would I want to waste a month writing and implementing my own version
-     * when this should do it all on its own, right? ...right? :(
-     */
-    private void setupMediaRecorder() {
-        File outputDir = mContext.getCacheDir();
-        try {
-            mTempOutputFile = File.createTempFile("temp_mov", "mp4", outputDir);
-        } catch (IOException e) {
-            throw new RuntimeException("Temp file could not be created. Message: " + e.getMessage());
-        }
-
-        mMediaRecorder = new MediaRecorder();
-
-        //set the sources
-        /**
-         * {@link MediaRecorder.AudioSource.CAMCORDER} is nice because on some fancier
-         * phones microphones will be aligned towards whatever camera is being used, giving us better
-         * directional audio. And if it doesn't have that, it will fallback to the default Microphone.
-         */
-        mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
-
-        /**
-         * Using {@link MediaRecorder.VideoSource.SURFACE} creates a {@link Surface}
-         * for us to use behind the scenes. We then pass this service to our {@link ExampleRenderer}
-         * later on for creation of our EGL contexts to render to.
-         *
-         * {@link MediaRecorder.VideoSource.SURFACE} is also the default for rendering
-         * out Camera2 api data without any shader manipulation at all.
-         */
-        mMediaRecorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
-
-        //set output
-        mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-
-        /**
-         * This would eventually be worth making a parameter at each call to {@link #setupMediaRecorder()}
-         * so that you can pass in a timestamp or unique file name each time to setup up.
-         */
-        mMediaRecorder.setOutputFile(mTempOutputFile.getPath());
-
-        /**
-         * Media Recorder can be finicky with certain video sizes, so lets make sure we pass it
-         * something 'normal' - ie 720p or 1080p. this will create a surface of the same size,
-         * which will be used by our renderer for drawing once recording is enabled
-         */
-        mMediaRecorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
-        mMediaRecorder.setVideoEncodingBitRate(VIDEO_BIT_RATE);
-        mMediaRecorder.setVideoSize(VIDEO_WIDTH, VIDEO_HEIGHT);
-        mMediaRecorder.setVideoFrameRate(30);
-
-        //setup audio
-        mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-        mMediaRecorder.setAudioEncodingBitRate(44800);
-
-        /**
-         * we can determine the rotation and orientation of our screen here for dynamic usage
-         * but since we know our app will be portrait only, setting the media recorder to
-         * 720x1280 rather than 1280x720 and letting orientation be 0 will keep everything looking normal
-         */
-        int rotation = ((Activity)mContext).getWindowManager().getDefaultDisplay().getRotation();
-        int orientation = ORIENTATIONS.get(rotation); Log.d(TAG, "orientation: " + orientation);
-        mMediaRecorder.setOrientationHint(0);
-
-        try {
-            /**
-             * There are what seems like an infinite number of ways to fuck up the previous steps,
-             * so prepare() will throw an exception if you fail, and hope that stackoverflow can help.
-             */
-            mMediaRecorder.prepare();
-        }
-        catch (IOException e) {
-            Toast.makeText(mContext, "MediaRecorder failed on prepare()", Toast.LENGTH_LONG).show();
-            Log.e(TAG, "MediaRecorder failed on prepare() " + e.getMessage());
-        }
-
-        Log.d(TAG, "MediaRecorder surface: " + mMediaRecorder.getSurface() + " isValid: " + mMediaRecorder.getSurface().isValid());
-    }
 
     /**
      * Initialize all necessary components for GLES rendering, creating window surfaces for drawing
      * the preview as well as the surface that will be used by MediaRecorder for recording
      */
     public void initGL() {
-        mEglCore = new EglCore(null, EglCore.FLAG_RECORDABLE | EglCore.FLAG_TRY_GLES3);
+        Log.d(TAG, "initGL");
+        mEglCore = new EglCore(null, /*EglCore.FLAG_RECORDABLE |*/ EglCore.FLAG_TRY_GLES3);
 
         //create preview surface
-        mWindowSurface = new WindowSurface(mEglCore, mSurfaceTexture);
+        mWindowSurface = new WindowSurface(mEglCore, mSurface, true);
         mWindowSurface.makeCurrent();
-
-        //create recording surface
-        mRecordSurface = new WindowSurface(mEglCore, mMediaRecorder.getSurface(), false);
 
         initGLComponents();
     }
 
     protected void initGLComponents() {
+        Log.d(TAG, "initGLComponents");
         onPreSetupGLComponents();
 
         setupVertexBuffer();
@@ -441,18 +301,17 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
     // ------------------------------------------------------------
 
     public void deinitGL() {
+        Log.d(TAG, "deinitGL");
         deinitGLComponents();
 
         mWindowSurface.release();
-        mRecordSurface.release();
 
         mEglCore.release();
 
-        if(mMediaRecorder != null)
-            mMediaRecorder.release();
     }
 
     protected void deinitGLComponents() {
+        Log.d(TAG, "deinitGLComponents");
         GLES20.glDeleteTextures(MAX_TEXTURES, mTexturesIds, 0);
         GLES20.glDeleteProgram(mCameraShaderProgram);
 
@@ -469,10 +328,14 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
      * the main camera setup gets underway
      */
     private void onPreSetupGLComponents() {
-
+        Log.d(TAG, "onPreSetupGLComponents");
+        GLES20.glViewport(0, 0, mSurfaceWidth, mSurfaceHeight);
+        GLES20.glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
     }
 
     protected void setupVertexBuffer() {
+        Log.d(TAG, "setupVertexBuffer");
         // Draw list buffer
         ByteBuffer dlb = ByteBuffer.allocateDirect(drawOrder.length * 2);
         dlb.order(ByteOrder.nativeOrder());
@@ -490,6 +353,7 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
 
     protected void setupTextures()
     {
+        Log.d(TAG, "setupTextures");
         ByteBuffer texturebb = ByteBuffer.allocateDirect(textureCoords.length * 4);
         texturebb.order(ByteOrder.nativeOrder());
 
@@ -507,6 +371,7 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
      * but rather as {@link GLES11Ext#GL_TEXTURE_EXTERNAL_OES}, which we bind here
      */
     protected void setupCameraTexture() {
+        Log.d(TAG, "setupCameraTexture");
         //set texture[0] to camera texture
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mTexturesIds[0]);
@@ -520,6 +385,7 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
      * Handling this manually here but check out another impl at {@link GlUtil#createProgram(String, String)}
      */
     protected void setupShaders() {
+        Log.d(TAG, "setupShaders");
         int vertexShaderHandle = GLES20.glCreateShader(GLES20.GL_VERTEX_SHADER);
         GLES20.glShaderSource(vertexShaderHandle, vertexShaderCode);
         GLES20.glCompileShader(vertexShaderHandle);
@@ -554,11 +420,13 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
      * super so that we can let them know we're done
      */
     protected void onSetupComplete() {
+        Log.d(TAG, "onSetupComplete");
         mOnRendererReadyListener.onRendererReady();
     }
 
     @Override
     public synchronized void start() {
+        Log.d(TAG, "start");
         initialize();
 
         if(mOnRendererReadyListener == null)
@@ -574,6 +442,8 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
     @Override
     public void run()
     {
+        Log.d(TAG, "run");
+
         Looper.prepare();
 
         //create handler for communication from UI
@@ -581,6 +451,9 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
 
         //initialize all GL on this context
         initGL();
+
+        lastTime = System.currentTimeMillis();
+        lastLog = lastTime;
 
         //LOOOOOOOOOOOOOOOOP
         Looper.loop();
@@ -597,13 +470,7 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
      * this should only be called from our handler to ensure thread-safe
      */
     public void shutdown() {
-        synchronized (this) {
-            if (mIsRecording)
-                stopRecording();
-            else //not recording but still needs release
-                mMediaRecorder.release();
-        }
-
+        Log.d(TAG, "shutdown");
         //kill ouy thread
         Looper.myLooper().quit();
     }
@@ -617,53 +484,9 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
         {
             updatePreviewTexture();
 
-            if(mEglCore.getGlVersion() >= 3)
-            {
-                draw();
-
-                if(mIsRecording) {
-                    mRecordSurface.makeCurrentReadFrom(mWindowSurface);
-
-                    GlUtil.checkGlError("before glBlitFramebuffer");
-
-                    GLES30.glBlitFramebuffer(
-                            0, 0, mWindowSurface.getWidth(), mWindowSurface.getHeight(),
-                            0, 0, mRecordSurface.getWidth(), mRecordSurface.getHeight(), //must match the mediarecorder surface size
-                            GLES30.GL_COLOR_BUFFER_BIT, GLES30.GL_NEAREST
-                    );
-
-                    int err;
-                    if ((err = GLES30.glGetError()) != GLES30.GL_NO_ERROR)
-                        Log.w(TAG, "ERROR: glBlitFramebuffer failed: 0x" + Integer.toHexString(err));
-
-                    mRecordSurface.setPresentationTime(surfaceTexture.getTimestamp());
-                    mRecordSurface.swapBuffers();
-                }
-
-                //swap main buff
-                mWindowSurface.makeCurrent();
-                swapResult = mWindowSurface.swapBuffers();
-            }
-            else //gl v2
-            {
-                draw();
-
-                if(mIsRecording) {
-                    // Draw for recording, swap.
-                    mRecordSurface.makeCurrent();
-
-                    setViewport(mRecordSurface.getWidth(), mRecordSurface.getHeight());
-                    draw();
-
-                    mRecordSurface.setPresentationTime(surfaceTexture.getTimestamp());
-                    mRecordSurface.swapBuffers();
-
-                    setViewport(mWindowSurface.getWidth(), mWindowSurface.getHeight());
-                }
-
-                mWindowSurface.makeCurrent();
-                swapResult = mWindowSurface.swapBuffers();
-            }
+            draw();
+            mWindowSurface.makeCurrent();
+            swapResult = mWindowSurface.swapBuffers();
 
             if (!swapResult) {
                 // This can happen if the Activity stops without waiting for us to halt.
@@ -673,15 +496,28 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
         }
     }
 
+    protected void logFPS(){
+        fps++;
+        long currentTime = System.currentTimeMillis();
+        long duration = currentTime -lastTime;
+
+        if(currentTime - lastLog > 1000){
+            Log.d(TAG, "FPS : "+fps);
+            fps=0;
+            lastLog = currentTime;
+        }
+
+        lastTime = currentTime;
+    }
+
     /**
      * main draw routine
      */
     public void draw()
     {
-        GLES20.glViewport(0, 0, mViewportWidth, mViewportHeight);
+        logFPS();
 
-        GLES20.glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+        clear();
 
         //set shader
         GLES20.glUseProgram(mCameraShaderProgram);
@@ -690,6 +526,15 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
         setExtraTextures();
         drawElements();
         onDrawCleanup();
+    }
+
+    /**
+     * Clear current frame
+     */
+    protected  void clear() {
+        GLES20.glViewport(0, 0, mSurfaceWidth, mSurfaceHeight);
+        GLES20.glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
     }
 
     /**
@@ -733,36 +578,39 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
      * @param uniformName
      * @return
      */
-    public int addTexture(int resource_id, String uniformName)
+    public int addTexture(int resource_id, String uniformName, int minFilter, int magFilter)
     {
+        Log.d(TAG, "addTexture - "+resource_id+", "+uniformName);
         int texId = mTextureConsts[mTextureArray.size()];
         if(mTextureArray.size() + 1 >= MAX_TEXTURES)
             throw new IllegalStateException("Too many textures! Please don't use so many :(");
 
         Bitmap bmp = BitmapFactory.decodeResource(mContext.getResources(), resource_id);
 
-        return addTexture(texId, bmp, uniformName, true);
+        return addTexture(texId, bmp, uniformName, true, minFilter, magFilter);
     }
 
-    public int addTexture(Bitmap bitmap, String uniformName)
+    public int addTexture(Bitmap bitmap, String uniformName, int minFilter, int magFilter)
     {
+        Log.d(TAG, "addTexture - "+bitmap+", "+uniformName);
         int texId = mTextureConsts[mTextureArray.size()];
         if(mTextureArray.size() + 1 >= MAX_TEXTURES)
             throw new IllegalStateException("Too many textures! Please don't use so many :(");
 
-        return addTexture(texId, bitmap, uniformName, true);
+        return addTexture(texId, bitmap, uniformName, true, minFilter, magFilter);
     }
 
-    public int addTexture(int texId, Bitmap bitmap, String uniformName, boolean recycle)
+    public int addTexture(int texId, Bitmap bitmap, String uniformName, boolean recycle, int minFilter, int magFilter)
     {
+        Log.d(TAG, "addTexture - "+texId+", "+bitmap+", "+uniformName+", "+recycle);
         int num = mTextureArray.size() + 1;
 
         GLES20.glActiveTexture(texId);
         checkGlError("Texture generate");
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTexturesIds[num]);
         checkGlError("Texture bind");
-        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
-        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
+        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, minFilter);
+        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, magFilter);
         GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
 
         if(recycle)
@@ -785,6 +633,7 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
      */
     public void updateTexture(int texNum, Bitmap drawingCache)
     {
+        Log.d(TAG, "updateTexture");
         GLES20.glActiveTexture(mTextureConsts[texNum - 1]);
         checkGlError("Texture generate");
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTexturesIds[texNum]);
@@ -834,93 +683,25 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
     }
 
     //getters and setters
-
-    public void setViewport(int viewportWidth, int viewportHeight)
-    {
-        mViewportWidth = viewportWidth;
-        mViewportHeight = viewportHeight;
-    }
-
-    public float[] getCameraTransformMatrix() {
-        return mCameraTransformMatrix;
-    }
-
     public SurfaceTexture getPreviewTexture() {
+        Log.d(TAG, "getPreviewTexture");
         return mPreviewTexture;
     }
 
     public RenderHandler getRenderHandler() {
+        Log.d(TAG, "getRenderHandler");
         return mHandler;
     }
 
     public void setOnRendererReadyListener(OnRendererReadyListener listener) {
+        Log.d(TAG, "setOnRendererReadyListener");
         mOnRendererReadyListener = listener;
 
     }
 
-    /**
-     * Triggers our built-in MediaRecorder to start recording
-     * @param outputFile a {@link File} where we'll be saving the completed render
-     */
-    public void startRecording(File outputFile) {
-        mOutputFile = outputFile;
-
-        if(mOutputFile == null)
-            throw new RuntimeException("No output file specified! Make sure to call setOutputFile prior to recording!");
-
-        synchronized (this) {
-            mIsRecording = true;
-            mMediaRecorder.start();
-        }
-    }
-
-    /**
-     * stops our mediarecorder if its still running and starts our copy from temp to regular
-     */
-    public void stopRecording() {
-        synchronized (this) {
-            if(!mIsRecording)
-                return;
-
-            mMediaRecorder.stop();
-            mMediaRecorder.release();
-
-            mIsRecording = false;
-
-            try {
-                copyFile(mTempOutputFile, mOutputFile);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
-    public boolean isRecording() {
-        synchronized (this) {
-            return mIsRecording;
-        }
-    }
-
-    /**
-     * Copies file recorded to our temp file into the user-defined file upon completion
-     */
-    protected void copyFile(File src, File dst) throws IOException {
-        FileChannel inChannel = new FileInputStream(src).getChannel();
-        FileChannel outChannel = new FileOutputStream(dst).getChannel();
-
-        try {
-            inChannel.transferTo(0, inChannel.size(), outChannel);
-        }
-        finally {
-            if (inChannel != null)
-                inChannel.close();
-
-            if (outChannel != null)
-                outChannel.close();
-        }
-    }
 
     public void setCameraFragment(CameraFragment cameraFragment) {
+        Log.d(TAG, "setCameraFragment");
         mCameraFragment = cameraFragment;
     }
 
@@ -966,6 +747,7 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
          * Call from render thread.
          */
         public RenderHandler(CameraRenderer rt) {
+            Log.d(TAG, "RenderHandler");
             mWeakRenderer = new WeakReference<>(rt);
         }
 
@@ -974,12 +756,14 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
          * Call from UI thread.
          */
         public void sendShutdown() {
+            Log.d(TAG, "sendShutdown");
             sendMessage(obtainMessage(RenderHandler.MSG_SHUTDOWN));
         }
 
         @Override
         public void handleMessage(Message msg)
         {
+            Log.d(TAG, "handleMessage - "+msg);
             CameraRenderer renderer = mWeakRenderer.get();
             if (renderer == null) {
                 Log.w(TAG, "RenderHandler.handleMessage: weak ref is null");

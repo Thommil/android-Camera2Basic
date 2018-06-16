@@ -29,7 +29,7 @@ import java.nio.FloatBuffer;
  * Some OpenGL utility functions. From Grafika
  */
 public class GlUtil {
-    public static final String TAG = "GlUtil";
+    private static final String TAG = "A_GO/GlUtil";
 
     /** Identity matrix for general use.  Don't modify or life will get weird. */
     public static final float[] IDENTITY_MATRIX;

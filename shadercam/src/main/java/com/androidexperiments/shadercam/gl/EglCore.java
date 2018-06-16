@@ -32,14 +32,16 @@ import android.view.Surface;
  * The EGLContext must only be attached to one thread at a time.  This class is not thread-safe.
  */
 public final class EglCore {
-    private static final String TAG = EglCore.class.getSimpleName();
+
+
+    private static final String TAG = "A_GO/EglCore";
 
     /**
      * Constructor flag: surface must be recordable.  This discourages EGL from using a
      * pixel format that cannot be converted efficiently to something usable by the video
      * encoder.
      */
-    public static final int FLAG_RECORDABLE = 0x01;
+    //public static final int FLAG_RECORDABLE = 0x01;
 
     /**
      * Constructor flag: ask for GLES3, fall back to GLES2 if not available.  Without this
@@ -48,7 +50,7 @@ public final class EglCore {
     public static final int FLAG_TRY_GLES3 = 0x02;
 
     // Android-specific extension.
-    private static final int EGL_RECORDABLE_ANDROID = 0x3142;
+    //private static final int EGL_RECORDABLE_ANDROID = 0x3142;
 
     private EGLDisplay mEGLDisplay = EGL14.EGL_NO_DISPLAY;
     private EGLContext mEGLContext = EGL14.EGL_NO_CONTEXT;
@@ -158,13 +160,13 @@ public final class EglCore {
                 //EGL14.EGL_DEPTH_SIZE, 16,
                 //EGL14.EGL_STENCIL_SIZE, 8,
                 EGL14.EGL_RENDERABLE_TYPE, renderableType,
-                EGL14.EGL_NONE, 0,      // placeholder for recordable [@-3]
+                //EGL14.EGL_NONE, 0,      // placeholder for recordable [@-3]
                 EGL14.EGL_NONE
         };
-        if ((flags & FLAG_RECORDABLE) != 0) {
-            attribList[attribList.length - 3] = EGL_RECORDABLE_ANDROID;
-            attribList[attribList.length - 2] = 1;
-        }
+        //if ((flags & FLAG_RECORDABLE) != 0) {
+        //    attribList[attribList.length - 3] = EGL_RECORDABLE_ANDROID;
+        //    attribList[attribList.length - 2] = 1;
+        //}
         EGLConfig[] configs = new EGLConfig[1];
         int[] numConfigs = new int[1];
         if (!EGL14.eglChooseConfig(mEGLDisplay, attribList, 0, configs, 0, configs.length,

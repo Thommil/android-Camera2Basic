@@ -27,6 +27,8 @@ import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 import android.view.TextureView;
 import android.widget.Toast;
 
@@ -41,14 +43,14 @@ import java.util.concurrent.TimeUnit;
  */
 public class CameraFragment extends Fragment {
 
-    private static final String TAG = "CameraFragment";
+    private static final String TAG = "A_GO/CameraFragment";
 
     private static CameraFragment __instance;
 
     /**
-     * A {@link TextureView} for camera preview.
+     * A {@link SurfaceView} for camera preview.
      */
-    private TextureView mTextureView;
+    private SurfaceView mSurfaceView;
 
     /**
      * A refernce to the opened {@link CameraDevice}.
@@ -131,6 +133,7 @@ public class CameraFragment extends Fragment {
      */
     public static CameraFragment getInstance()
     {
+        Log.d(TAG, "getInstance");
         if(__instance == null)
         {
             __instance = new CameraFragment();
@@ -142,6 +145,7 @@ public class CameraFragment extends Fragment {
     @Override
     public void onResume()
     {
+        Log.d(TAG, "onResume");
         super.onResume();
 
         startBackgroundThread();
@@ -150,6 +154,7 @@ public class CameraFragment extends Fragment {
     @Override
     public void onPause()
     {
+        Log.d(TAG, "onPause");
         super.onPause();
 
         stopBackgroundThread();
@@ -159,6 +164,7 @@ public class CameraFragment extends Fragment {
      * Starts a background thread and its {@link Handler}.
      */
     private void startBackgroundThread() {
+        Log.d(TAG, "startBackgroundThread");
         mBackgroundThread = new HandlerThread("CameraBackground");
         mBackgroundThread.start();
         mBackgroundHandler = new Handler(mBackgroundThread.getLooper());
@@ -168,6 +174,7 @@ public class CameraFragment extends Fragment {
      * Stops the background thread and its {@link Handler}.
      */
     private void stopBackgroundThread() {
+        Log.d(TAG, "stopBackgroundThread");
         mBackgroundThread.quitSafely();
         try {
             mBackgroundThread.join();
@@ -183,6 +190,7 @@ public class CameraFragment extends Fragment {
      */
     public void swapCamera()
     {
+        Log.d(TAG, "swapCamera");
         closeCamera();
 
         if(mCameraToUse == CAMERA_FORWARD)
@@ -198,6 +206,7 @@ public class CameraFragment extends Fragment {
      */
     public void openCamera()
     {
+        Log.d(TAG, "openCamera");
         final Activity activity = getActivity();
         if (null == activity || activity.isFinishing()) {
             return;
@@ -232,8 +241,6 @@ public class CameraFragment extends Fragment {
             //send back for updates to renderer if needed
             updateViewportSize(mVideoSizeAspectRatio, mPreviewSurfaceAspectRatio);
 
-            Log.i(TAG, "openCamera() videoSize: " + mVideoSize + " previewSize: " + mPreviewSize);
-
             manager.openCamera(cameraId, mStateCallback, null);
         }
         catch (CameraAccessException e) {
@@ -261,8 +268,9 @@ public class CameraFragment extends Fragment {
      */
     public void updateViewportSize(float videoAspect, float surfaceAspect)
     {
-        int sw = mTextureView.getWidth();
-        int sh = mTextureView.getHeight();
+        Log.d(TAG, "updateViewportSize - "+videoAspect+", "+surfaceAspect);
+        int sw = mSurfaceView.getWidth();
+        int sh = mSurfaceView.getHeight();
 
         int vpW, vpH;
 
@@ -295,19 +303,16 @@ public class CameraFragment extends Fragment {
 
         @Override
         public void onOpened(CameraDevice cameraDevice) {
+            Log.d(TAG, "onOpened");
             mCameraOpenCloseLock.release();
             mCameraDevice = cameraDevice;
             mCameraIsOpen = true;
             startPreview();
-
-            //overkill?
-            if (mTextureView != null) {
-                configureTransform(mTextureView.getWidth(), mTextureView.getHeight());
-            }
         }
 
         @Override
         public void onDisconnected(CameraDevice cameraDevice) {
+            Log.d(TAG, "onDisconnected");
             mCameraOpenCloseLock.release();
             cameraDevice.close();
             mCameraDevice = null;
@@ -316,12 +321,11 @@ public class CameraFragment extends Fragment {
 
         @Override
         public void onError(CameraDevice cameraDevice, int error) {
+            Log.d(TAG, "onError - "+error);
             mCameraOpenCloseLock.release();
             cameraDevice.close();
             mCameraDevice = null;
             mCameraIsOpen = false;
-
-            Log.e(TAG, "CameraDevice.StateCallback onError() " + error);
 
             Activity activity = getActivity();
             if (null != activity) {
@@ -338,12 +342,13 @@ public class CameraFragment extends Fragment {
      */
     private Size chooseVideoSize(Size[] choices)
     {
-        int sw = mTextureView.getWidth(); //surface width
-        int sh = mTextureView.getHeight(); //surface height
+        Log.d(TAG, "chooseVideoSize");
+        int sw = mSurfaceView.getWidth(); //surface width
+        int sh = mSurfaceView.getHeight(); //surface height
 
         mPreviewSurfaceAspectRatio = (float)sw / sh;
 
-        Log.i(TAG, "chooseVideoSize() for landscape:" + (mPreviewSurfaceAspectRatio > 1.f) + " aspect: " + mPreviewSurfaceAspectRatio + " : " + Arrays.toString(choices) );
+        Log.d(TAG, "chooseVideoSize() for landscape:" + (mPreviewSurfaceAspectRatio > 1.f) + " aspect: " + mPreviewSurfaceAspectRatio + " : " + Arrays.toString(choices) );
 
         //rather than in-lining returns, use this size as placeholder so we can calc aspectratio upon completion
         Size sizeToReturn = null;
@@ -419,6 +424,7 @@ public class CameraFragment extends Fragment {
      * close camera when not in use/pausing/leaving
      */
     public void closeCamera() {
+        Log.d(TAG, "closeCamera");
         try {
             mCameraOpenCloseLock.acquire();
             if (null != mCameraDevice) {
@@ -433,12 +439,16 @@ public class CameraFragment extends Fragment {
         }
     }
 
+
+
     /**
      * Start the camera preview.
      */
     private void startPreview()
     {
-        if (null == mCameraDevice || !mTextureView.isAvailable() || null == mPreviewSize) {
+        Log.d(TAG, "startPreview");
+        if (null == mCameraDevice || null == mPreviewSize) {
+            //if (null == mCameraDevice || !mTextureView.isAvailable() || null == mPreviewSize) {
             return;
         }
         try {
@@ -479,6 +489,7 @@ public class CameraFragment extends Fragment {
      * Update the camera preview. {@link #startPreview()} needs to be called in advance.
      */
     private void updatePreview() {
+        Log.d(TAG, "updatePreview");
         if (null == mCameraDevice) {
             return;
         }
@@ -501,48 +512,12 @@ public class CameraFragment extends Fragment {
 
 
     /**
-     * Configures the necessary Matrix transformation to `mTextureView`.
-     * This method should not to be called until the camera preview size is determined in
-     * openCamera, or until the size of `mTextureView` is fixed.
-     *
-     * @param viewWidth  The width of `mTextureView`
-     * @param viewHeight The height of `mTextureView`
+     * set the surfaceView to render the camera preview inside
+     * @param surfaceView
      */
-    public void configureTransform(int viewWidth, int viewHeight)
-    {
-        Activity activity = getActivity();
-        if (null == mTextureView || null == mPreviewSize || null == activity) {
-            return;
-        }
-
-        Matrix matrix = new Matrix();
-        int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
-
-        if (Surface.ROTATION_90 == rotation || Surface.ROTATION_270 == rotation)
-        {
-            RectF viewRect = new RectF(0, 0, viewWidth, viewHeight);
-            float centerX = viewRect.centerX();
-            float centerY = viewRect.centerY();
-
-            RectF bufferRect = new RectF(0, 0, mPreviewSize.getHeight(), mPreviewSize.getWidth());
-            bufferRect.offset(centerX - bufferRect.centerX(), centerY - bufferRect.centerY());
-            matrix.setRectToRect(viewRect, bufferRect, Matrix.ScaleToFit.FILL);
-            float scale = Math.max(
-                    (float) viewHeight / mPreviewSize.getHeight(),
-                    (float) viewWidth / mPreviewSize.getWidth());
-            matrix.postScale(scale, scale, centerX, centerY);
-            matrix.postRotate(90 * (rotation - 2), centerX, centerY);
-        }
-
-        mTextureView.setTransform(matrix);
-    }
-
-    /**
-     * set the textureView to render the camera preview inside
-     * @param textureView
-     */
-    public void setTextureView(TextureView textureView) {
-        mTextureView = textureView;
+    public void setSurfaceView(SurfaceView surfaceView) {
+        Log.d(TAG, "setSurfaceView");
+        mSurfaceView = surfaceView;
     }
 
     /**
@@ -550,6 +525,7 @@ public class CameraFragment extends Fragment {
      * @return {@link Size} of current video from camera.
      */
     public Size getVideoSize() {
+        Log.d(TAG, "getVideoSize");
         return mVideoSize;
     }
 
@@ -558,6 +534,7 @@ public class CameraFragment extends Fragment {
      * @return current camera type
      */
     public int getCurrentCameraType(){
+        Log.d(TAG, "getCurrentCameraType");
         return mCameraToUse;
     }
 
@@ -567,6 +544,7 @@ public class CameraFragment extends Fragment {
      */
     public void setCameraToUse(int camera_id)
     {
+        Log.d(TAG, "setCameraToUse - " + camera_id);
         mCameraToUse = camera_id;
     }
 
@@ -576,10 +554,12 @@ public class CameraFragment extends Fragment {
      * @param previewSurface
      */
     public void setPreviewTexture(SurfaceTexture previewSurface) {
+        Log.d(TAG, "setPreviewTexture");
         this.mPreviewSurface = previewSurface;
     }
 
     public void setOnViewportSizeUpdatedListener(OnViewportSizeUpdatedListener listener) {
+        Log.d(TAG, "setOnViewportSizeUpdatedListener");
         this.mOnViewportSizeUpdatedListener = listener;
     }
 

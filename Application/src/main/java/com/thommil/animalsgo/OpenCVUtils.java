@@ -9,7 +9,7 @@ import org.opencv.android.OpenCVLoader;
  */
 public class OpenCVUtils {
 
-    private static final String TAG = MainActivity.TAG;
+    private static final String TAG = "A_GO/OpenCVUtils";
 
     private static boolean OPENCV_AVAILABLE = false;
 

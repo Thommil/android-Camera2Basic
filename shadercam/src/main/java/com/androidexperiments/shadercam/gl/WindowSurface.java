@@ -17,6 +17,7 @@
 package com.androidexperiments.shadercam.gl;
 
 import android.graphics.SurfaceTexture;
+import android.util.Log;
 import android.view.Surface;
 
 /**
@@ -25,6 +26,9 @@ import android.view.Surface;
  * It's good practice to explicitly release() the surface, preferably from a "finally" block.
  */
 public class WindowSurface extends EglSurfaceBase {
+
+    private static final String TAG = "A_GO/WindowSurface";
+
     private Surface mSurface;
     private boolean mReleaseSurface;
 
@@ -38,17 +42,10 @@ public class WindowSurface extends EglSurfaceBase {
      */
     public WindowSurface(EglCore eglCore, Surface surface, boolean releaseSurface) {
         super(eglCore);
+        //Log.d(TAG, "WindowSurface");
         createWindowSurface(surface);
         mSurface = surface;
         mReleaseSurface = releaseSurface;
-    }
-
-    /**
-     * Associates an EGL surface with the SurfaceTexture.
-     */
-    public WindowSurface(EglCore eglCore, SurfaceTexture surfaceTexture) {
-        super(eglCore);
-        createWindowSurface(surfaceTexture);
     }
 
     /**
@@ -58,6 +55,7 @@ public class WindowSurface extends EglSurfaceBase {
      * Does not require that the surface's EGL context be current.
      */
     public void release() {
+        //Log.d(TAG, "release");
         releaseEglSurface();
         if (mSurface != null) {
             if (mReleaseSurface) {
@@ -81,6 +79,7 @@ public class WindowSurface extends EglSurfaceBase {
      * about already being connected.
      */
     public void recreate(EglCore newEglCore) {
+        //Log.d(TAG, "recreate");
         if (mSurface == null) {
             throw new RuntimeException("not yet implemented for SurfaceTexture");
         }

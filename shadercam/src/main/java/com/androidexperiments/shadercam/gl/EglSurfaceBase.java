@@ -35,7 +35,7 @@ import java.nio.ByteOrder;
  * There can be multiple surfaces associated with a single context.
  */
 public class EglSurfaceBase {
-    protected static final String TAG = EglSurfaceBase.class.getSimpleName();
+    private static final String TAG = "A_GO/EglSurfaceBase";
 
     // EglCore object we're associated with.  It may be associated with multiple surfaces.
     protected EglCore mEglCore;
@@ -150,11 +150,11 @@ public class EglSurfaceBase {
     }
 
     /**
-     * Saves the EGL surface to a file.
-     * <p>
-     * Expects that this object's EGL surface is current.
+     * Saves the EGL surface to a bitmap
+     *
+     * @return The Bitmap from the surface
      */
-    public void saveFrame(File file) throws IOException {
+    public Bitmap saveFrame() {
         if (!mEglCore.isCurrent(mEGLSurface)) {
             throw new RuntimeException("Expected EGL context/surface is not current");
         }
@@ -171,8 +171,6 @@ public class EglSurfaceBase {
         // our output will look upside down relative to what appears on screen if the
         // typical GL conventions are used.
 
-        String filename = file.toString();
-
         int width = getWidth();
         int height = getHeight();
         ByteBuffer buf = ByteBuffer.allocateDirect(width * height * 4);
@@ -182,16 +180,28 @@ public class EglSurfaceBase {
         GlUtil.checkGlError("glReadPixels");
         buf.rewind();
 
+        Bitmap bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        bmp.copyPixelsFromBuffer(buf);
+
+        return bmp;
+    }
+
+    /**
+     * Saves the EGL surface to a file.
+     * <p>
+     * Expects that this object's EGL surface is current.
+     */
+    public void saveFrame(File file, int quality) throws IOException {
+        String filename = file.toString();
+
         BufferedOutputStream bos = null;
         try {
             bos = new BufferedOutputStream(new FileOutputStream(filename));
-            Bitmap bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-            bmp.copyPixelsFromBuffer(buf);
-            bmp.compress(Bitmap.CompressFormat.PNG, 90, bos);
+            Bitmap bmp = saveFrame();
+            bmp.compress(Bitmap.CompressFormat.PNG, quality, bos);
             bmp.recycle();
         } finally {
             if (bos != null) bos.close();
         }
-        Log.d(TAG, "Saved " + width + "x" + height + " frame as '" + filename + "'");
     }
 }

@@ -9,7 +9,7 @@ import android.widget.Button;
 
 public class MainActivity extends AppCompatActivity {
 
-    public static String TAG = "animals-go";
+    private static final String TAG = "A_GO/MainActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -23,8 +23,8 @@ public class MainActivity extends AppCompatActivity {
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //final Intent intent = new Intent(MainActivity.this, CameraActivity.class);
-                //MainActivity.this.startActivity(intent);
+                final Intent intent = new Intent(MainActivity.this, CameraActivity.class);
+                MainActivity.this.startActivity(intent);
             }
         });
     }

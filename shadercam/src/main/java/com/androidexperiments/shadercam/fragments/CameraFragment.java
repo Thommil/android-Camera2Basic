@@ -73,11 +73,6 @@ public class CameraFragment extends Fragment {
     private Size mPreviewSize;
 
     /**
-     * The {@link Size} of video preview/recording.
-     */
-    private Size mVideoSize;
-
-    /**
      * Camera preview.
      */
     private CaptureRequest.Builder mPreviewBuilder;
@@ -116,7 +111,6 @@ public class CameraFragment extends Fragment {
      */
     private OnViewportSizeUpdatedListener mOnViewportSizeUpdatedListener;
 
-    private float mVideoSizeAspectRatio;
     private float mPreviewSurfaceAspectRatio;
 
     /**
@@ -235,11 +229,12 @@ public class CameraFragment extends Fragment {
             StreamConfigurationMap streamConfigurationMap = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
 
             //typically these are identical
-            mVideoSize = chooseVideoSize(streamConfigurationMap.getOutputSizes(MediaRecorder.class));
             mPreviewSize = chooseVideoSize(streamConfigurationMap.getOutputSizes(SurfaceTexture.class));
 
             //send back for updates to renderer if needed
-            updateViewportSize(mVideoSizeAspectRatio, mPreviewSurfaceAspectRatio);
+            if(mOnViewportSizeUpdatedListener != null) {
+                mOnViewportSizeUpdatedListener.onViewportSizeUpdated(mSurfaceView.getWidth(), mSurfaceView.getHeight());
+            }
 
             manager.openCamera(cameraId, mStateCallback, null);
         }
@@ -256,44 +251,6 @@ public class CameraFragment extends Fragment {
         catch (InterruptedException e) {
             throw new RuntimeException("Interrupted while trying to lock camera opening.");
         }
-    }
-
-    /**
-     * Callback from our {@link com.androidexperiments.shadercam.fragments.CameraFragment.OnViewportSizeUpdatedListener CameraFragment.OnViewportSizeUpdatedListener}
-     * which is called every time we open the camera, to make sure we are using the most up-to-date values for calculating our
-     * renderer's glViewport. Without this, TextureView's that aren't exactly the same size as the size of Camera api video
-     * will become distorted.
-     * @param videoAspect float of the aspect ratio of the size of video returned in openCamera
-     * @param surfaceAspect aspect ratio of our available textureview surface
-     */
-    public void updateViewportSize(float videoAspect, float surfaceAspect)
-    {
-        Log.d(TAG, "updateViewportSize - "+videoAspect+", "+surfaceAspect);
-        int sw = mSurfaceView.getWidth();
-        int sh = mSurfaceView.getHeight();
-
-        int vpW, vpH;
-
-        if(videoAspect == surfaceAspect)
-        {
-            vpW = sw;
-            vpH = sh;
-        }
-        else if(videoAspect < surfaceAspect)
-        {
-            float ratio = (float)sw / mVideoSize.getHeight();
-            vpW = (int)(mVideoSize.getHeight() * ratio);
-            vpH = (int)(mVideoSize.getWidth() * ratio);
-        }
-        else
-        {
-            float ratio = (float)sw / mVideoSize.getWidth();
-            vpW = (int)(mVideoSize.getWidth() * ratio);
-            vpH = (int)(mVideoSize.getHeight() * ratio);
-        }
-
-        if(mOnViewportSizeUpdatedListener != null)
-            mOnViewportSizeUpdatedListener.onViewportSizeUpdated(vpW, vpH);
     }
 
     /**
@@ -365,7 +322,6 @@ public class CameraFragment extends Fragment {
             if(sizeToReturn == null)
                 sizeToReturn = choices[0];
 
-            mVideoSizeAspectRatio = (float) sizeToReturn.getWidth() / sizeToReturn.getHeight();
         }
         else //portrait or square
         {
@@ -412,8 +368,6 @@ public class CameraFragment extends Fragment {
             if(sizeToReturn == null)
                 sizeToReturn = choices[0];
 
-            //landscape shit
-            mVideoSizeAspectRatio = (float) sizeToReturn.getHeight() / sizeToReturn.getWidth();
         }
 
 
@@ -518,15 +472,6 @@ public class CameraFragment extends Fragment {
     public void setSurfaceView(SurfaceView surfaceView) {
         Log.d(TAG, "setSurfaceView");
         mSurfaceView = surfaceView;
-    }
-
-    /**
-     * Get the current video size used for recording
-     * @return {@link Size} of current video from camera.
-     */
-    public Size getVideoSize() {
-        Log.d(TAG, "getVideoSize");
-        return mVideoSize;
     }
 
     /**

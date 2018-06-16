@@ -10,6 +10,7 @@ import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 import android.opengl.GLES30;
 import android.opengl.GLUtils;
+import android.opengl.Matrix;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -67,12 +68,12 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
      * main texture for display, based on TextureView that is created in activity or fragment
      * and passed in after onSurfaceTextureAvailable is called, guaranteeing its existence.
      */
-    private Surface mSurface;
+    protected Surface mSurface;
 
     /**
      * EGLCore used for creating {@link WindowSurface}s for preview and recording
      */
-    private EglCore mEglCore;
+    protected EglCore mEglCore;
 
     /**
      * Primary {@link WindowSurface} for rendering to screen
@@ -82,7 +83,7 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
     /**
      * Texture created for GLES rendering of camera data
      */
-    private SurfaceTexture mPreviewTexture;
+    protected SurfaceTexture mPreviewTexture;
 
     /**
      * if you override these in ctor of subclass, loader will ignore the files listed above
@@ -94,20 +95,20 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
     /**
      * Basic mesh rendering code
      */
-    private static float squareSize = 1.0f;
+    protected static float squareSize = 1.0f;
 
-    private static float squareCoords[] = {
+    protected static float squareCoords[] = {
             -squareSize, squareSize, // 0.0f,     // top left
             squareSize, squareSize, // 0.0f,   // top right
             -squareSize, -squareSize, // 0.0f,   // bottom left
             squareSize, -squareSize, // 0.0f,   // bottom right
     };
 
-    private static short drawOrder[] = {0, 1, 2, 1, 3, 2};
+    protected static short drawOrder[] = {0, 1, 2, 1, 3, 2};
 
     private FloatBuffer textureBuffer;
 
-    private float textureCoords[] = {
+    protected float textureCoords[] = {
             0.0f, 1.0f,
             1.0f, 1.0f,
             0.0f, 0.0f,
@@ -116,68 +117,28 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
 
     protected int mCameraShaderProgram;
 
-    private FloatBuffer vertexBuffer;
+    protected FloatBuffer vertexBuffer;
 
-    private ShortBuffer drawListBuffer;
+    protected ShortBuffer drawListBuffer;
 
-    private int textureCoordinateHandle;
+    protected int textureCoordinateHandle;
 
-    private int positionHandle;
+    protected int positionHandle;
 
-    private long lastTime = 0;
-    private long lastLog = 0;
-    private int fps = 0;
-
-    /**
-     * "arbitrary" maximum number of textures. seems that most phones dont like more than 16
-     */
-    public static final int MAX_TEXTURES = 16;
+    protected long lastTime = 0;
+    protected long lastLog = 0;
+    protected int fps = 0;
 
     /**
-     * for storing all texture ids from genTextures, and used when binding
-     * after genTextures, id[0] is reserved for camera texture
+     * Cam texture ID
      */
-    private int[] mTexturesIds = new int[MAX_TEXTURES];
-
-    /**
-     * array of proper constants for use in creation,
-     * updating, and drawing. most phones max out at 16
-     * same number as {@link #MAX_TEXTURES}
-     *
-     * Used in our implementation of {@link #addTexture(Bitmap, String)}
-     */
-    private int[] mTextureConsts = {
-            GLES20.GL_TEXTURE1,
-            GLES20.GL_TEXTURE2,
-            GLES20.GL_TEXTURE3,
-            GLES20.GL_TEXTURE4,
-            GLES20.GL_TEXTURE5,
-            GLES20.GL_TEXTURE6,
-            GLES20.GL_TEXTURE7,
-            GLES20.GL_TEXTURE8,
-            GLES20.GL_TEXTURE9,
-            GLES20.GL_TEXTURE10,
-            GLES20.GL_TEXTURE11,
-            GLES20.GL_TEXTURE12,
-            GLES20.GL_TEXTURE13,
-            GLES20.GL_TEXTURE14,
-            GLES20.GL_TEXTURE15,
-            GLES20.GL_TEXTURE16,
-    };
-
-    /**
-     * array of {@link Texture} objects used for looping through
-     * during the render pass. created in {@link #addTexture(int, Bitmap, String, boolean)}
-     * and looped in {@link #setExtraTextures()}
-     */
-    private ArrayList<Texture> mTextureArray;
-
+    private int mCamTextureId;
 
     /**
      * matrix for transforming our camera texture, available immediately after {@link #mPreviewTexture}s
      * {@code updateTexImage()} is called in our main {@link #draw()} loop.
      */
-    private float[] mCameraTransformMatrix = new float[16];
+    protected float[] mCameraTransformMatrix = new float[16];
 
     /**
      * Handler for communcation with the UI thread. Implementation below at
@@ -237,10 +198,8 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
 
     }
 
-    private void initialize() {
+    protected void initialize() {
         Log.d(TAG, "initialize");
-        mTextureArray = new ArrayList<>();
-
         setupCameraFragment();
 
         if(fragmentShaderCode == null || vertexShaderCode == null) {
@@ -248,14 +207,14 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
         }
     }
 
-    private void setupCameraFragment() {
+    protected void setupCameraFragment() {
         Log.d(TAG, "setupCameraFragment");
         if(mCameraFragment == null) {
             throw new RuntimeException("CameraFragment is null! Please call setCameraFragment prior to initialization.");
         }
         }
 
-    private void loadFromShadersFromAssets(String pathToFragment, String pathToVertex)
+    protected void loadFromShadersFromAssets(String pathToFragment, String pathToVertex)
     {
         Log.d(TAG, "loadFromShadersFromAssets - "+pathToFragment+", "+pathToVertex);
         try {
@@ -288,7 +247,6 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
         onPreSetupGLComponents();
 
         setupVertexBuffer();
-        setupTextures();
         setupCameraTexture();
         setupShaders();
 
@@ -312,7 +270,7 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
 
     protected void deinitGLComponents() {
         Log.d(TAG, "deinitGLComponents");
-        GLES20.glDeleteTextures(MAX_TEXTURES, mTexturesIds, 0);
+        GLES20.glDeleteTextures(1, new int[]{mCamTextureId}, 0);
         GLES20.glDeleteProgram(mCameraShaderProgram);
 
         mPreviewTexture.release();
@@ -327,7 +285,7 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
      * override this method if there's anything else u want to accomplish before
      * the main camera setup gets underway
      */
-    private void onPreSetupGLComponents() {
+    protected void onPreSetupGLComponents() {
         Log.d(TAG, "onPreSetupGLComponents");
         GLES20.glViewport(0, 0, mSurfaceWidth, mSurfaceHeight);
         GLES20.glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
@@ -351,9 +309,13 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
         vertexBuffer.position(0);
     }
 
-    protected void setupTextures()
-    {
-        Log.d(TAG, "setupTextures");
+    /**
+     * Remember that Android's camera api returns camera texture not as {@link GLES20#GL_TEXTURE_2D}
+     * but rather as {@link GLES11Ext#GL_TEXTURE_EXTERNAL_OES}, which we bind here
+     */
+    protected void setupCameraTexture() {
+        Log.d(TAG, "setupCameraTexture");
+
         ByteBuffer texturebb = ByteBuffer.allocateDirect(textureCoords.length * 4);
         texturebb.order(ByteOrder.nativeOrder());
 
@@ -361,23 +323,17 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
         textureBuffer.put(textureCoords);
         textureBuffer.position(0);
 
-        // Generate the max amount texture ids
-        GLES20.glGenTextures(MAX_TEXTURES, mTexturesIds, 0);
+        int[] texturesId = new int[1];
+        GLES20.glGenTextures(1, texturesId , 0);
         checkGlError("Texture generate");
-    }
+        mCamTextureId = texturesId[0];
 
-    /**
-     * Remember that Android's camera api returns camera texture not as {@link GLES20#GL_TEXTURE_2D}
-     * but rather as {@link GLES11Ext#GL_TEXTURE_EXTERNAL_OES}, which we bind here
-     */
-    protected void setupCameraTexture() {
-        Log.d(TAG, "setupCameraTexture");
         //set texture[0] to camera texture
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mTexturesIds[0]);
+        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mCamTextureId);
         checkGlError("Texture bind");
 
-        mPreviewTexture = new SurfaceTexture(mTexturesIds[0]);
+        mPreviewTexture = new SurfaceTexture(mCamTextureId);
         mPreviewTexture.setOnFrameAvailableListener(this);
     }
 
@@ -482,7 +438,8 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
 
         synchronized (this)
         {
-            updatePreviewTexture();
+            mPreviewTexture.updateTexImage();
+            mPreviewTexture.getTransformMatrix(mCameraTransformMatrix);
 
             draw();
             mWindowSurface.makeCurrent();
@@ -515,42 +472,10 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
      */
     public void draw()
     {
-        logFPS();
-
-        clear();
-
+        //logFPS();
         //set shader
         GLES20.glUseProgram(mCameraShaderProgram);
 
-        setUniformsAndAttribs();
-        setExtraTextures();
-        drawElements();
-        onDrawCleanup();
-    }
-
-    /**
-     * Clear current frame
-     */
-    protected  void clear() {
-        GLES20.glViewport(0, 0, mSurfaceWidth, mSurfaceHeight);
-        GLES20.glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-    }
-
-    /**
-     * update the SurfaceTexture to the latest camera image
-     */
-    protected void updatePreviewTexture()
-    {
-        mPreviewTexture.updateTexImage();
-        mPreviewTexture.getTransformMatrix(mCameraTransformMatrix);
-    }
-
-    /**
-     * base amount of attributes needed for rendering camera to screen
-     */
-    protected void setUniformsAndAttribs()
-    {
         int textureParamHandle = GLES20.glGetUniformLocation(mCameraShaderProgram, "camTexture");
         int textureTranformHandle = GLES20.glGetUniformLocation(mCameraShaderProgram, "camTextureTransform");
         textureCoordinateHandle = GLES20.glGetAttribLocation(mCameraShaderProgram, "camTexCoordinate");
@@ -562,114 +487,20 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
 
         //camera texture
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mTexturesIds[0]);
+        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mCamTextureId);
         GLES20.glUniform1i(textureParamHandle, 0);
 
         GLES20.glEnableVertexAttribArray(textureCoordinateHandle);
         GLES20.glVertexAttribPointer(textureCoordinateHandle, 2, GLES20.GL_FLOAT, false, 4 * 2, textureBuffer);
 
         GLES20.glUniformMatrix4fv(textureTranformHandle, 1, false, mCameraTransformMatrix, 0);
-    }
 
-    /**
-     * creates a new texture with specified resource id and returns the
-     * tex id num upon completion
-     * @param resource_id
-     * @param uniformName
-     * @return
-     */
-    public int addTexture(int resource_id, String uniformName, int minFilter, int magFilter)
-    {
-        Log.d(TAG, "addTexture - "+resource_id+", "+uniformName);
-        int texId = mTextureConsts[mTextureArray.size()];
-        if(mTextureArray.size() + 1 >= MAX_TEXTURES)
-            throw new IllegalStateException("Too many textures! Please don't use so many :(");
-
-        Bitmap bmp = BitmapFactory.decodeResource(mContext.getResources(), resource_id);
-
-        return addTexture(texId, bmp, uniformName, true, minFilter, magFilter);
-    }
-
-    public int addTexture(Bitmap bitmap, String uniformName, int minFilter, int magFilter)
-    {
-        Log.d(TAG, "addTexture - "+bitmap+", "+uniformName);
-        int texId = mTextureConsts[mTextureArray.size()];
-        if(mTextureArray.size() + 1 >= MAX_TEXTURES)
-            throw new IllegalStateException("Too many textures! Please don't use so many :(");
-
-        return addTexture(texId, bitmap, uniformName, true, minFilter, magFilter);
-    }
-
-    public int addTexture(int texId, Bitmap bitmap, String uniformName, boolean recycle, int minFilter, int magFilter)
-    {
-        Log.d(TAG, "addTexture - "+texId+", "+bitmap+", "+uniformName+", "+recycle);
-        int num = mTextureArray.size() + 1;
-
-        GLES20.glActiveTexture(texId);
-        checkGlError("Texture generate");
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTexturesIds[num]);
-        checkGlError("Texture bind");
-        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, minFilter);
-        GLES20.glTexParameterf(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, magFilter);
-        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
-
-        if(recycle)
-            bitmap.recycle();
-
-        Texture tex = new Texture(num, texId, uniformName);
-
-        if(!mTextureArray.contains(tex)) {
-            mTextureArray.add(tex);
-            Log.d(TAG, "addedTexture() " + mTexturesIds[num] + " : " + tex);
-        }
-
-        return num;
-    }
-
-    /**
-     * updates specific texture and recycles bitmap used for updating
-     * @param texNum
-     * @param drawingCache
-     */
-    public void updateTexture(int texNum, Bitmap drawingCache)
-    {
-        Log.d(TAG, "updateTexture");
-        GLES20.glActiveTexture(mTextureConsts[texNum - 1]);
-        checkGlError("Texture generate");
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTexturesIds[texNum]);
-        checkGlError("Texture bind");
-        GLUtils.texSubImage2D(GLES20.GL_TEXTURE_2D, 0, 0, 0, drawingCache);
-        checkGlError("Tex Sub Image");
-
-        drawingCache.recycle();
-    }
-
-    /**
-     * override this and copy if u want to add your own mTexturesIds
-     * if u need different uv coordinates, refer to {@link #setupTextures()}
-     * for how to create your own buffer
-     */
-    protected void setExtraTextures()
-    {
-        for(int i = 0; i < mTextureArray.size(); i++)
-        {
-            Texture tex = mTextureArray.get(i);
-            int imageParamHandle = GLES20.glGetUniformLocation(mCameraShaderProgram, tex.uniformName);
-
-            GLES20.glActiveTexture(tex.texId);
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTexturesIds[tex.texNum]);
-            GLES20.glUniform1i(imageParamHandle, tex.texNum);
-        }
-    }
-
-    protected void drawElements() {
         GLES20.glDrawElements(GLES20.GL_TRIANGLES, drawOrder.length, GLES20.GL_UNSIGNED_SHORT, drawListBuffer);
-    }
 
-    protected void onDrawCleanup() {
         GLES20.glDisableVertexAttribArray(positionHandle);
         GLES20.glDisableVertexAttribArray(textureCoordinateHandle);
     }
+
 
     /**
      * utility for checking GL errors
@@ -705,25 +536,6 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
         mCameraFragment = cameraFragment;
     }
 
-    /**
-     * Internal class for storing refs to mTexturesIds for rendering
-     */
-    private class Texture {
-        public int texNum;
-        public int texId;
-        public String uniformName;
-
-        private Texture(int texNum, int texId, String uniformName) {
-            this.texNum = texNum;
-            this.texId = texId;
-            this.uniformName = uniformName;
-        }
-        @Override
-        public String toString() {
-            return "[Texture] num: " + texNum + " id: " + texId + ", uniformName: " + uniformName;
-        }
-
-    }
 
     /**
      * {@link Handler} responsible for communication between this render thread and the UI thread.

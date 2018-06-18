@@ -24,6 +24,7 @@ import android.os.HandlerThread;
 import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.PermissionChecker;
 import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
@@ -45,48 +46,46 @@ public class CameraFragment extends Fragment {
 
     private static final String TAG = "A_GO/CameraFragment";
 
-    private static CameraFragment __instance;
-
     /**
      * A {@link SurfaceView} for camera preview.
      */
-    private SurfaceView mSurfaceView;
+    protected SurfaceView mSurfaceView;
 
     /**
      * A refernce to the opened {@link CameraDevice}.
      */
-    private CameraDevice mCameraDevice;
+    protected CameraDevice mCameraDevice;
 
     /**
      * A reference to the current {@link CameraCaptureSession} for preview.
      */
-    private CameraCaptureSession mPreviewSession;
+    protected CameraCaptureSession mPreviewSession;
 
     /**
      * Surface to render preview of camera
      */
-    private SurfaceTexture mPreviewSurface;
+    protected SurfaceTexture mPreviewSurface;
 
     /**
      * The {@link Size} of camera preview.
      */
-    private Size mPreviewSize;
+    protected Size mPreviewSize;
 
     /**
      * Camera preview.
      */
-    private CaptureRequest.Builder mPreviewBuilder;
+    protected CaptureRequest.Builder mPreviewBuilder;
 
 
     /**
      * An additional thread for running tasks that shouldn't block the UI.
      */
-    private HandlerThread mBackgroundThread;
+    protected HandlerThread mBackgroundThread;
 
     /**
      * A {@link Handler} for running tasks in the background.
      */
-    private Handler mBackgroundHandler;
+    protected Handler mBackgroundHandler;
 
 
     /**
@@ -109,32 +108,18 @@ public class CameraFragment extends Fragment {
     /**
      * Listener for when openCamera is called and a proper video size is created
      */
-    private OnViewportSizeUpdatedListener mOnViewportSizeUpdatedListener;
+    protected OnViewportSizeUpdatedListener mOnViewportSizeUpdatedListener;
 
-    private float mPreviewSurfaceAspectRatio;
+    protected float mPreviewSurfaceAspectRatio;
 
     /**
      * A {@link Semaphore} to prevent the app from exiting before closing the camera.
      */
-    private Semaphore mCameraOpenCloseLock = new Semaphore(1);
+    protected Semaphore mCameraOpenCloseLock = new Semaphore(1);
 
-    private boolean mCameraIsOpen = false;
+    protected boolean mCameraIsOpen = false;
 
-    /**
-     * Get instance of this fragment that sets retain instance true so it is not affected
-     * by device orientation changes and other updates
-     * @return instance of CameraFragment
-     */
-    public static CameraFragment getInstance()
-    {
-        Log.d(TAG, "getInstance");
-        if(__instance == null)
-        {
-            __instance = new CameraFragment();
-            __instance.setRetainInstance(true);
-        }
-        return __instance;
-    }
+    protected CameraCaptureSession.CaptureCallback mCaptureCallback;
 
     @Override
     public void onResume()
@@ -229,11 +214,11 @@ public class CameraFragment extends Fragment {
             StreamConfigurationMap streamConfigurationMap = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
 
             //typically these are identical
-            mPreviewSize = chooseVideoSize(streamConfigurationMap.getOutputSizes(SurfaceTexture.class));
+            mPreviewSize = chooseVideoSize(streamConfigurationMap.getOutputSizes(SurfaceHolder.class));
 
             //send back for updates to renderer if needed
             if(mOnViewportSizeUpdatedListener != null) {
-                mOnViewportSizeUpdatedListener.onViewportSizeUpdated(mSurfaceView.getWidth(), mSurfaceView.getHeight());
+                mOnViewportSizeUpdatedListener.onViewportSizeUpdated(new Size(mSurfaceView.getWidth(), mSurfaceView.getHeight()),mPreviewSize);
             }
 
             manager.openCamera(cameraId, mStateCallback, null);
@@ -303,6 +288,8 @@ public class CameraFragment extends Fragment {
         int sw = mSurfaceView.getWidth(); //surface width
         int sh = mSurfaceView.getHeight(); //surface height
 
+        Log.d(TAG, "Surface size : "+sw+"x"+sh);
+
         mPreviewSurfaceAspectRatio = (float)sw / sh;
 
         Log.d(TAG, "chooseVideoSize() for landscape:" + (mPreviewSurfaceAspectRatio > 1.f) + " aspect: " + mPreviewSurfaceAspectRatio + " : " + Arrays.toString(choices) );
@@ -337,31 +324,34 @@ public class CameraFragment extends Fragment {
                 if(aspect == mPreviewSurfaceAspectRatio)
                     potentials.add(size);
             }
-            Log.i(TAG, "---potentials: " + potentials.size());
+            Log.i(TAG, "---potentials: " + potentials.size() + " : " + potentials);
 
             if(potentials.size() > 0)
             {
                 //check for potential perfect matches (usually full screen surfaces)
                 for(Size potential : potentials)
                     if(potential.getHeight() == sw) {
+                        Log.d(TAG, "potential : " + potential);
                         sizeToReturn = potential;
                         break;
                     }
-                if(sizeToReturn == null)
+                if(sizeToReturn == null) {
                     Log.i(TAG, "---no perfect match, check for 'normal'");
 
-                //if that fails - check for largest 'normal size' video
-                for(Size potential : potentials)
-                    if(potential.getHeight() == 1080 || potential.getHeight() == 720) {
-                        sizeToReturn = potential;
-                        break;
-                    }
-                if(sizeToReturn == null)
-                    Log.i(TAG, "---no 'normal' match, return largest ");
 
-                //if not, return largest potential available
-                if(sizeToReturn == null)
-                    sizeToReturn = potentials.get(0);
+                    //if that fails - check for largest 'normal size' video
+                    for (Size potential : potentials) {
+                        if (potential.getHeight() == 1080 || potential.getHeight() == 720) {
+                            sizeToReturn = potential;
+                            break;
+                        }
+                    }
+
+                    if (sizeToReturn == null) {
+                        Log.i(TAG, "---no 'normal' match, return largest ");
+                        sizeToReturn = potentials.get(0);
+                    }
+                }
             }
 
             //final check
@@ -370,6 +360,7 @@ public class CameraFragment extends Fragment {
 
         }
 
+        Log.i(TAG, "Final choice : " + sizeToReturn);
 
         return sizeToReturn;
     }
@@ -398,7 +389,7 @@ public class CameraFragment extends Fragment {
     /**
      * Start the camera preview.
      */
-    private void startPreview()
+    protected void startPreview()
     {
         Log.d(TAG, "startPreview");
         if (null == mCameraDevice || null == mPreviewSize) {
@@ -408,7 +399,7 @@ public class CameraFragment extends Fragment {
         try {
             mPreviewSurface.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
 
-            mPreviewBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
+            mPreviewBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             List<Surface> surfaces = new ArrayList<>();
 
             assert mPreviewSurface != null;
@@ -440,30 +431,50 @@ public class CameraFragment extends Fragment {
     }
 
     /**
+     * Overrides this method to implement custom capture request settings
+     *
+     * @param captureRequestBuilder The CaptureRequest.Builder instance
+     */
+    protected void setupCaptureRequest(final CaptureRequest.Builder captureRequestBuilder) {
+        Log.d(TAG, "setupCaptureRequest");
+        captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+    }
+
+    /**
      * Update the camera preview. {@link #startPreview()} needs to be called in advance.
      */
-    private void updatePreview() {
+    protected void updatePreview() {
         Log.d(TAG, "updatePreview");
         if (null == mCameraDevice) {
             return;
         }
         try {
-            mPreviewBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-            mPreviewSession.setRepeatingRequest(mPreviewBuilder.build(), captureCallback, mBackgroundHandler);
+            setupCaptureRequest(mPreviewBuilder);
+            if(mCaptureCallback == null){
+                mCaptureCallback = new CameraCaptureSession.CaptureCallback() {
+                    @Override
+                    public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result)
+                    {
+                        super.onCaptureCompleted(session, request, result);
+                    }
+                };
+            }
+            mPreviewSession.setRepeatingRequest(mPreviewBuilder.build(), mCaptureCallback, mBackgroundHandler);
         }
         catch (CameraAccessException e) {
             e.printStackTrace();
         }
     }
 
-    private CameraCaptureSession.CaptureCallback captureCallback = new CameraCaptureSession.CaptureCallback() {
-        @Override
-        public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result)
-        {
-            super.onCaptureCompleted(session, request, result);
-        }
-    };
 
+    /**
+     * Allow to set custom CameraCaptureSession.CaptureCallback
+     *
+     * @param captureCallback The CameraCaptureSession.CaptureCallback  to set
+     */
+    public void setCaptureCallback(CameraCaptureSession.CaptureCallback captureCallback){
+        mCaptureCallback = captureCallback;
+    }
 
     /**
      * set the surfaceView to render the camera preview inside
@@ -512,7 +523,7 @@ public class CameraFragment extends Fragment {
      * Listener interface that will send back the newly created {@link Size} of our camera output
      */
     public interface OnViewportSizeUpdatedListener {
-        void onViewportSizeUpdated(int viewportWidth, int viewportHeight);
+        void onViewportSizeUpdated(Size surfaceSize, Size previewSize);
     }
 
     /**

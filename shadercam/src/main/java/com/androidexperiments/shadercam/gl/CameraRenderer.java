@@ -15,6 +15,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
+import android.util.Size;
 import android.util.SparseIntArray;
 import android.view.Surface;
 import android.widget.Toast;
@@ -33,6 +34,7 @@ import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /** *
  * Base camera rendering class. Responsible for rendering to proper window contexts, as well as
@@ -40,9 +42,11 @@ import java.util.ArrayList;
  *
  * Subclass this and add any kind of fun stuff u want, new shaders, textures, uniforms - go to town!
  *
+ * TODO Android < 6 -> Fix Ratio
+ *
  */
 
-public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvailableListener
+public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvailableListener, CameraFragment.OnViewportSizeUpdatedListener
 {
     private static final String TAG = "A_GO/CameraRenderer";
     private static final String THREAD_NAME = "CameraRendererThread";
@@ -106,7 +110,7 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
 
     protected static short drawOrder[] = {0, 1, 2, 1, 3, 2};
 
-    private FloatBuffer textureBuffer;
+    protected FloatBuffer textureBuffer;
 
     protected float textureCoords[] = {
             0.0f, 1.0f,
@@ -247,6 +251,7 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
         onPreSetupGLComponents();
 
         setupVertexBuffer();
+        setupCameraTextureCoords();
         setupCameraTexture();
         setupShaders();
 
@@ -281,6 +286,41 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
     // setup
     // ------------------------------------------------------------
 
+
+    @Override
+    public void onViewportSizeUpdated(Size surfaceSize, Size previewSize) {
+        Log.d(TAG, "onViewportSizeUpdated - " +surfaceSize+","+previewSize);
+        float surfaceRatio = (float)surfaceSize.getWidth()/(float)surfaceSize.getHeight();
+        float previewRatio = (float)previewSize.getHeight()/(float)previewSize.getWidth();
+
+        Log.d(TAG, "Ratios - S : " +surfaceRatio+", P : "+previewRatio);
+
+        //We must crop preview vertically
+        if(previewRatio > surfaceRatio){
+            float delta = (previewRatio - surfaceRatio) / 2f;
+            textureCoords = new float[]{
+                    delta, 1.0f,
+                    1.0f-delta, 1.0f,
+                    delta, 0.0f,
+                    1.0f-delta, 0.0f
+            };
+        }
+        //We must crop preview horizontally
+        else{
+            float delta = (surfaceRatio - previewRatio ) / 2f;
+            textureCoords = new float[]{
+                    0.0f, 1.0f-delta,
+                    1.0f, 1.0f-delta,
+                    0.0f, delta,
+                    1.0f, delta
+            };
+        }
+
+        Log.d(TAG, "TextureCoords : " + Arrays.toString(textureCoords));
+
+        setupCameraTextureCoords();
+    }
+
     /**
      * override this method if there's anything else u want to accomplish before
      * the main camera setup gets underway
@@ -309,19 +349,22 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
         vertexBuffer.position(0);
     }
 
-    /**
-     * Remember that Android's camera api returns camera texture not as {@link GLES20#GL_TEXTURE_2D}
-     * but rather as {@link GLES11Ext#GL_TEXTURE_EXTERNAL_OES}, which we bind here
-     */
-    protected void setupCameraTexture() {
-        Log.d(TAG, "setupCameraTexture");
-
+    protected void setupCameraTextureCoords(){
+        Log.d(TAG, "setupCameraTextureCoord");
         ByteBuffer texturebb = ByteBuffer.allocateDirect(textureCoords.length * 4);
         texturebb.order(ByteOrder.nativeOrder());
 
         textureBuffer = texturebb.asFloatBuffer();
         textureBuffer.put(textureCoords);
         textureBuffer.position(0);
+    }
+
+    /**
+     * Remember that Android's camera api returns camera texture not as {@link GLES20#GL_TEXTURE_2D}
+     * but rather as {@link GLES11Ext#GL_TEXTURE_EXTERNAL_OES}, which we bind here
+     */
+    protected void setupCameraTexture() {
+        Log.d(TAG, "setupCameraTexture");
 
         int[] texturesId = new int[1];
         GLES20.glGenTextures(1, texturesId , 0);
@@ -456,7 +499,6 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
     protected void logFPS(){
         fps++;
         long currentTime = System.currentTimeMillis();
-        long duration = currentTime -lastTime;
 
         if(currentTime - lastLog > 1000){
             Log.d(TAG, "FPS : "+fps);
@@ -472,10 +514,8 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
      */
     public void draw()
     {
-        //logFPS();
         //set shader
         GLES20.glUseProgram(mCameraShaderProgram);
-
         int textureParamHandle = GLES20.glGetUniformLocation(mCameraShaderProgram, "camTexture");
         int textureTranformHandle = GLES20.glGetUniformLocation(mCameraShaderProgram, "camTextureTransform");
         textureCoordinateHandle = GLES20.glGetAttribLocation(mCameraShaderProgram, "camTexCoordinate");
@@ -483,7 +523,7 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
 
 
         GLES20.glEnableVertexAttribArray(positionHandle);
-        GLES20.glVertexAttribPointer(positionHandle, 2, GLES20.GL_FLOAT, false, 4 * 2, vertexBuffer);
+        GLES20.glVertexAttribPointer(positionHandle, 2, GLES20.GL_FLOAT, false, 8, vertexBuffer);
 
         //camera texture
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
@@ -491,11 +531,11 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
         GLES20.glUniform1i(textureParamHandle, 0);
 
         GLES20.glEnableVertexAttribArray(textureCoordinateHandle);
-        GLES20.glVertexAttribPointer(textureCoordinateHandle, 2, GLES20.GL_FLOAT, false, 4 * 2, textureBuffer);
+        GLES20.glVertexAttribPointer(textureCoordinateHandle, 2, GLES20.GL_FLOAT, false, 8, textureBuffer);
 
         GLES20.glUniformMatrix4fv(textureTranformHandle, 1, false, mCameraTransformMatrix, 0);
 
-        GLES20.glDrawElements(GLES20.GL_TRIANGLES, drawOrder.length, GLES20.GL_UNSIGNED_SHORT, drawListBuffer);
+        GLES20.glDrawElements(GLES20.GL_TRIANGLES, 6, GLES20.GL_UNSIGNED_SHORT, drawListBuffer);
 
         GLES20.glDisableVertexAttribArray(positionHandle);
         GLES20.glDisableVertexAttribArray(textureCoordinateHandle);

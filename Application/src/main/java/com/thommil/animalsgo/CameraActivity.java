@@ -16,6 +16,8 @@ import com.androidexperiments.shadercam.fragments.CameraFragment;
 import com.androidexperiments.shadercam.fragments.PermissionsHelper;
 import com.androidexperiments.shadercam.gl.CameraRenderer;
 import com.androidexperiments.shadercam.utils.ShaderUtils;
+import com.thommil.animalsgo.fragments.AGCameraFragment;
+import com.thommil.animalsgo.gl.AGCameraRenderer;
 
 
 /**
@@ -33,13 +35,13 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
     /**
      * Custom fragment used for encapsulating all the {@link android.hardware.camera2} apis.
      */
-    private CameraFragment mCameraFragment;
+    private AGCameraFragment mCameraFragment;
 
     /**
      * Our custom renderer for this example, which extends {@link CameraRenderer} and then adds custom
      * shaders, which turns shit green, which is easy.
      */
-    private CameraRenderer mRenderer;
+    private AGCameraRenderer mRenderer;
 
     /**
      * boolean for triggering restart of camera after completed rendering
@@ -57,7 +59,6 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
         setContentView(R.layout.activity_camera);
 
         mSurfaceView = findViewById(R.id.surface_view);
-
         setupCameraFragment();
 
         //setup permissions for M or start normally
@@ -82,7 +83,8 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
         if(mCameraFragment != null && mCameraFragment.isAdded())
             return;
 
-        mCameraFragment = CameraFragment.getInstance();
+        mCameraFragment = new AGCameraFragment();
+        mCameraFragment.setRetainInstance(true);
         mCameraFragment.setCameraToUse(CameraFragment.CAMERA_PRIMARY); //pick which camera u want to use, we default to forward
         mCameraFragment.setSurfaceView(mSurfaceView);
 
@@ -154,7 +156,9 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
      */
     protected void setReady(Surface surface, int width, int height) {
         Log.d(TAG, "setReady - "+width+", "+height);
-        mRenderer = new CameraRenderer(this, surface, width, height);
+        mRenderer = new AGCameraRenderer(this, surface, width, height);
+        mCameraFragment.setOnViewportSizeUpdatedListener(mRenderer);
+        mCameraFragment.setOnCaptureCompletedListener(mRenderer);
         mRenderer.setCameraFragment(mCameraFragment);
         mRenderer.setOnRendererReadyListener(this);
         mRenderer.start();

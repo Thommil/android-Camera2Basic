@@ -29,6 +29,7 @@ public class AGCameraRenderer extends CameraRenderer implements AGCameraFragment
 
     @Override
     public void onCaptureDataReceived(AGCameraFragment.CaptureData captureData) {
+        //Log.d(TAG, "onCaptureDataReceived - "+captureData);
         if(captureData.lightState && captureData.movementState && captureData.touchState
                 && captureData.cameraState && captureData.facesState){
             Log.d(TAG, "GO GO GO");

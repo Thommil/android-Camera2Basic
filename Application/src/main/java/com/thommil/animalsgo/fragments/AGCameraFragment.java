@@ -144,7 +144,6 @@ public class AGCameraFragment extends CameraFragment{
         private boolean isTouched = false;
 
         private int frameCount = 0;
-        private int faceDetectionThreshold = -1;
 
         private boolean bIsmoving = false;
 
@@ -158,7 +157,7 @@ public class AGCameraFragment extends CameraFragment{
             for(int i =0; i < POOL_SIZE; i++){
                 captureDataPool.release(new CaptureData());
             }
-            faceDetectionThreshold = Face.SCORE_MAX / 2;
+
             mAccel = 0.00f;
             mAccelCurrent = SensorManager.GRAVITY_EARTH;
             mAccelLast = SensorManager.GRAVITY_EARTH;
@@ -254,19 +253,7 @@ public class AGCameraFragment extends CameraFragment{
 
                 //Faces
                 final Face[] faces = result.get(CaptureResult.STATISTICS_FACES);
-                if(faces != null){
-                    captureData.facesState = true;
-                    for(Face face : faces){
-                        if(face.getScore() == 1 || face.getScore() > faceDetectionThreshold){
-                            captureData.facesState = false;
-                            break;
-                        }
-                    }
-                }
-                else{
-                    captureData.facesState = true;
-                }
-
+                captureData.facesState = (faces == null || faces.length == 0 );
 
                 //Movement
                 captureData.movementState = bIsmoving ? false : true;

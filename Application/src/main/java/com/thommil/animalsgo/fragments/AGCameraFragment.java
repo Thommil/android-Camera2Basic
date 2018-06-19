@@ -3,45 +3,41 @@ package com.thommil.animalsgo.fragments;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Rect;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
-import android.hardware.camera2.CameraMetadata;
-import android.hardware.camera2.CaptureFailure;
 import android.hardware.camera2.CaptureRequest;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
+import android.hardware.camera2.params.Face;
 import android.support.annotation.NonNull;
 import android.support.v4.util.Pools;
 import android.util.Log;
-import android.util.Range;
 import android.view.MotionEvent;
-import android.view.Surface;
 import android.view.View;
-import android.widget.Toast;
 
 import com.androidexperiments.shadercam.fragments.CameraFragment;
-import com.thommil.animalsgo.gl.AGCameraRenderer;
+
+import org.opencv.core.Mat;
 
 import java.util.Arrays;
 
+
 /**
- *  Dedicated CameraFragment implementation :
- *      - CaptureRequest.Builder specific conf
- *      - QoS
+ *  Dedicated CameraFragment implementation
  *
- *      TODO Quality in prefs
  */
-public class AGCameraFragment extends CameraFragment implements View.OnTouchListener{
+public class AGCameraFragment extends CameraFragment{
 
     private static final String TAG = "A_GO/AGCameraFragment";
 
-    public enum Quality {QUALITY_MEDIUM, QUALITY_HIGH};
-
-    private Quality mQuality = Quality.QUALITY_HIGH;
-
-    private CaptureCallback mCaptureCallback;
+    // Number of frames between 2 updates
+    private static final int CAPTURE_UPDATE_FREQUENCY = 10;
 
     private OnCaptureCompletedListener mCaptureCompletedListener;
 
@@ -50,10 +46,16 @@ public class AGCameraFragment extends CameraFragment implements View.OnTouchList
     private Rect mActiveArraySize;
     private Rect mCurrentZoomRect;
 
+    private Sensor mAccelerometer;
+
     @Override
-    public void onResume() {
-        super.onResume();
-        this.mSurfaceView.setOnTouchListener(this);
+    public void onPause() {
+        super.onPause();
+
+        final SensorManager sensorManager = (SensorManager) getActivity().getSystemService(Context.SENSOR_SERVICE);
+        if(mCaptureCallback != null) {
+            sensorManager.unregisterListener((CaptureCallback)mCaptureCallback);
+        }
     }
 
     @Override
@@ -62,13 +64,24 @@ public class AGCameraFragment extends CameraFragment implements View.OnTouchList
             final CameraManager manager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
             CameraCharacteristics characteristics = manager.getCameraCharacteristics(mCameraDevice.getId());
 
+            final SensorManager sensorManager = (SensorManager) getActivity().getSystemService(Context.SENSOR_SERVICE);
+            if(mAccelerometer == null) {
+                mAccelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+            }
+
             mMaxZoom =  characteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM);
             mCurrentZoom = 1.0f;
             mActiveArraySize = characteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
             mCurrentZoomRect = new Rect(mActiveArraySize);
 
             if(mCaptureCallback == null){
-                this.setCaptureCallback(new CaptureCallback(this, mCaptureCompletedListener));
+                this.setCaptureCallback(new CaptureCallback(mCaptureCompletedListener));
+            }
+
+            this.mSurfaceView.setOnTouchListener((CaptureCallback)mCaptureCallback);
+
+            if(mAccelerometer != null) {
+                sensorManager.registerListener((CaptureCallback)mCaptureCallback, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
             }
 
         }catch (CameraAccessException cae){
@@ -86,44 +99,15 @@ public class AGCameraFragment extends CameraFragment implements View.OnTouchList
             return;
         }
 
-        //Common settings
-        captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO);
-        captureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_ON);
-        captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF);
-        captureRequestBuilder.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE, CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_ON);
-        captureRequestBuilder.set(CaptureRequest.STATISTICS_FACE_DETECT_MODE, CaptureRequest.STATISTICS_FACE_DETECT_MODE_OFF);
+        //Settings
+        captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO); // Mode AUTO
+        captureRequestBuilder.set(CaptureRequest.CONTROL_CAPTURE_INTENT, CaptureRequest.CONTROL_CAPTURE_INTENT_VIDEO_SNAPSHOT); // High quality video
+        captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF); // No Flash (don't bother animals)
+        captureRequestBuilder.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE, CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_OFF); // No Mvt
+        captureRequestBuilder.set(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE, CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE_OFF); // No Mvt
+        captureRequestBuilder.set(CaptureRequest.STATISTICS_FACE_DETECT_MODE, CaptureRequest.STATISTICS_FACE_DETECT_MODE_SIMPLE); // Find faces
+        captureRequestBuilder.set(CaptureRequest.CONTROL_AE_ANTIBANDING_MODE, CaptureRequest.CONTROL_AE_ANTIBANDING_MODE_OFF); // Outside purpose
 
-        //Quality based settings
-        switch (mQuality){
-            case QUALITY_HIGH:
-                captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
-                captureRequestBuilder.set(CaptureRequest.CONTROL_CAPTURE_INTENT, CaptureRequest.CONTROL_CAPTURE_INTENT_VIDEO_SNAPSHOT);
-                captureRequestBuilder.set(CaptureRequest.COLOR_CORRECTION_ABERRATION_MODE, CaptureRequest.COLOR_CORRECTION_ABERRATION_MODE_HIGH_QUALITY);
-                captureRequestBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_AUTO);
-                captureRequestBuilder.set(CaptureRequest.CONTROL_AE_ANTIBANDING_MODE, CaptureRequest.CONTROL_AE_ANTIBANDING_MODE_AUTO);
-                captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range(30, 60));
-                captureRequestBuilder.set(CaptureRequest.EDGE_MODE, CaptureRequest.EDGE_MODE_HIGH_QUALITY);
-                captureRequestBuilder.set(CaptureRequest.HOT_PIXEL_MODE, CaptureRequest.HOT_PIXEL_MODE_HIGH_QUALITY);
-                captureRequestBuilder.set(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE, CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE_ON);
-                captureRequestBuilder.set(CaptureRequest.NOISE_REDUCTION_MODE, CaptureRequest.NOISE_REDUCTION_MODE_HIGH_QUALITY);
-                captureRequestBuilder.set(CaptureRequest.SHADING_MODE, CaptureRequest.SHADING_MODE_HIGH_QUALITY);
-                captureRequestBuilder.set(CaptureRequest.TONEMAP_MODE, CaptureRequest.TONEMAP_MODE_HIGH_QUALITY);
-                break;
-            default:
-                captureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE, CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
-                captureRequestBuilder.set(CaptureRequest.CONTROL_CAPTURE_INTENT, CaptureRequest.CONTROL_CAPTURE_INTENT_VIDEO_RECORD);
-                captureRequestBuilder.set(CaptureRequest.COLOR_CORRECTION_ABERRATION_MODE, CaptureRequest.COLOR_CORRECTION_ABERRATION_MODE_FAST);
-                captureRequestBuilder.set(CaptureRequest.CONTROL_AWB_MODE, CaptureRequest.CONTROL_AWB_MODE_AUTO);
-                captureRequestBuilder.set(CaptureRequest.CONTROL_AE_ANTIBANDING_MODE, CaptureRequest.CONTROL_AE_ANTIBANDING_MODE_AUTO);
-                captureRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE, new Range(0, 30));
-                captureRequestBuilder.set(CaptureRequest.EDGE_MODE, CaptureRequest.EDGE_MODE_FAST);
-                captureRequestBuilder.set(CaptureRequest.HOT_PIXEL_MODE, CaptureRequest.HOT_PIXEL_MODE_FAST);
-                captureRequestBuilder.set(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE, CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE_OFF);
-                captureRequestBuilder.set(CaptureRequest.NOISE_REDUCTION_MODE, CaptureRequest.NOISE_REDUCTION_MODE_FAST);
-                captureRequestBuilder.set(CaptureRequest.SHADING_MODE, CaptureRequest.SHADING_MODE_FAST);
-                captureRequestBuilder.set(CaptureRequest.TONEMAP_MODE, CaptureRequest.TONEMAP_MODE_FAST);
-                break;
-        }
 
         //Zoom
         if(mCurrentZoom != 1.0f) {
@@ -133,16 +117,6 @@ public class AGCameraFragment extends CameraFragment implements View.OnTouchList
             mCurrentZoomRect.bottom = mCurrentZoomRect.top + (int) (mActiveArraySize.bottom / mCurrentZoom);
             captureRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, mCurrentZoomRect);
         }
-    }
-
-    public Quality getQuality() {
-        return mQuality;
-    }
-
-    public void setQuality(Quality quality) {
-        Log.d(TAG, "setQuality - " + quality);
-        this.mQuality = quality;
-        this.updatePreview();
     }
 
     public void setOnCaptureCompletedListener(OnCaptureCompletedListener onCaptureCompletedListener) {
@@ -156,77 +130,157 @@ public class AGCameraFragment extends CameraFragment implements View.OnTouchList
         this.updatePreview();
     }
 
-    @Override
-    public boolean onTouch(View view, MotionEvent motionEvent) {
-        //this.updatePreview();
-        return false;
-    }
-
     /**
      * Decicated CameraCaptureSession.CaptureCallback used for QoS and event dispatch to Renderer
      *
      */
-    private static class CaptureCallback extends CameraCaptureSession.CaptureCallback{
+    private static class CaptureCallback extends CameraCaptureSession.CaptureCallback implements View.OnTouchListener, SensorEventListener{
 
-        private AGCameraFragment mCameraFragment;
         private OnCaptureCompletedListener mCaptureCompletedListener;
 
         private static final int POOL_SIZE = 10;
-        private static final Pools.SimplePool<CaptureData> captureDataPool = new Pools.SimplePool<CaptureData>(POOL_SIZE );
+        private static final Pools.SynchronizedPool<CaptureData> captureDataPool = new Pools.SynchronizedPool<CaptureData>(POOL_SIZE );
 
-        protected long lastTime = 0;
-        protected int frames = 0;
+        private boolean isTouched = false;
 
-        // Threshold to lower quality 25fps
-        private int THRESHOLD = 25 * 5;
-        private boolean bEnabledQoS = true;
+        private int frameCount = 0;
+        private int faceDetectionThreshold = -1;
 
-        public CaptureCallback(AGCameraFragment cameraFragment, OnCaptureCompletedListener captureCompletedListener) {
-            this(cameraFragment, captureCompletedListener, true);
-        }
+        private boolean bIsmoving = false;
 
-        public CaptureCallback(AGCameraFragment cameraFragment, OnCaptureCompletedListener captureCompletedListener, boolean enabledQoS) {
-            this.mCameraFragment = cameraFragment;
+        private float[] mGravity;
+        private float mAccel;
+        private float mAccelCurrent;
+        private float mAccelLast;
+
+        public CaptureCallback(OnCaptureCompletedListener captureCompletedListener) {
             this.mCaptureCompletedListener = captureCompletedListener;
-            this.bEnabledQoS = enabledQoS;
             for(int i =0; i < POOL_SIZE; i++){
                 captureDataPool.release(new CaptureData());
             }
+            faceDetectionThreshold = Face.SCORE_MAX / 2;
+            mAccel = 0.00f;
+            mAccelCurrent = SensorManager.GRAVITY_EARTH;
+            mAccelLast = SensorManager.GRAVITY_EARTH;
         }
 
-        protected void QoS(){
-            if(lastTime == 0) {
-                lastTime = System.currentTimeMillis();
-            }
-            frames ++;
-            long currentTime = System.currentTimeMillis();
-
-            if(currentTime - lastTime > 5000){
-                lastTime = currentTime;
-                //Lower quality
-                Log.d(TAG, "Average Camera FPS - " + ((float)frames/5f));
-                if(frames < THRESHOLD){
-                    switch (mCameraFragment.mQuality){
-                        case QUALITY_HIGH:
-                            mCameraFragment.setQuality(Quality.QUALITY_MEDIUM);
-                            break;
-                    }
-                }
-                frames = 0;
-            }
+        @Override
+        public void onSensorChanged(SensorEvent sensorEvent) {
+            mGravity = sensorEvent.values.clone();
+            final float x = mGravity[0];
+            final float y = mGravity[1];
+            final float z = mGravity[2];
+            mAccelLast = mAccelCurrent;
+            mAccelCurrent = (float)Math.sqrt(x*x + y*y + z*z);
+            final float delta = Math.abs(mAccelCurrent - mAccelLast);
+            mAccel = mAccel * 0.9f + delta;
+            bIsmoving = (mAccel > 1f);
         }
+
+        @Override
+        public void onAccuracyChanged(Sensor sensor, int i) {
+           //PASS
+        }
+
+        @Override
+        public boolean onTouch(View view, MotionEvent motionEvent) {
+            isTouched = !(motionEvent.getActionMasked() == MotionEvent.ACTION_UP && motionEvent.getPointerCount() == 1);
+            return true;
+        }
+
 
         @Override
         public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
             super.onCaptureCompleted(session, request, result);
-            //Listener
-            CaptureData captureData = captureDataPool.acquire();
-            mCaptureCompletedListener.onCaptureDataReceived(captureData);
-            captureDataPool.release(captureData);
 
-            //QoS
-            if(bEnabledQoS) {
-                QoS();
+            if(frameCount > AGCameraFragment.CAPTURE_UPDATE_FREQUENCY) {
+                //Listener
+                CaptureData captureData = captureDataPool.acquire();
+
+                //Camera state
+                captureData.cameraState = false;
+                final Integer afValue = result.get(CaptureResult.CONTROL_AF_STATE);
+                if (afValue != null) {
+                    switch (afValue) {
+                        case CaptureResult.CONTROL_AF_STATE_INACTIVE:
+                        case CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED:
+                        case CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED:
+                            final Integer aeValue = result.get(CaptureResult.CONTROL_AE_STATE);
+                            if (aeValue != null) {
+                                switch (aeValue) {
+                                    case CaptureResult.CONTROL_AE_STATE_INACTIVE:
+                                    case CaptureResult.CONTROL_AE_STATE_LOCKED:
+                                    case CaptureResult.CONTROL_AE_STATE_CONVERGED:
+                                        captureData.cameraState = true;
+                                        captureData.lightState = true;
+                                        break;
+                                    case CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED:
+                                        captureData.cameraState = false;
+                                        captureData.lightState = false;
+                                        break;
+                                    default:
+                                        captureData.cameraState = true;
+                                        captureData.lightState = true;
+                                }
+                            } else {
+                                captureData.cameraState = true;
+                                captureData.lightState = true;
+                            }
+
+                            if (captureData.cameraState) {
+                                final Integer awbValue = result.get(CaptureResult.CONTROL_AWB_STATE);
+                                if (awbValue != null) {
+                                    switch (awbValue) {
+                                        case CaptureResult.CONTROL_AWB_STATE_INACTIVE:
+                                        case CaptureResult.CONTROL_AWB_STATE_LOCKED:
+                                        case CaptureResult.CONTROL_AWB_STATE_CONVERGED:
+                                            captureData.cameraState = true;
+                                            break;
+                                        default:
+                                            captureData.cameraState = false;
+                                    }
+                                } else {
+                                    captureData.cameraState = true;
+                                }
+                            }
+
+                            break;
+                        default:
+                            captureData.cameraState = false;
+                    }
+                } else {
+                    captureData.cameraState = true;
+                }
+
+                //Faces
+                final Face[] faces = result.get(CaptureResult.STATISTICS_FACES);
+                if(faces != null){
+                    captureData.facesState = true;
+                    for(Face face : faces){
+                        if(face.getScore() == 1 || face.getScore() > faceDetectionThreshold){
+                            captureData.facesState = false;
+                            break;
+                        }
+                    }
+                }
+                else{
+                    captureData.facesState = true;
+                }
+
+
+                //Movement
+                captureData.movementState = bIsmoving ? false : true;
+
+                //Touch
+                captureData.touchState = isTouched ? false : true;
+
+
+                mCaptureCompletedListener.onCaptureDataReceived(captureData);
+                captureDataPool.release(captureData);
+                frameCount=0;
+            }
+            else {
+                frameCount++;
             }
         }
     }
@@ -245,5 +299,14 @@ public class AGCameraFragment extends CameraFragment implements View.OnTouchList
      */
     public static class CaptureData {
 
+        public boolean cameraState = false;
+        public boolean facesState = false;
+        public boolean movementState = false;
+        public boolean lightState = false;
+        public boolean touchState = false;
+
+        public String toString(){
+            return "[CAM:" +cameraState+", FCS:" +facesState+", MVT:"+movementState+", LGT:"+lightState+", TCH:"+touchState+"]";
+        }
     }
 }

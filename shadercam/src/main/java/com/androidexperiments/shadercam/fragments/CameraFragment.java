@@ -76,17 +76,10 @@ public class CameraFragment extends Fragment {
      */
     protected CaptureRequest.Builder mPreviewBuilder;
 
-
-    /**
-     * An additional thread for running tasks that shouldn't block the UI.
-     */
-    protected HandlerThread mBackgroundThread;
-
     /**
      * A {@link Handler} for running tasks in the background.
      */
     protected Handler mBackgroundHandler;
-
 
     /**
      * Use these for changing which camera to use on start
@@ -120,49 +113,6 @@ public class CameraFragment extends Fragment {
     protected boolean mCameraIsOpen = false;
 
     protected CameraCaptureSession.CaptureCallback mCaptureCallback;
-
-    @Override
-    public void onResume()
-    {
-        Log.d(TAG, "onResume");
-        super.onResume();
-
-        startBackgroundThread();
-    }
-
-    @Override
-    public void onPause()
-    {
-        Log.d(TAG, "onPause");
-        super.onPause();
-
-        stopBackgroundThread();
-    }
-
-    /**
-     * Starts a background thread and its {@link Handler}.
-     */
-    private void startBackgroundThread() {
-        Log.d(TAG, "startBackgroundThread");
-        mBackgroundThread = new HandlerThread("CameraBackground");
-        mBackgroundThread.start();
-        mBackgroundHandler = new Handler(mBackgroundThread.getLooper());
-    }
-
-    /**
-     * Stops the background thread and its {@link Handler}.
-     */
-    private void stopBackgroundThread() {
-        Log.d(TAG, "stopBackgroundThread");
-        mBackgroundThread.quitSafely();
-        try {
-            mBackgroundThread.join();
-            mBackgroundThread = null;
-            mBackgroundHandler = null;
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
 
     /**
      * Switch between the back(primary) camera and the front(selfie) camera
@@ -474,6 +424,15 @@ public class CameraFragment extends Fragment {
      */
     public void setCaptureCallback(CameraCaptureSession.CaptureCallback captureCallback){
         mCaptureCallback = captureCallback;
+    }
+
+    /**
+     * Set external BG handler for capture session callbacks
+     *
+     * @param backgroundHandler
+     */
+    public void setBackgroundHandler(Handler backgroundHandler) {
+        this.mBackgroundHandler = backgroundHandler;
     }
 
     /**

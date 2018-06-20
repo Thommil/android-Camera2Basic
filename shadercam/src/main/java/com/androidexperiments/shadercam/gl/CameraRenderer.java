@@ -448,6 +448,9 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         //create handler for communication from UI
         mHandler = new Handler(Looper.myLooper());
 
+        //Associated GL Thread to capture completion
+        mCameraFragment.setBackgroundHandler(mHandler);
+
         //initialize all GL on this context
         initGL();
 

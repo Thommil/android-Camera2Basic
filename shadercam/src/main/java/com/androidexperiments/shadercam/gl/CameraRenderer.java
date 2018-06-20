@@ -12,6 +12,7 @@ import android.opengl.GLES30;
 import android.opengl.GLUtils;
 import android.opengl.Matrix;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
@@ -46,7 +47,7 @@ import java.util.Arrays;
  *
  */
 
-public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvailableListener, CameraFragment.OnViewportSizeUpdatedListener
+public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFrameAvailableListener, CameraFragment.OnViewportSizeUpdatedListener
 {
     private static final String TAG = "A_GO/CameraRenderer";
     private static final String THREAD_NAME = "CameraRendererThread";
@@ -146,9 +147,8 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
 
     /**
      * Handler for communcation with the UI thread. Implementation below at
-     * {@link com.androidexperiments.shadercam.gl.CameraRenderer.RenderHandler RenderHandler}
      */
-    private RenderHandler mHandler;
+    private Handler mHandler;
 
     /**
      * Interface listener for some callbacks to the UI thread when rendering is setup and finished.
@@ -169,6 +169,7 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
      */
     public CameraRenderer(Context context, Surface surface, int width, int height)
     {
+        super(THREAD_NAME);
         Log.d(TAG, "CameraRenderer - "+width+", "+height);
         init(context, surface, width, height, DEFAULT_FRAGMENT_SHADER, DEFAULT_VERTEX_SHADER);
     }
@@ -181,6 +182,7 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
      */
     public CameraRenderer(Context context, Surface surface, int width, int height, String fragPath, String vertPath)
     {
+        super(THREAD_NAME);
         Log.d(TAG, "CameraRenderer - "+width+", "+height+", "+fragPath+", "+vertPath);
         init(context, surface, width, height, fragPath, vertPath);
     }
@@ -188,8 +190,6 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
     private void init(Context context, Surface surface, int width, int height, String fragPath, String vertPath)
     {
         Log.d(TAG, "init - "+width+", "+height+", "+fragPath+", "+vertPath);
-        this.setName(THREAD_NAME);
-
         this.mContext = context;
         this.mSurface = surface;
 
@@ -446,7 +446,7 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
         Looper.prepare();
 
         //create handler for communication from UI
-        mHandler = new RenderHandler(this);
+        mHandler = new Handler(Looper.myLooper());
 
         //initialize all GL on this context
         initGL();
@@ -471,7 +471,7 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
     public void shutdown() {
         Log.d(TAG, "shutdown");
         //kill ouy thread
-        Looper.myLooper().quit();
+        mHandler.getLooper().quit();
     }
 
     @Override
@@ -559,11 +559,6 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
         return mPreviewTexture;
     }
 
-    public RenderHandler getRenderHandler() {
-        Log.d(TAG, "getRenderHandler");
-        return mHandler;
-    }
-
     public void setOnRendererReadyListener(OnRendererReadyListener listener) {
         Log.d(TAG, "setOnRendererReadyListener");
         mOnRendererReadyListener = listener;
@@ -574,63 +569,6 @@ public class CameraRenderer extends Thread implements SurfaceTexture.OnFrameAvai
     public void setCameraFragment(CameraFragment cameraFragment) {
         Log.d(TAG, "setCameraFragment");
         mCameraFragment = cameraFragment;
-    }
-
-
-    /**
-     * {@link Handler} responsible for communication between this render thread and the UI thread.
-     *
-     * For now, the only thing we really need to worry about is shutting down the thread upon completion
-     * of recording, since we cannot access the {@link android.media.MediaRecorder} surface once
-     * {@link MediaRecorder#stop()} is called.
-     */
-    public static class RenderHandler extends Handler
-    {
-        private static final String TAG = RenderHandler.class.getSimpleName();
-
-        private static final int MSG_SHUTDOWN = 0;
-
-        /**
-         * Our camera renderer ref, weak since we're dealing with static class so it doesn't leak
-         */
-        private WeakReference<CameraRenderer> mWeakRenderer;
-
-        /**
-         * Call from render thread.
-         */
-        public RenderHandler(CameraRenderer rt) {
-            Log.d(TAG, "RenderHandler");
-            mWeakRenderer = new WeakReference<>(rt);
-        }
-
-        /**
-         * Sends the "shutdown" message, which tells the render thread to halt.
-         * Call from UI thread.
-         */
-        public void sendShutdown() {
-            Log.d(TAG, "sendShutdown");
-            sendMessage(obtainMessage(RenderHandler.MSG_SHUTDOWN));
-        }
-
-        @Override
-        public void handleMessage(Message msg)
-        {
-            Log.d(TAG, "handleMessage - "+msg);
-            CameraRenderer renderer = mWeakRenderer.get();
-            if (renderer == null) {
-                Log.w(TAG, "RenderHandler.handleMessage: weak ref is null");
-                return;
-            }
-
-            int what = msg.what;
-            switch (what) {
-                case MSG_SHUTDOWN:
-                    renderer.shutdown();
-                    break;
-                default:
-                    throw new RuntimeException("unknown message " + what);
-            }
-        }
     }
 
     /**

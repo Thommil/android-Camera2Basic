@@ -181,7 +181,7 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
         mCameraFragment.closeCamera();
 
         mRestartCamera = restart;
-        mRenderer.getRenderHandler().sendShutdown();
+        mRenderer.shutdown();
         mRenderer = null;
     }
 
@@ -191,8 +191,6 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
      * that we call our methods from the {@link #runOnUiThread(Runnable)} method, so that we don't
      * throw any exceptions about touching the UI from non-UI threads.
      *
-     * Another way to handle this would be to create a Handler/Message system similar to how our
-     * {@link com.androidexperiments.shadercam.gl.CameraRenderer.RenderHandler} works.
      */
     @Override
     public void onRendererReady() {

@@ -42,7 +42,7 @@ public class WindowSurface extends EglSurfaceBase {
      */
     public WindowSurface(EglCore eglCore, Surface surface, boolean releaseSurface) {
         super(eglCore);
-        //Log.d(TAG, "WindowSurface");
+        ////Log.d(TAG, "WindowSurface");
         createWindowSurface(surface);
         mSurface = surface;
         mReleaseSurface = releaseSurface;
@@ -55,7 +55,7 @@ public class WindowSurface extends EglSurfaceBase {
      * Does not require that the surface's EGL context be current.
      */
     public void release() {
-        //Log.d(TAG, "release");
+        ////Log.d(TAG, "release");
         releaseEglSurface();
         if (mSurface != null) {
             if (mReleaseSurface) {
@@ -79,7 +79,7 @@ public class WindowSurface extends EglSurfaceBase {
      * about already being connected.
      */
     public void recreate(EglCore newEglCore) {
-        //Log.d(TAG, "recreate");
+        ////Log.d(TAG, "recreate");
         if (mSurface == null) {
             throw new RuntimeException("not yet implemented for SurfaceTexture");
         }

@@ -23,6 +23,8 @@ import android.view.View;
 
 import com.androidexperiments.shadercam.fragments.CameraFragment;
 
+import java.util.Arrays;
+
 
 /**
  *  Dedicated CameraFragment implementation
@@ -32,6 +34,7 @@ public class AGCameraFragment extends CameraFragment{
 
     private static final String TAG = "A_GO/AGCameraFragment";
 
+    //TODO test settings when recognition is OK
     // Number of frames between 2 updates
     private static final int CAPTURE_UPDATE_FREQUENCY = 10;
 
@@ -90,7 +93,7 @@ public class AGCameraFragment extends CameraFragment{
 
     @Override
     protected void setupCaptureRequest(CaptureRequest.Builder captureRequestBuilder) {
-        Log.d(TAG, "setupCaptureRequest");
+        //Log.d(TAG, "setupCaptureRequest");
         final Activity activity = getActivity();
         if (null == activity || activity.isFinishing()) {
             return;
@@ -132,7 +135,7 @@ public class AGCameraFragment extends CameraFragment{
         final private OnCaptureCompletedListener mCaptureCompletedListener;
 
         private static final int POOL_SIZE = 10;
-        private static final Pools.SynchronizedPool<CaptureData> captureDataPool = new Pools.SynchronizedPool<CaptureData>(POOL_SIZE );
+        private static final Pools.SynchronizedPool<CaptureData> captureDataPool = new Pools.SynchronizedPool<>(POOL_SIZE );
 
         static{
             for(int i =0; i < POOL_SIZE; i++){
@@ -146,7 +149,7 @@ public class AGCameraFragment extends CameraFragment{
 
         private boolean bIsmoving = false;
 
-        private float[] mGravity;
+        final private float[] mGravity = new float[3];
         private float mAccel;
         private float mAccelCurrent;
         private float mAccelLast;
@@ -161,7 +164,7 @@ public class AGCameraFragment extends CameraFragment{
 
         @Override
         public void onSensorChanged(SensorEvent sensorEvent) {
-            mGravity = sensorEvent.values.clone();
+            System.arraycopy(sensorEvent.values, 0, mGravity, 0, 3); ;
             final float x = mGravity[0];
             final float y = mGravity[1];
             final float z = mGravity[2];
@@ -257,6 +260,8 @@ public class AGCameraFragment extends CameraFragment{
                 //Touch
                 captureData.touchState = isTouched ? false : true;
 
+                //Gravity
+                System.arraycopy(mGravity, 0, captureData.gravity, 0, 3); ;
 
                 mCaptureCompletedListener.onCaptureDataReceived(captureData);
                 captureDataPool.release(captureData);
@@ -287,9 +292,10 @@ public class AGCameraFragment extends CameraFragment{
         public boolean movementState = false;
         public boolean lightState = false;
         public boolean touchState = false;
+        public float[] gravity = new float[3];
 
         public String toString(){
-            return "[CAM:" +cameraState+", FCS:" +facesState+", MVT:"+movementState+", LGT:"+lightState+", TCH:"+touchState+"]";
+            return "[CAM:" +cameraState+", FCS:" +facesState+", MVT:"+movementState+", LGT:"+lightState+", TCH:"+touchState+", GRV :"+ Arrays.toString(gravity)+"]";
         }
     }
 }

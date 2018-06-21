@@ -24,8 +24,11 @@ import com.thommil.animalsgo.gl.AGCameraRenderer;
  * Written by Anthony Tripaldi
  *
  * Very basic implemention of shader camera.
+ *
+ * // TODO handle error in global way
+ * // TODO display permission on cam start only
  */
-public class CameraActivity extends FragmentActivity implements CameraRenderer.OnRendererReadyListener, PermissionsHelper.PermissionsListener
+public class CameraActivity extends FragmentActivity implements CameraRenderer.OnRendererReadyListener
 {
     private static final String TAG = "A_GO/CameraActivity";
     private static final String TAG_CAMERA_FRAGMENT = "tag_camera_frag";
@@ -46,40 +49,26 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
     /**
      * boolean for triggering restart of camera after completed rendering
      */
-    private boolean mRestartCamera = false;
-
-    private PermissionsHelper mPermissionsHelper;
-    private boolean mPermissionsSatisfied = false;
+    private boolean mRestartCamera = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
-        Log.d(TAG, "onCreate");
+        //Log.d(TAG, "onCreate");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
 
         mSurfaceView = findViewById(R.id.surface_view);
         setupCameraFragment();
-
-        //setup permissions for M or start normally
-        if(PermissionsHelper.isMorHigher())
-            setupPermissions();
     }
 
-    private void setupPermissions() {
-        Log.d(TAG, "setupPermissions");
-        mPermissionsHelper = PermissionsHelper.attach(this);
-        mPermissionsHelper.setRequestedPermissions(
-                Manifest.permission.CAMERA
-        );
-    }
 
     /**
      * create the camera fragment responsible for handling camera state and add it to our activity
      */
     private void setupCameraFragment()
     {
-        Log.d(TAG, "setupCameraFragment");
+        //Log.d(TAG, "setupCameraFragment");
         if(mCameraFragment != null && mCameraFragment.isAdded())
             return;
 
@@ -94,57 +83,25 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
         transaction.commit();
     }
 
-    /**
-     * Things are good to go and we can continue on as normal. If this is called after a user
-     * sees a dialog, then onResume will be called next, allowing the app to continue as normal.
-     */
-    @Override
-    public void onPermissionsSatisfied() {
-        Log.d(TAG, "onPermissionsSatisfied");
-        mPermissionsSatisfied = true;
-    }
 
-    /**
-     * User did not grant the permissions needed for out app, so we show a quick toast and kill the
-     * activity before it can continue onward.
-     * @param failedPermissions string array of which permissions were denied
-     */
-    @Override
-    public void onPermissionsFailed(String[] failedPermissions) {
-        Log.d(TAG, "onPermissionsFailed");
-        mPermissionsSatisfied = false;
-        Toast.makeText(this, "Animal-GO needs all permissions to function, please try again.", Toast.LENGTH_LONG).show();
-        this.finish();
-    }
 
     @Override
     protected void onResume() {
-        Log.d(TAG, "onResume");
+        //Log.d(TAG, "onResume");
         super.onResume();
-
-        if(PermissionsHelper.isMorHigher() && !mPermissionsSatisfied) {
-            if (!mPermissionsHelper.checkPermissions())
-                return;
-            else
-                mPermissionsSatisfied = true; //extra helper as callback sometimes isnt quick enough for future results
-        }
-
         ShaderUtils.goFullscreen(this.getWindow());
-
         mSurfaceView.getHolder().addCallback(mSurfaceHolderCallback);
     }
 
     @Override
     protected void onPause() {
-        Log.d(TAG, "onPause");
+        //Log.d(TAG, "onPause");
         super.onPause();
 
         shutdownCamera(false);
         mSurfaceView.getHolder().removeCallback(mSurfaceHolderCallback);
 
-        if(!((PowerManager) getSystemService(Context.POWER_SERVICE)).isInteractive()){
-            finish();
-        }
+        finish();
     }
 
     /**
@@ -155,7 +112,7 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
      * @param height height of the surface texture
      */
     protected void setReady(Surface surface, int width, int height) {
-        Log.d(TAG, "setReady - "+width+", "+height);
+        //Log.d(TAG, "setReady - "+width+", "+height);
         mRenderer = new AGCameraRenderer(this, surface, width, height);
         mCameraFragment.setOnViewportSizeUpdatedListener(mRenderer);
         mCameraFragment.setOnCaptureCompletedListener(mRenderer);
@@ -171,9 +128,7 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
      */
     private void shutdownCamera(boolean restart)
     {
-        Log.d(TAG, "shutdownCamera - "+restart);
-        //make sure we're here in a working state with proper permissions when we kill the camera
-        if(PermissionsHelper.isMorHigher() && !mPermissionsSatisfied) return;
+        //Log.d(TAG, "shutdownCamera - "+restart);
 
         //check to make sure we've even created the cam and renderer yet
         if(mCameraFragment == null || mRenderer == null) return;
@@ -194,7 +149,7 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
      */
     @Override
     public void onRendererReady() {
-        Log.d(TAG, "onRendererReady");
+        //Log.d(TAG, "onRendererReady");
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -206,7 +161,7 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
 
     @Override
     public void onRendererFinished() {
-        Log.d(TAG, "onRendererFinished");
+        //Log.d(TAG, "onRendererFinished");
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -222,18 +177,18 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
     private SurfaceHolder.Callback mSurfaceHolderCallback = new SurfaceHolder.Callback() {
         @Override
         public void surfaceCreated(SurfaceHolder surfaceHolder) {
-            Log.d(TAG, "surfaceCreated");
+            //Log.d(TAG, "surfaceCreated");
         }
 
         @Override
         public void surfaceChanged(SurfaceHolder surfaceHolder, int format, int width, int height) {
-            Log.d(TAG, "surfaceChanged - "+format+", "+width+", "+height);
+            //Log.d(TAG, "surfaceChanged - "+format+", "+width+", "+height);
             setReady(surfaceHolder.getSurface(), width, height);
         }
 
         @Override
         public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
-            Log.d(TAG, "surfaceDestroyed");
+            //Log.d(TAG, "surfaceDestroyed");
         }
     };
 

@@ -64,7 +64,7 @@ public class PermissionsHelper extends Fragment {
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        Log.d(TAG, "onRequestPermissionsResult() " + Arrays.toString(permissions) + Arrays.toString(grantResults));
+        //Log.d(TAG, "onRequestPermissionsResult() " + Arrays.toString(permissions) + Arrays.toString(grantResults));
 
         if(requestCode == PERMISSION_REQUEST_CODE && getParent() != null) {
             if(verifyPermissions(grantResults)) {

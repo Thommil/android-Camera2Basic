@@ -39,7 +39,7 @@ public class AGCameraFragment extends CameraFragment{
     private static final int CAPTURE_UPDATE_FREQUENCY = 10;
 
     // Mvt detection sensibility (more = less sensible)
-    private static final float MOVEMENT_THRESHOLD = 1.0f;
+    private static final float MOVEMENT_THRESHOLD = 0.9f;
 
     private OnCaptureCompletedListener mCaptureCompletedListener;
 

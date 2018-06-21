@@ -69,7 +69,7 @@ public class SnapshotValidator extends HandlerThread implements Handler.Callback
          public Handler callBackHandler;
          public int width;
          public int height;
-         public float[] gravity;
+         public final float[] gravity = new float[3];
          public ByteBuffer data;
     }
 }

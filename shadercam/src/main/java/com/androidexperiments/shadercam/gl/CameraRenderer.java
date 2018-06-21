@@ -47,7 +47,7 @@ import java.util.Arrays;
  *
  */
 
-public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFrameAvailableListener, CameraFragment.OnViewportSizeUpdatedListener
+public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFrameAvailableListener, CameraFragment.OnViewportSizeUpdatedListener, Handler.Callback
 {
     private static final String TAG = "A_GO/CameraRenderer";
     private static final String THREAD_NAME = "CameraRendererThread";
@@ -148,7 +148,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     /**
      * Handler for communcation with the UI thread. Implementation below at
      */
-    private Handler mHandler;
+    protected Handler mHandler;
 
     /**
      * Interface listener for some callbacks to the UI thread when rendering is setup and finished.
@@ -446,7 +446,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         Looper.prepare();
 
         //create handler for communication from UI
-        mHandler = new Handler(Looper.myLooper());
+        mHandler = new Handler(Looper.myLooper(), this);
 
         //Associated GL Thread to capture completion
         mCameraFragment.setBackgroundHandler(mHandler);
@@ -464,6 +464,14 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         deinitGL();
 
         mOnRendererReadyListener.onRendererFinished();
+    }
+
+    /**
+     * Subclasses can override this method to handle messages in GL thread
+     */
+    @Override
+    public boolean handleMessage(Message message) {
+        return true;
     }
 
     /**

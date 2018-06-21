@@ -134,6 +134,12 @@ public class AGCameraFragment extends CameraFragment{
         private static final int POOL_SIZE = 10;
         private static final Pools.SynchronizedPool<CaptureData> captureDataPool = new Pools.SynchronizedPool<CaptureData>(POOL_SIZE );
 
+        static{
+            for(int i =0; i < POOL_SIZE; i++){
+                captureDataPool.release(new CaptureData());
+            }
+        }
+
         private boolean isTouched = false;
 
         private int frameCount = 0;
@@ -148,10 +154,6 @@ public class AGCameraFragment extends CameraFragment{
 
         public CaptureCallback(final OnCaptureCompletedListener captureCompletedListener) {
             this.mCaptureCompletedListener = captureCompletedListener;
-            for(int i =0; i < POOL_SIZE; i++){
-                captureDataPool.release(new CaptureData());
-            }
-
             mAccel = 0.00f;
             mAccelCurrent = SensorManager.GRAVITY_EARTH;
             mAccelLast = SensorManager.GRAVITY_EARTH;

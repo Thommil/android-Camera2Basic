@@ -1,4 +1,4 @@
-package com.thommil.animalsgo;
+package com.thommil.animalsgo.opencv;
 
 import android.util.Log;
 

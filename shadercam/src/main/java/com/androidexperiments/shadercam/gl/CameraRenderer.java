@@ -159,7 +159,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
      * Reference to our users CameraFragment to ease setting viewport size. Thought about decoupling but wasn't
      * worth the listener/callback hastle
      */
-    private CameraFragment mCameraFragment;
+    protected CameraFragment mCameraFragment;
 
     private String mFragmentShaderPath;
     private String mVertexShaderPath;

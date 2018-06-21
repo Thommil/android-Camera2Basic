@@ -23,10 +23,6 @@ import android.view.View;
 
 import com.androidexperiments.shadercam.fragments.CameraFragment;
 
-import org.opencv.core.Mat;
-
-import java.util.Arrays;
-
 
 /**
  *  Dedicated CameraFragment implementation
@@ -38,6 +34,9 @@ public class AGCameraFragment extends CameraFragment{
 
     // Number of frames between 2 updates
     private static final int CAPTURE_UPDATE_FREQUENCY = 10;
+
+    // Mvt detection sensibility (more = less sensible)
+    private static final float MOVEMENT_THRESHOLD = 1.0f;
 
     private OnCaptureCompletedListener mCaptureCompletedListener;
 
@@ -78,8 +77,6 @@ public class AGCameraFragment extends CameraFragment{
                 this.setCaptureCallback(new CaptureCallback(mCaptureCompletedListener));
             }
 
-            this.mSurfaceView.setOnTouchListener((CaptureCallback)mCaptureCallback);
-
             if(mAccelerometer != null) {
                 sensorManager.registerListener((CaptureCallback)mCaptureCallback, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
             }
@@ -100,14 +97,10 @@ public class AGCameraFragment extends CameraFragment{
         }
 
         //Settings
-        captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CaptureRequest.CONTROL_MODE_AUTO); // Mode AUTO
         captureRequestBuilder.set(CaptureRequest.CONTROL_CAPTURE_INTENT, CaptureRequest.CONTROL_CAPTURE_INTENT_VIDEO_SNAPSHOT); // High quality video
         captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF); // No Flash (don't bother animals)
-        captureRequestBuilder.set(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE, CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_OFF); // No Mvt
-        captureRequestBuilder.set(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE, CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE_OFF); // No Mvt
         captureRequestBuilder.set(CaptureRequest.STATISTICS_FACE_DETECT_MODE, CaptureRequest.STATISTICS_FACE_DETECT_MODE_SIMPLE); // Find faces
         captureRequestBuilder.set(CaptureRequest.CONTROL_AE_ANTIBANDING_MODE, CaptureRequest.CONTROL_AE_ANTIBANDING_MODE_OFF); // Outside purpose
-
 
         //Zoom
         if(mCurrentZoom != 1.0f) {
@@ -117,16 +110,16 @@ public class AGCameraFragment extends CameraFragment{
             mCurrentZoomRect.bottom = mCurrentZoomRect.top + (int) (mActiveArraySize.bottom / mCurrentZoom);
             captureRequestBuilder.set(CaptureRequest.SCALER_CROP_REGION, mCurrentZoomRect);
         }
+
+        this.mSurfaceView.setOnTouchListener((CaptureCallback)mCaptureCallback);
     }
 
     public void setOnCaptureCompletedListener(OnCaptureCompletedListener onCaptureCompletedListener) {
         this.mCaptureCompletedListener = onCaptureCompletedListener;
     }
 
-
-
     public void setZoom(float zoomFactor){
-        mCurrentZoom = Math.abs(Math.min(zoomFactor , mMaxZoom));
+        mCurrentZoom = Math.abs(Math.min(zoomFactor, mMaxZoom));
         this.updatePreview();
     }
 
@@ -136,7 +129,7 @@ public class AGCameraFragment extends CameraFragment{
      */
     private static class CaptureCallback extends CameraCaptureSession.CaptureCallback implements View.OnTouchListener, SensorEventListener{
 
-        private OnCaptureCompletedListener mCaptureCompletedListener;
+        final private OnCaptureCompletedListener mCaptureCompletedListener;
 
         private static final int POOL_SIZE = 10;
         private static final Pools.SynchronizedPool<CaptureData> captureDataPool = new Pools.SynchronizedPool<CaptureData>(POOL_SIZE );
@@ -152,7 +145,8 @@ public class AGCameraFragment extends CameraFragment{
         private float mAccelCurrent;
         private float mAccelLast;
 
-        public CaptureCallback(OnCaptureCompletedListener captureCompletedListener) {
+
+        public CaptureCallback(final OnCaptureCompletedListener captureCompletedListener) {
             this.mCaptureCompletedListener = captureCompletedListener;
             for(int i =0; i < POOL_SIZE; i++){
                 captureDataPool.release(new CaptureData());
@@ -173,7 +167,7 @@ public class AGCameraFragment extends CameraFragment{
             mAccelCurrent = (float)Math.sqrt(x*x + y*y + z*z);
             final float delta = Math.abs(mAccelCurrent - mAccelLast);
             mAccel = mAccel * 0.9f + delta;
-            bIsmoving = (mAccel > 1f);
+            bIsmoving = (mAccel > MOVEMENT_THRESHOLD);
         }
 
         @Override

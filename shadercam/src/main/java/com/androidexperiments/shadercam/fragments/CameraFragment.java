@@ -114,6 +114,8 @@ public class CameraFragment extends Fragment {
 
     protected CameraCaptureSession.CaptureCallback mCaptureCallback;
 
+    private boolean bIsPaused = false;
+
     /**
      * Switch between the back(primary) camera and the front(selfie) camera
      */
@@ -399,21 +401,34 @@ public class CameraFragment extends Fragment {
             return;
         }
         try {
-            setupCaptureRequest(mPreviewBuilder);
-            if(mCaptureCallback == null){
-                mCaptureCallback = new CameraCaptureSession.CaptureCallback() {
-                    @Override
-                    public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result)
-                    {
-                        super.onCaptureCompleted(session, request, result);
-                    }
-                };
+            if(!bIsPaused) {
+                setupCaptureRequest(mPreviewBuilder);
+                if (mCaptureCallback == null) {
+                    mCaptureCallback = new CameraCaptureSession.CaptureCallback() {
+                        @Override
+                        public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
+                            super.onCaptureCompleted(session, request, result);
+                        }
+                    };
+                }
+                mPreviewSession.setRepeatingRequest(mPreviewBuilder.build(), mCaptureCallback, mBackgroundHandler);
             }
-            mPreviewSession.setRepeatingRequest(mPreviewBuilder.build(), mCaptureCallback, mBackgroundHandler);
+            else{
+                mPreviewSession.abortCaptures();
+            }
         }
         catch (CameraAccessException e) {
             e.printStackTrace();
         }
+    }
+
+    public void setPaused(boolean isPaused){
+        bIsPaused = isPaused;
+        updatePreview();
+    }
+
+    public boolean isPaused(){
+        return bIsPaused;
     }
 
 
@@ -442,6 +457,10 @@ public class CameraFragment extends Fragment {
     public void setSurfaceView(SurfaceView surfaceView) {
         Log.d(TAG, "setSurfaceView");
         mSurfaceView = surfaceView;
+    }
+
+    public SurfaceView getSurfaceView(){
+        return mSurfaceView;
     }
 
     /**

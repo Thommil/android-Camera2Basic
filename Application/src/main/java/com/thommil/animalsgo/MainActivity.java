@@ -18,8 +18,6 @@ public class MainActivity extends AppCompatActivity {
 
         Button button = findViewById(R.id.button);
 
-        OpenCVUtils.init();
-
         button.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {

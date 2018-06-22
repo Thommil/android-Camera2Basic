@@ -1,4 +1,4 @@
-package com.androidexperiments.shadercam.utils;
+package com.thommil.animalsgo.gl;
 
 import android.content.Context;
 import android.view.View;
@@ -23,7 +23,7 @@ public class ShaderUtils
      * @param ctx Context to use
      * @param filename name of the file, including any folders, inside of the /assets/ folder.
      * @return String of contents of file, lines separated by <code>\n</code>
-     * @throws java.io.IOException if file is not found
+     * @throws IOException if file is not found
      */
     public static String getStringFromFileInAssets(Context ctx, String filename) throws IOException {
         return getStringFromFileInAssets(ctx, filename, true);

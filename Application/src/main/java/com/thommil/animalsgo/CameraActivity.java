@@ -1,23 +1,15 @@
 package com.thommil.animalsgo;
 
-import android.Manifest;
-import android.content.Context;
 import android.os.Bundle;
-import android.os.PowerManager;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentTransaction;
-import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.widget.Toast;
 
-import com.androidexperiments.shadercam.fragments.CameraFragment;
-import com.androidexperiments.shadercam.fragments.PermissionsHelper;
-import com.androidexperiments.shadercam.gl.CameraRenderer;
-import com.androidexperiments.shadercam.utils.ShaderUtils;
-import com.thommil.animalsgo.fragments.AGCameraFragment;
-import com.thommil.animalsgo.gl.AGCameraRenderer;
+import com.thommil.animalsgo.fragments.CameraFragment;
+import com.thommil.animalsgo.gl.CameraRenderer;
+import com.thommil.animalsgo.gl.ShaderUtils;
 
 
 /**
@@ -38,13 +30,13 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
     /**
      * Custom fragment used for encapsulating all the {@link android.hardware.camera2} apis.
      */
-    private AGCameraFragment mCameraFragment;
+    private CameraFragment mCameraFragment;
 
     /**
      * Our custom renderer for this example, which extends {@link CameraRenderer} and then adds custom
      * shaders, which turns shit green, which is easy.
      */
-    private AGCameraRenderer mRenderer;
+    private CameraRenderer mRenderer;
 
     /**
      * boolean for triggering restart of camera after completed rendering
@@ -72,7 +64,7 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
         if(mCameraFragment != null && mCameraFragment.isAdded())
             return;
 
-        mCameraFragment = new AGCameraFragment();
+        mCameraFragment = new CameraFragment();
         mCameraFragment.setRetainInstance(true);
         mCameraFragment.setCameraToUse(CameraFragment.CAMERA_PRIMARY); //pick which camera u want to use, we default to forward
         mCameraFragment.setSurfaceView(mSurfaceView);
@@ -113,7 +105,7 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
      */
     protected void setReady(Surface surface, int width, int height) {
         //Log.d(TAG, "setReady - "+width+", "+height);
-        mRenderer = new AGCameraRenderer(this, surface, width, height);
+        mRenderer = new CameraRenderer(this, surface, width, height);
         mCameraFragment.setOnViewportSizeUpdatedListener(mRenderer);
         mCameraFragment.setOnCaptureCompletedListener(mRenderer);
         mRenderer.setCameraFragment(mCameraFragment);
@@ -141,8 +133,7 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
     }
 
     /**
-     * Interface overrides from our {@link com.androidexperiments.shadercam.gl.CameraRenderer.OnRendererReadyListener}
-     * interface. Since these are being called from inside the CameraRenderer thread, we need to make sure
+     * Since these are being called from inside the CameraRenderer thread, we need to make sure
      * that we call our methods from the {@link #runOnUiThread(Runnable)} method, so that we don't
      * throw any exceptions about touching the UI from non-UI threads.
      *

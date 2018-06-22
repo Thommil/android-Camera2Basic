@@ -1,13 +1,16 @@
-package com.androidexperiments.shadercam.fragments;
+package com.thommil.animalsgo.fragments;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.graphics.Matrix;
-import android.graphics.RectF;
+import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -15,22 +18,22 @@ import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
 import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
+import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
-import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
-import android.support.v4.content.PermissionChecker;
+import android.support.v4.util.Pools;
 import android.util.Log;
 import android.util.Size;
+import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.view.TextureView;
+import android.view.View;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -45,6 +48,13 @@ import java.util.concurrent.TimeUnit;
 public class CameraFragment extends Fragment {
 
     private static final String TAG = "A_GO/CameraFragment";
+
+    //TODO test settings when recognition is OK
+    // Number of frames between 2 updates
+    private static final int CAPTURE_UPDATE_FREQUENCY = 10;
+
+    // Mvt detection sensibility (more = less sensible)
+    private static final float MOVEMENT_THRESHOLD = 1f;
 
     /**
      * A {@link SurfaceView} for camera preview.
@@ -115,6 +125,17 @@ public class CameraFragment extends Fragment {
     protected CameraCaptureSession.CaptureCallback mCaptureCallback;
 
     private boolean bIsPaused = false;
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    private CameraFragment.OnCaptureCompletedListener mCaptureCompletedListener;
+
+    private float mMaxZoom;
+    private float mCurrentZoom;
+    private Rect mActiveArraySize;
+    private Rect mCurrentZoomRect;
+
+    private Sensor mAccelerometer;
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
      * Switch between the back(primary) camera and the front(selfie) camera
@@ -343,6 +364,32 @@ public class CameraFragment extends Fragment {
      */
     protected void startPreview()
     {
+        try {
+            final CameraManager manager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
+            CameraCharacteristics characteristics = manager.getCameraCharacteristics(mCameraDevice.getId());
+
+            final SensorManager sensorManager = (SensorManager) getActivity().getSystemService(Context.SENSOR_SERVICE);
+            if(mAccelerometer == null) {
+                mAccelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+            }
+
+            mMaxZoom =  characteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM);
+            mCurrentZoom = 1.0f;
+            mActiveArraySize = characteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
+            mCurrentZoomRect = new Rect(mActiveArraySize);
+
+            if(mCaptureCallback == null){
+                this.setCaptureCallback(new CameraFragment.CaptureCallback(mCaptureCompletedListener));
+            }
+
+            if(mAccelerometer != null) {
+                sensorManager.registerListener((CameraFragment.CaptureCallback)mCaptureCallback, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+            }
+
+        }catch (CameraAccessException cae){
+            cae.printStackTrace();
+        }
+
         //Log.d(TAG, "startPreview");
         if (null == mCameraDevice || null == mPreviewSize) {
             //if (null == mCameraDevice || !mTextureView.isAvailable() || null == mPreviewSize) {
@@ -382,15 +429,6 @@ public class CameraFragment extends Fragment {
         }
     }
 
-    /**
-     * Overrides this method to implement custom capture request settings
-     *
-     * @param captureRequestBuilder The CaptureRequest.Builder instance
-     */
-    protected void setupCaptureRequest(final CaptureRequest.Builder captureRequestBuilder) {
-        //Log.d(TAG, "setupCaptureRequest");
-        captureRequestBuilder.set(CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
-    }
 
     /**
      * Update the camera preview. {@link #startPreview()} needs to be called in advance.
@@ -402,7 +440,28 @@ public class CameraFragment extends Fragment {
         }
         try {
             if(!bIsPaused) {
-                setupCaptureRequest(mPreviewBuilder);
+                final Activity activity = getActivity();
+                if (null == activity || activity.isFinishing()) {
+                    return;
+                }
+
+                //Settings
+                mPreviewBuilder.set(CaptureRequest.CONTROL_CAPTURE_INTENT, CaptureRequest.CONTROL_CAPTURE_INTENT_VIDEO_SNAPSHOT); // High quality video
+                mPreviewBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF); // No Flash (don't bother animals)
+                mPreviewBuilder.set(CaptureRequest.STATISTICS_FACE_DETECT_MODE, CaptureRequest.STATISTICS_FACE_DETECT_MODE_OFF); // Faces using OpenCV outside
+                mPreviewBuilder.set(CaptureRequest.CONTROL_AE_ANTIBANDING_MODE, CaptureRequest.CONTROL_AE_ANTIBANDING_MODE_OFF); // Outside purpose
+
+                //Zoom
+                if(mCurrentZoom != 1.0f) {
+                    mCurrentZoomRect.left = mActiveArraySize.centerX() - (int) ((mActiveArraySize.right / mCurrentZoom) / 2);
+                    mCurrentZoomRect.top = mActiveArraySize.centerY() - (int) ((mActiveArraySize.bottom / mCurrentZoom) / 2);
+                    mCurrentZoomRect.right = mCurrentZoomRect.left + (int) (mActiveArraySize.right / mCurrentZoom);
+                    mCurrentZoomRect.bottom = mCurrentZoomRect.top + (int) (mActiveArraySize.bottom / mCurrentZoom);
+                    mPreviewBuilder.set(CaptureRequest.SCALER_CROP_REGION, mCurrentZoomRect);
+                }
+
+                this.mSurfaceView.setOnTouchListener((CameraFragment.CaptureCallback)mCaptureCallback);
+
                 if (mCaptureCallback == null) {
                     mCaptureCallback = new CameraCaptureSession.CaptureCallback() {
                         @Override
@@ -422,6 +481,16 @@ public class CameraFragment extends Fragment {
         }
     }
 
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        final SensorManager sensorManager = (SensorManager) getActivity().getSystemService(Context.SENSOR_SERVICE);
+        if(mCaptureCallback != null) {
+            sensorManager.unregisterListener((CameraFragment.CaptureCallback)mCaptureCallback);
+        }
+    }
+
     public void setPaused(boolean isPaused){
         bIsPaused = isPaused;
         updatePreview();
@@ -431,6 +500,10 @@ public class CameraFragment extends Fragment {
         return bIsPaused;
     }
 
+    public void setZoom(float zoomFactor){
+        mCurrentZoom = Math.abs(Math.min(zoomFactor, mMaxZoom));
+        this.updatePreview();
+    }
 
     /**
      * Allow to set custom CameraCaptureSession.CaptureCallback
@@ -497,6 +570,10 @@ public class CameraFragment extends Fragment {
         this.mOnViewportSizeUpdatedListener = listener;
     }
 
+    public void setOnCaptureCompletedListener(CameraFragment.OnCaptureCompletedListener onCaptureCompletedListener) {
+        this.mCaptureCompletedListener = onCaptureCompletedListener;
+    }
+
     /**
      * Listener interface that will send back the newly created {@link Size} of our camera output
      */
@@ -524,5 +601,187 @@ public class CameraFragment extends Fragment {
                     .create();
         }
 
+    }
+
+    /**
+     * Decicated CameraCaptureSession.CaptureCallback used for QoS and event dispatch to Renderer
+     *
+     */
+    private static class CaptureCallback extends CameraCaptureSession.CaptureCallback implements View.OnTouchListener, SensorEventListener {
+
+        final private CameraFragment.OnCaptureCompletedListener mCaptureCompletedListener;
+
+        private static final int POOL_SIZE = 10;
+        private static final Pools.SimplePool<CameraFragment.CaptureData> captureDataPool = new Pools.SimplePool<>(POOL_SIZE );
+
+        static{
+            for(int i =0; i < POOL_SIZE; i++){
+                captureDataPool.release(new CameraFragment.CaptureData());
+            }
+        }
+
+        private boolean isTouched = false;
+
+        private int frameCount = 0;
+
+        private boolean bIsmoving = false;
+
+        final private float[] mGravity = new float[3];
+        private float mAccel;
+        private float mAccelCurrent;
+        private float mAccelLast;
+
+
+        public CaptureCallback(final CameraFragment.OnCaptureCompletedListener captureCompletedListener) {
+            this.mCaptureCompletedListener = captureCompletedListener;
+            mAccel = 0.00f;
+            mAccelCurrent = SensorManager.GRAVITY_EARTH;
+            mAccelLast = SensorManager.GRAVITY_EARTH;
+        }
+
+        @Override
+        public void onSensorChanged(SensorEvent sensorEvent) {
+            System.arraycopy(sensorEvent.values, 0, mGravity, 0, 3); ;
+            final float x = mGravity[0];
+            final float y = mGravity[1];
+            final float z = mGravity[2];
+            mAccelLast = mAccelCurrent;
+            mAccelCurrent = (float)Math.sqrt(x*x + y*y + z*z);
+            final float delta = Math.abs(mAccelCurrent - mAccelLast);
+            mAccel = mAccel * 0.9f + delta;
+            bIsmoving = (mAccel > MOVEMENT_THRESHOLD);
+        }
+
+        @Override
+        public void onAccuracyChanged(Sensor sensor, int i) {
+            //PASS
+        }
+
+        @Override
+        public boolean onTouch(View view, MotionEvent motionEvent) {
+            isTouched = !(motionEvent.getActionMasked() == MotionEvent.ACTION_UP && motionEvent.getPointerCount() == 1);
+            return true;
+        }
+
+
+        @Override
+        public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
+            super.onCaptureCompleted(session, request, result);
+
+            if(frameCount > CameraFragment.CAPTURE_UPDATE_FREQUENCY) {
+                //Listener
+                CameraFragment.CaptureData captureData = captureDataPool.acquire();
+
+                //Camera state
+                final Integer afValue = result.get(CaptureResult.CONTROL_AF_STATE);
+                if (afValue != null) {
+                    switch (afValue) {
+                        case CaptureResult.CONTROL_AF_STATE_INACTIVE:
+                        case CaptureResult.CONTROL_AF_STATE_PASSIVE_FOCUSED:
+                        case CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED:
+                            final Integer aeValue = result.get(CaptureResult.CONTROL_AE_STATE);
+                            if (aeValue != null) {
+                                switch (aeValue) {
+                                    case CaptureResult.CONTROL_AE_STATE_INACTIVE:
+                                    case CaptureResult.CONTROL_AE_STATE_LOCKED:
+                                    case CaptureResult.CONTROL_AE_STATE_CONVERGED:
+                                        captureData.cameraState = true;
+                                        captureData.lightState = true;
+                                        break;
+                                    case CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED:
+                                        captureData.cameraState = false;
+                                        captureData.lightState = false;
+                                        break;
+                                    default:
+                                        captureData.cameraState = true;
+                                        captureData.lightState = true;
+                                }
+                            } else {
+                                captureData.cameraState = true;
+                                captureData.lightState = true;
+                            }
+
+                            if (captureData.cameraState) {
+                                final Integer awbValue = result.get(CaptureResult.CONTROL_AWB_STATE);
+                                if (awbValue != null) {
+                                    switch (awbValue) {
+                                        case CaptureResult.CONTROL_AWB_STATE_INACTIVE:
+                                        case CaptureResult.CONTROL_AWB_STATE_LOCKED:
+                                        case CaptureResult.CONTROL_AWB_STATE_CONVERGED:
+                                            captureData.cameraState = true;
+                                            break;
+                                        default:
+                                            captureData.cameraState = false;
+                                    }
+                                } else {
+                                    captureData.cameraState = true;
+                                }
+                            }
+
+                            if (captureData.cameraState) {
+                                final Integer lensValue = result.get(CaptureResult.LENS_STATE);
+                                if (lensValue != null) {
+                                    switch (lensValue) {
+                                        case CaptureResult.LENS_STATE_STATIONARY:
+                                            captureData.cameraState = true;
+                                            break;
+                                        default:
+                                            captureData.cameraState = false;
+                                    }
+                                } else {
+                                    captureData.cameraState = true;
+                                }
+                            }
+
+                            break;
+                        default:
+                            captureData.cameraState = false;
+                    }
+                } else {
+                    captureData.cameraState = true;
+                }
+
+                //Movement
+                captureData.movementState = bIsmoving ? false : true;
+
+                //Touch
+                captureData.touchState = isTouched ? false : true;
+
+                //Gravity
+                System.arraycopy(mGravity, 0, captureData.gravity, 0, 3); ;
+
+                mCaptureCompletedListener.onCaptureDataReceived(captureData);
+                captureDataPool.release(captureData);
+                frameCount=0;
+            }
+            else {
+                frameCount++;
+            }
+        }
+    }
+
+    /**
+     * Listener receiving capture events
+     */
+    public interface OnCaptureCompletedListener {
+
+        // Called each time a frame has been processed and received current captureData
+        void onCaptureDataReceived(final CameraFragment.CaptureData captureData);
+    }
+
+    /**
+     * Encapsulate needed/simplified infos from a CaptureResult
+     */
+    public static class CaptureData {
+
+        public boolean cameraState = false;
+        public boolean movementState = false;
+        public boolean lightState = false;
+        public boolean touchState = false;
+        public float[] gravity = new float[3];
+
+        public String toString(){
+            return "[CAM:" +cameraState+", MVT:"+movementState+", LGT:"+lightState+", TCH:"+touchState+", GRV :"+ Arrays.toString(gravity)+"]";
+        }
     }
 }

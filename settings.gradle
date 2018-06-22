@@ -1,3 +1,2 @@
 include 'Application'
 include ':openCVLibrary341'
-include ':shadercam'

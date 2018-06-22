@@ -1,41 +1,28 @@
-package com.androidexperiments.shadercam.gl;
+package com.thommil.animalsgo.gl;
 
-import android.app.Activity;
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.SurfaceTexture;
-import android.media.MediaRecorder;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
-import android.opengl.GLES30;
 import android.opengl.GLUtils;
-import android.opengl.Matrix;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 import android.util.Size;
-import android.util.SparseIntArray;
+import android.view.MotionEvent;
 import android.view.Surface;
-import android.widget.Toast;
+import android.view.View;
 
-import com.androidexperiments.shadercam.fragments.CameraFragment;
-import com.androidexperiments.shadercam.utils.ShaderUtils;
+import com.thommil.animalsgo.fragments.CameraFragment;
+import com.thommil.animalsgo.opencv.SnapshotValidator;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
-import java.nio.channels.FileChannel;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 /** *
  * Base camera rendering class. Responsible for rendering to proper window contexts, as well as
@@ -47,8 +34,8 @@ import java.util.Arrays;
  *
  */
 
-public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFrameAvailableListener, CameraFragment.OnViewportSizeUpdatedListener, Handler.Callback
-{
+public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFrameAvailableListener, CameraFragment.OnViewportSizeUpdatedListener, Handler.Callback, CameraFragment.OnCaptureCompletedListener, View.OnTouchListener {
+
     private static final String TAG = "A_GO/CameraRenderer";
     private static final String THREAD_NAME = "CameraRendererThread";
 
@@ -164,27 +151,35 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     private String mFragmentShaderPath;
     private String mVertexShaderPath;
 
-    /**
-     * Simple ctor to use default shaders
-     */
-    public CameraRenderer(Context context, Surface surface, int width, int height)
-    {
-        super(THREAD_NAME);
-        //Log.d(TAG, "CameraRenderer - "+width+", "+height);
-        init(context, surface, width, height, DEFAULT_FRAGMENT_SHADER, DEFAULT_VERTEX_SHADER);
-    }
+    private static final int SNAPSHOT_SCORE_THRESHOLD = 70;
 
-    /**
-     * Main constructor for passing in shaders to override the default shader.
-     * Context, surface, width, and height are passed in automatically by CameraTextureListener
-     * @param fragPath the file name of your fragment shader, ex: "lip_service.frag" if it is top-level /assets/ folder. Add subdirectories if needed
-     * @param vertPath the file name of your vertex shader, ex: "lip_service.vert" if it is top-level /assets/ folder. Add subdirectories if needed
-     */
-    public CameraRenderer(Context context, Surface surface, int width, int height, String fragPath, String vertPath)
-    {
+    private final Handler mainHandler;
+
+    private final SnapshotValidator snapshotValidator;
+
+    private final SnapshotValidator.Snapshot snapshotInstance;
+
+    private final CameraFragment.CaptureData mCurrentCaptureData;
+
+    public final static int STATE_PREVIEW = 0x00;
+    public final static int STATE_START_ANALYZE = 0x01;
+    public final static int STATE_ANALYZING = 0X02;
+    public final static int STATE_CONFIRM_SNAPSHOT = 0X04;
+
+    public final static int STATE_SHUTDOWN = 0X08;
+
+    private int mState;
+
+    public CameraRenderer(Context context, Surface surface, int width, int height) {
         super(THREAD_NAME);
-        //Log.d(TAG, "CameraRenderer - "+width+", "+height+", "+fragPath+", "+vertPath);
-        init(context, surface, width, height, fragPath, vertPath);
+        init(context, surface, width, height, DEFAULT_FRAGMENT_SHADER, DEFAULT_VERTEX_SHADER);
+        //Log.d(TAG, "AGCameraRenderer");
+        mState = STATE_PREVIEW;
+        mainHandler = new Handler(Looper.getMainLooper());
+        snapshotValidator = new SnapshotValidator();
+        snapshotInstance = new SnapshotValidator.Snapshot();
+        mCurrentCaptureData = new CameraFragment.CaptureData();
+        snapshotValidator.start();
     }
 
     private void init(Context context, Surface surface, int width, int height, String fragPath, String vertPath)
@@ -319,6 +314,10 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         //Log.d(TAG, "TextureCoords : " + Arrays.toString(textureCoords));
 
         setupCameraTextureCoords();
+
+        snapshotInstance.width = surfaceSize.getWidth();
+        snapshotInstance.height = surfaceSize.getHeight();
+        snapshotInstance.data = ByteBuffer.allocateDirect(snapshotInstance.width * snapshotInstance.height * 4);
     }
 
     /**
@@ -466,24 +465,6 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         mOnRendererReadyListener.onRendererFinished();
     }
 
-    /**
-     * Subclasses can override this method to handle messages in GL thread
-     */
-    @Override
-    public boolean handleMessage(Message message) {
-        return true;
-    }
-
-    /**
-     * stop our thread, and make sure we kill a recording if its still happening
-     *
-     * this should only be called from our handler to ensure thread-safe
-     */
-    public void shutdown() {
-        //Log.d(TAG, "shutdown");
-        //kill ouy thread
-        mHandler.getLooper().quit();
-    }
 
     @Override
     public void onFrameAvailable(SurfaceTexture surfaceTexture)
@@ -523,7 +504,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     /**
      * main draw routine
      */
-    public void draw()
+    public void drawPreview()
     {
         //set shader
         GLES20.glUseProgram(mCameraShaderProgram);
@@ -552,6 +533,107 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         GLES20.glDisableVertexAttribArray(textureCoordinateHandle);
     }
 
+    @Override
+    public boolean handleMessage(Message message) {
+        //Log.d(TAG, "handleMessage - " + message);
+
+        switch(message.what){
+            case SnapshotValidator.ANALYZE :
+                switch(mState){
+                    case STATE_ANALYZING :
+                        if (message.arg1 > SNAPSHOT_SCORE_THRESHOLD) {
+                            mState = STATE_CONFIRM_SNAPSHOT;
+                        }
+                        else{
+                            mState = STATE_PREVIEW;
+                        }
+                        break;
+                }
+                break;
+        }
+        return true;
+    }
+
+    @Override
+    public void onCaptureDataReceived(final CameraFragment.CaptureData captureData) {
+        //Log.d(TAG, "onCaptureDataReceived - "+captureData);
+        //TODO add HUD state and drawing
+        switch(mState){
+            //Only in PREVIEW
+            case STATE_PREVIEW :
+                mCurrentCaptureData.lightState = captureData.lightState;
+                mCurrentCaptureData.movementState = captureData.movementState;
+                mCurrentCaptureData.touchState = captureData.touchState;
+                mCurrentCaptureData.cameraState = captureData.cameraState;
+                System.arraycopy(captureData.gravity, 0, mCurrentCaptureData.gravity, 0, 3);
+                if(captureData.lightState & captureData.movementState & captureData.touchState & captureData.cameraState){
+                    mState = STATE_START_ANALYZE;
+                }
+                break;
+        }
+    }
+
+    @Override
+    public boolean onTouch(View view, MotionEvent motionEvent) {
+        // TODO Remove mock for UI events
+        mState = STATE_PREVIEW;
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                mCameraFragment.setPaused(false);
+            }
+        });
+        return true;
+    }
+
+    public void draw() {
+        logFPS();
+        switch(mState){
+            case STATE_PREVIEW :
+                drawPreview();
+                drawHUD();
+                break;
+            case STATE_START_ANALYZE :
+                drawPreview();
+                final Handler handler = snapshotValidator.getHandler();
+                snapshotInstance.callBackHandler = mHandler;
+                snapshotInstance.data.rewind();
+                //TODO only capture square inside HUD
+                GLES20.glReadPixels(0, 0, snapshotInstance.width, snapshotInstance.height, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, snapshotInstance.data);
+                GlUtil.checkGlError("glReadPixels");
+                snapshotInstance.data.rewind();
+                System.arraycopy(mCurrentCaptureData.gravity, 0, snapshotInstance.gravity, 0, 3);
+                handler.sendMessage(handler.obtainMessage(SnapshotValidator.ANALYZE, snapshotInstance));
+                drawHUD();
+                mState = STATE_ANALYZING;
+                break;
+            case STATE_CONFIRM_SNAPSHOT :
+                drawConfirmSnapshot();
+                break;
+        }
+    }
+
+    private void drawHUD(){
+
+        //TODO HUD
+    }
+
+    private void drawConfirmSnapshot(){
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                mCameraFragment.setPaused(true);
+                mCameraFragment.getSurfaceView().setOnTouchListener(CameraRenderer.this);
+            }
+        });
+    }
+
+    public void shutdown() {
+        //Log.d(TAG, "shutdown");
+        snapshotValidator.shutdown();
+        mState = STATE_SHUTDOWN;
+        mHandler.getLooper().quit();
+    }
 
     /**
      * utility for checking GL errors

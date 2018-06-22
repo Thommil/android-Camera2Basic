@@ -2,12 +2,7 @@ package com.thommil.animalsgo.opencv;
 
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.os.Looper;
 import android.os.Message;
-import android.support.v4.util.Pools;
-import android.util.Log;
-
-import com.thommil.animalsgo.fragments.AGCameraFragment;
 
 import java.nio.ByteBuffer;
 

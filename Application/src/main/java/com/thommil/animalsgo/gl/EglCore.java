@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.androidexperiments.shadercam.gl;
+package com.thommil.animalsgo.gl;
 
 import android.graphics.SurfaceTexture;
 import android.opengl.EGL14;

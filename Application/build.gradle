@@ -12,7 +12,6 @@ dependencies {
     implementation 'com.android.support:appcompat-v7:27.0.2'
     implementation 'com.android.support.constraint:constraint-layout:1.1.1'
     implementation project(':openCVLibrary341')
-    implementation project(':shadercam')
 }
 
 // The sample build uses multiple directories to

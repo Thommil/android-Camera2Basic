@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package com.androidexperiments.shadercam.gl;
+package com.thommil.animalsgo.gl;
 
 import android.graphics.Bitmap;
 import android.opengl.EGL14;
 import android.opengl.EGLSurface;
 import android.opengl.GLES20;
-import android.util.Log;
 
 import java.io.BufferedOutputStream;
 import java.io.File;

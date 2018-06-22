@@ -39,7 +39,7 @@ public class AGCameraFragment extends CameraFragment{
     private static final int CAPTURE_UPDATE_FREQUENCY = 10;
 
     // Mvt detection sensibility (more = less sensible)
-    private static final float MOVEMENT_THRESHOLD = 0.9f;
+    private static final float MOVEMENT_THRESHOLD = 1f;
 
     private OnCaptureCompletedListener mCaptureCompletedListener;
 
@@ -102,7 +102,7 @@ public class AGCameraFragment extends CameraFragment{
         //Settings
         captureRequestBuilder.set(CaptureRequest.CONTROL_CAPTURE_INTENT, CaptureRequest.CONTROL_CAPTURE_INTENT_VIDEO_SNAPSHOT); // High quality video
         captureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF); // No Flash (don't bother animals)
-        captureRequestBuilder.set(CaptureRequest.STATISTICS_FACE_DETECT_MODE, CaptureRequest.STATISTICS_FACE_DETECT_MODE_SIMPLE); // Find faces
+        captureRequestBuilder.set(CaptureRequest.STATISTICS_FACE_DETECT_MODE, CaptureRequest.STATISTICS_FACE_DETECT_MODE_OFF); // Faces using OpenCV outside
         captureRequestBuilder.set(CaptureRequest.CONTROL_AE_ANTIBANDING_MODE, CaptureRequest.CONTROL_AE_ANTIBANDING_MODE_OFF); // Outside purpose
 
         //Zoom
@@ -135,7 +135,7 @@ public class AGCameraFragment extends CameraFragment{
         final private OnCaptureCompletedListener mCaptureCompletedListener;
 
         private static final int POOL_SIZE = 10;
-        private static final Pools.SynchronizedPool<CaptureData> captureDataPool = new Pools.SynchronizedPool<>(POOL_SIZE );
+        private static final Pools.SimplePool<CaptureData> captureDataPool = new Pools.SimplePool<>(POOL_SIZE );
 
         static{
             for(int i =0; i < POOL_SIZE; i++){
@@ -196,7 +196,6 @@ public class AGCameraFragment extends CameraFragment{
                 CaptureData captureData = captureDataPool.acquire();
 
                 //Camera state
-                captureData.cameraState = false;
                 final Integer afValue = result.get(CaptureResult.CONTROL_AF_STATE);
                 if (afValue != null) {
                     switch (afValue) {
@@ -242,6 +241,21 @@ public class AGCameraFragment extends CameraFragment{
                                 }
                             }
 
+                            if (captureData.cameraState) {
+                                final Integer lensValue = result.get(CaptureResult.LENS_STATE);
+                                if (lensValue != null) {
+                                    switch (lensValue) {
+                                        case CaptureResult.LENS_STATE_STATIONARY:
+                                            captureData.cameraState = true;
+                                            break;
+                                        default:
+                                            captureData.cameraState = false;
+                                    }
+                                } else {
+                                    captureData.cameraState = true;
+                                }
+                            }
+
                             break;
                         default:
                             captureData.cameraState = false;
@@ -249,10 +263,6 @@ public class AGCameraFragment extends CameraFragment{
                 } else {
                     captureData.cameraState = true;
                 }
-
-                //Faces
-                final Face[] faces = result.get(CaptureResult.STATISTICS_FACES);
-                captureData.facesState = (faces == null || faces.length == 0 );
 
                 //Movement
                 captureData.movementState = bIsmoving ? false : true;
@@ -288,14 +298,13 @@ public class AGCameraFragment extends CameraFragment{
     public static class CaptureData {
 
         public boolean cameraState = false;
-        public boolean facesState = false;
         public boolean movementState = false;
         public boolean lightState = false;
         public boolean touchState = false;
         public float[] gravity = new float[3];
 
         public String toString(){
-            return "[CAM:" +cameraState+", FCS:" +facesState+", MVT:"+movementState+", LGT:"+lightState+", TCH:"+touchState+", GRV :"+ Arrays.toString(gravity)+"]";
+            return "[CAM:" +cameraState+", MVT:"+movementState+", LGT:"+lightState+", TCH:"+touchState+", GRV :"+ Arrays.toString(gravity)+"]";
         }
     }
 }

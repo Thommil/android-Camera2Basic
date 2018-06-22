@@ -79,18 +79,18 @@ public class AGCameraRenderer extends CameraRenderer implements AGCameraFragment
     }
 
     @Override
-    public synchronized void onCaptureDataReceived(final AGCameraFragment.CaptureData captureData) {
+    public void onCaptureDataReceived(final AGCameraFragment.CaptureData captureData) {
         //Log.d(TAG, "onCaptureDataReceived - "+captureData);
         //TODO add HUD state and drawing
         switch(mState){
+            //Only in PREVIEW
             case STATE_PREVIEW :
                 mCurrentCaptureData.lightState = captureData.lightState;
                 mCurrentCaptureData.movementState = captureData.movementState;
                 mCurrentCaptureData.touchState = captureData.touchState;
                 mCurrentCaptureData.cameraState = captureData.cameraState;
-                mCurrentCaptureData.facesState = captureData.facesState;
                 System.arraycopy(captureData.gravity, 0, mCurrentCaptureData.gravity, 0, 3);
-                if(captureData.lightState & captureData.movementState & captureData.touchState & captureData.cameraState & captureData.facesState){
+                if(captureData.lightState & captureData.movementState & captureData.touchState & captureData.cameraState){
                     mState = STATE_START_ANALYZE;
                 }
                 break;

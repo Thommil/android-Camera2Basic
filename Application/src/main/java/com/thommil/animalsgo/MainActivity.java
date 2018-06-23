@@ -4,12 +4,11 @@ import android.Manifest;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
-import com.thommil.animalsgo.fragments.PermissionsHelper;
+import com.thommil.animalsgo.utils.PermissionsHelper;
 
 public class MainActivity extends AppCompatActivity implements PermissionsHelper.PermissionsListener {
 
@@ -29,6 +28,7 @@ public class MainActivity extends AppCompatActivity implements PermissionsHelper
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        //Log.d(TAG, "onCreate()");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -49,6 +49,7 @@ public class MainActivity extends AppCompatActivity implements PermissionsHelper
 
     @Override
     protected void onResume() {
+        //Log.d(TAG, "onResume()");
         super.onResume();
         if(PermissionsHelper.isMorHigher() && !mPermissionsSatisfied) {
             if (!mPermissionsHelper.checkPermissions())
@@ -64,7 +65,7 @@ public class MainActivity extends AppCompatActivity implements PermissionsHelper
      */
     @Override
     public void onPermissionsSatisfied() {
-        //Log.d(TAG, "onPermissionsSatisfied");
+        //Log.d(TAG, "onPermissionsSatisfied()");
         mPermissionsSatisfied = true;
     }
 
@@ -75,7 +76,7 @@ public class MainActivity extends AppCompatActivity implements PermissionsHelper
      */
     @Override
     public void onPermissionsFailed(String[] failedPermissions) {
-        //Log.d(TAG, "onPermissionsFailed");
+        //Log.d(TAG, "onPermissionsFailed("+ Arrays.toString(failedPermissions)+")");
         mPermissionsSatisfied = false;
         Toast.makeText(this, "Animal-GO needs all permissions to function, please try again.", Toast.LENGTH_LONG).show();
         this.finish();

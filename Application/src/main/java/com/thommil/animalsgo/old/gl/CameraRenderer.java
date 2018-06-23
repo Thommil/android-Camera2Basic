@@ -1,4 +1,4 @@
-package com.thommil.animalsgo.gl;
+package com.thommil.animalsgo.old.gl;
 
 import android.content.Context;
 import android.graphics.SurfaceTexture;
@@ -15,8 +15,8 @@ import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.View;
 
-import com.thommil.animalsgo.fragments.CameraFragment;
-import com.thommil.animalsgo.opencv.SnapshotValidator;
+import com.thommil.animalsgo.old.fragments.CameraFragment;
+import com.thommil.animalsgo.old.opencv.SnapshotValidator;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

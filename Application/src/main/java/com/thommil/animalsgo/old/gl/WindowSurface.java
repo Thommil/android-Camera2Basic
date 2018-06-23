@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.thommil.animalsgo.gl;
+package com.thommil.animalsgo.old.gl;
 
 import android.view.Surface;
 

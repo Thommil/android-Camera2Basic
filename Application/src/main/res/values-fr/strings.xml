@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Animals GO</string>
+
+    <!-- PREFERENCES -->
+    <string name="prefs_file_key">preferences</string>
+
+    <!-- Camera -->
+    <string name="prefs_camera">Camera</string>
+
+    <string name="prefs_camera_preview_quality_title">Qualité de l\'aperçu : </string>
+    <string name="prefs_camera_preview_quality_summary">Qualité de l\'aperçu</string>
+    <string name="prefs_camera_preview_quality_dialog">Choisir le niveau :</string>
+    <string-array name="prefs_camera_preview_quality_entries">
+        <item>faible</item>
+        <item>moyen</item>
+        <item>élevé</item>
+    </string-array>
+
+</resources>

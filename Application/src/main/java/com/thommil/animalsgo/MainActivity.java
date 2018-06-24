@@ -2,12 +2,14 @@ package com.thommil.animalsgo;
 
 import android.Manifest;
 import android.content.Intent;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
+import com.thommil.animalsgo.data.Settings;
 import com.thommil.animalsgo.utils.PermissionsHelper;
 
 public class MainActivity extends AppCompatActivity implements PermissionsHelper.PermissionsListener {
@@ -32,15 +34,27 @@ public class MainActivity extends AppCompatActivity implements PermissionsHelper
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Button button = findViewById(R.id.button);
+        Button cameraButton = findViewById(R.id.button_camera);
 
-        button.setOnClickListener(new View.OnClickListener() {
+        cameraButton .setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 final Intent intent = new Intent(MainActivity.this, CameraActivity.class);
                 MainActivity.this.startActivity(intent);
             }
         });
+
+        Button settingsButton = findViewById(R.id.button_settings);
+
+        settingsButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                final Intent intent = new Intent(MainActivity.this, SettingsActivity.class);
+                MainActivity.this.startActivity(intent);
+            }
+        });
+
+        Settings.newInstance(this);
 
         //setup permissions for M or start normally
         if(PermissionsHelper.isMorHigher())

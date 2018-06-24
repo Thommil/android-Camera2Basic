@@ -16,7 +16,7 @@ import android.view.Surface;
 import android.view.View;
 
 import com.thommil.animalsgo.old.fragments.CameraFragment;
-import com.thommil.animalsgo.old.opencv.SnapshotValidator;
+import com.thommil.animalsgo.opencv.SnapshotValidator;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -157,7 +157,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
     private final SnapshotValidator snapshotValidator;
 
-    private final SnapshotValidator.Snapshot snapshotInstance;
+    //private final SnapshotValidator.Snapshot snapshotInstance;
 
     private final CameraFragment.CaptureData mCurrentCaptureData;
 
@@ -177,7 +177,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         mState = STATE_PREVIEW;
         mainHandler = new Handler(Looper.getMainLooper());
         snapshotValidator = new SnapshotValidator();
-        snapshotInstance = new SnapshotValidator.Snapshot();
+        //snapshotInstance = new SnapshotValidator.Snapshot();
         mCurrentCaptureData = new CameraFragment.CaptureData();
         snapshotValidator.start();
     }
@@ -315,9 +315,9 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
         setupCameraTextureCoords();
 
-        snapshotInstance.width = surfaceSize.getWidth();
-        snapshotInstance.height = surfaceSize.getHeight();
-        snapshotInstance.data = ByteBuffer.allocateDirect(snapshotInstance.width * snapshotInstance.height * 4);
+        //snapshotInstance.width = surfaceSize.getWidth();
+        //snapshotInstance.height = surfaceSize.getHeight();
+        //snapshotInstance.data = ByteBuffer.allocateDirect(snapshotInstance.width * snapshotInstance.height * 4);
     }
 
     /**
@@ -537,7 +537,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     public boolean handleMessage(Message message) {
         //Log.d(TAG, "handleMessage - " + message);
 
-        switch(message.what){
+        /*switch(message.what){
             case SnapshotValidator.ANALYZE :
                 switch(mState){
                     case STATE_ANALYZING :
@@ -550,7 +550,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
                         break;
                 }
                 break;
-        }
+        }*/
         return true;
     }
 
@@ -596,14 +596,14 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
             case STATE_START_ANALYZE :
                 drawPreview();
                 final Handler handler = snapshotValidator.getHandler();
-                snapshotInstance.callBackHandler = mHandler;
-                snapshotInstance.data.rewind();
+                //snapshotInstance.callBackHandler = mHandler;
+                //snapshotInstance.data.rewind();
                 //TODO only capture square inside HUD
-                GLES20.glReadPixels(0, 0, snapshotInstance.width, snapshotInstance.height, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, snapshotInstance.data);
-                GlUtil.checkGlError("glReadPixels");
-                snapshotInstance.data.rewind();
-                System.arraycopy(mCurrentCaptureData.gravity, 0, snapshotInstance.gravity, 0, 3);
-                handler.sendMessage(handler.obtainMessage(SnapshotValidator.ANALYZE, snapshotInstance));
+                //GLES20.glReadPixels(0, 0, snapshotInstance.width, snapshotInstance.height, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, snapshotInstance.data);
+                //GlUtil.checkGlError("glReadPixels");
+                //snapshotInstance.data.rewind();
+                //System.arraycopy(mCurrentCaptureData.gravity, 0, snapshotInstance.gravity, 0, 3);
+                //handler.sendMessage(handler.obtainMessage(SnapshotValidator.ANALYZE, snapshotInstance));
                 drawHUD();
                 mState = STATE_ANALYZING;
                 break;
@@ -630,7 +630,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
     public void shutdown() {
         //Log.d(TAG, "shutdown");
-        snapshotValidator.shutdown();
+        //snapshotValidator.shutdown();
         mState = STATE_SHUTDOWN;
         mHandler.getLooper().quit();
     }

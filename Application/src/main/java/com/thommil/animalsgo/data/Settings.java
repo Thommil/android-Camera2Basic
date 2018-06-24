@@ -18,8 +18,20 @@ public class Settings {
 
     private static final String TAG = "A_GO/Settings";
 
-    // Settings keys
+    // Static settings
+    // Number of frames between 2 updates
+    public static final int CAPTURE_UPDATE_FREQUENCY = 10;
+
+    // Mvt detection sensibility (more = less sensible)
+    public static final float MOVEMENT_THRESHOLD = 1f;
+
+    // Settings keys & values
+
+    //Preview Settings values
     public static final String CAMERA_PREVIEW_QUALITY = "prefs_camera_preview_quality";
+    public static final String PREVIEW_QUALITY_LOW = "low";
+    public static final String PREVIEW_QUALITY_MEDIUM = "medium";
+    public static final String PREVIEW_QUALITY_HIGH = "high";
 
     private static Settings sInstance;
 

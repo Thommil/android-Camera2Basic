@@ -2,7 +2,9 @@
 <resources>
     <string name="app_name">Animals GO</string>
 
-    <!-- PREFERENCES -->
+    <!--
+        PREFERENCES
+     -->
     <string name="prefs_file_key">preferences</string>
 
     <!-- Camera -->
@@ -21,6 +23,13 @@
         <item>medium</item>
         <item>high</item>
     </string-array>
-    <string name="prefs_camera_preview_quality_default">medium</string>
+    <string name="prefs_camera_preview_quality_default">high</string>
+
+    <!--
+        ERRORS
+     -->
+    <string name="error_camera_generic">An error has occured while using camera !</string>
+    <string name="error_camera_not_supported">Camera2 not supported by device !</string>
+    <string name="error_camera_timeout">Time out waiting to lock camera opening !</string>
 
 </resources>

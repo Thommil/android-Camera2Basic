@@ -64,6 +64,11 @@ public class SnapshotValidator extends HandlerThread implements Handler.Callback
         Log.d(TAG, "validateSnaphot("+snapshot+")");
     }
 
+    private void showError(final String message){
+        Log.d(TAG, "showError(" + message+ ")");
+        mMainHandler.sendMessage(mMainHandler.obtainMessage(Messaging.SYSTEM_ERROR, message));
+    }
+
     protected void shutdown(){
         Log.d(TAG, "shutdown()");
         quitSafely();

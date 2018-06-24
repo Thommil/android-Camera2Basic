@@ -1,6 +1,10 @@
 package com.thommil.animalsgo.fragments;
 
 import android.content.Context;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Rect;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -21,11 +25,6 @@ import com.thommil.animalsgo.data.Settings;
 public class CameraSurfaceView extends SurfaceView implements Runnable, Handler.Callback {
 
     private static final String TAG = "A_GO/CameraSurfaceView";
-
-    //Preview Settings based on prefs_camera_preview_quality_entries
-    public static final String PREVIEW_QUALITY_LOW = "low";
-    public static final String PREVIEW_QUALITY_MEDIUM = "medium";
-    public static final String PREVIEW_QUALITY_HIGH = "high";
 
     // HandlerThread bound to the view processing
     private HandlerThread mHandlerThread;
@@ -75,11 +74,15 @@ public class CameraSurfaceView extends SurfaceView implements Runnable, Handler.
         Log.d(TAG, "handleMessage(" + message+ ")");
         switch (message.what){
             case Messaging.SYSTEM_SHUTDOWN:
-                Log.d(TAG, "" + Settings.getInstance().getString(Settings.CAMERA_PREVIEW_QUALITY));
                 shutdown();
                 break;
         }
         return true;
+    }
+
+    private void showError(final String message){
+        Log.d(TAG, "showError(" + message+ ")");
+        mMainHandler.sendMessage(mMainHandler.obtainMessage(Messaging.SYSTEM_ERROR, message));
     }
 
     protected void shutdown(){

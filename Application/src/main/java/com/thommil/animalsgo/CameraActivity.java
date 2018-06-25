@@ -10,51 +10,40 @@ import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
 
 import com.thommil.animalsgo.data.Messaging;
 import com.thommil.animalsgo.fragments.CameraFragment;
 import com.thommil.animalsgo.gl.CameraRenderer;
-import com.thommil.animalsgo.gl.ShaderUtils;
+import com.thommil.animalsgo.opencv.SnapshotValidator;
 
 
-/**
- * Written by Anthony Tripaldi
- *
- * Very basic implemention of shader camera.
- *
- * // TODO handle error in global way
- * // TODO display permission on cam start only
- */
-public class CameraActivity extends FragmentActivity implements CameraRenderer.OnRendererReadyListener, Handler.Callback
-{
+public class CameraActivity extends FragmentActivity implements CameraRenderer.OnRendererReadyListener, Handler.Callback {
+
     private static final String TAG = "A_GO/CameraActivity";
     private static final String TAG_CAMERA_FRAGMENT = "tag_camera_frag";
 
-    SurfaceView mSurfaceView;
+    // Reference to the target SurfaceView
+    private SurfaceView mSurfaceView;
 
-    /**
-     * Custom fragment used for encapsulating all the {@link android.hardware.camera2} apis.
-     */
+    // Custom fragment used for encapsulating all the {@link android.hardware.camera2} apis.
     private CameraFragment mCameraFragment;
 
-    /**
-     * Our custom renderer for this example, which extends {@link CameraRenderer} and then adds custom
-     * shaders, which turns shit green, which is easy.
-     */
+    // Custom renderer
     private CameraRenderer mRenderer;
 
     // Main handler
     private Handler mMainHandler;
 
-    /**
-     * boolean for triggering restart of camera after completed rendering
-     */
-    private boolean mRestartCamera = true;
+    // Renderer handler
+    private Handler mRendererHandler;
+
+    // OpenCV handler
+    private Handler mValidatorHandler;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState)
-    {
-        //Log.d(TAG, "onCreate");
+    protected void onCreate(Bundle savedInstanceState) {
+        Log.d(TAG, "onCreate()");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
 
@@ -63,22 +52,16 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
     }
 
 
-    /**
-     * create the camera fragment responsible for handling camera state and add it to our activity
-     */
-    private void setupCameraFragment()
-    {
-        //Log.d(TAG, "setupCameraFragment");
+    private void setupCameraFragment(){
+        Log.d(TAG, "setupCameraFragment()");
         if(mCameraFragment != null && mCameraFragment.isAdded())
             return;
 
         mCameraFragment = new CameraFragment();
         mCameraFragment.setRetainInstance(true);
-        mCameraFragment.setCameraToUse(CameraFragment.CAMERA_PRIMARY); //pick which camera u want to use, we default to forward
         mCameraFragment.setSurfaceView(mSurfaceView);
 
-        //add fragment to our setup and let it work its magic
-        FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
+        final FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.add(mCameraFragment, TAG_CAMERA_FRAGMENT);
         transaction.commit();
     }
@@ -87,31 +70,38 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
 
     @Override
     protected void onResume() {
-        //Log.d(TAG, "onResume");
+        Log.d(TAG, "onResume()");
         super.onResume();
-        ShaderUtils.goFullscreen(this.getWindow());
+        getWindow().getDecorView()
+                .setSystemUiVisibility(
+                        View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                                | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                                | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                                | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION // hide nav bar
+                                | View.SYSTEM_UI_FLAG_FULLSCREEN // hide status bar
+                                | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                );
+
+        mSurfaceView.getHolder().setKeepScreenOn(true);
         mSurfaceView.getHolder().addCallback(mSurfaceHolderCallback);
         mMainHandler = new Handler(Looper.getMainLooper(), this);
+        mCameraFragment.setMainHandler(mMainHandler);
+
+        SnapshotValidator.getInstance().setMainHandler(mMainHandler);
+        SnapshotValidator.getInstance().start();
     }
 
     @Override
     protected void onPause() {
-        //Log.d(TAG, "onPause");
+        Log.d(TAG, "onPause()");
         super.onPause();
         mSurfaceView.getHolder().removeCallback(mSurfaceHolderCallback);
-        shutdownCamera(false);
+        shutdownCamera();
         finish();
     }
 
-    /**
-     * called whenever surface texture becomes initially available or whenever a camera restarts after
-     * completed recording or resuming from onpause
-     * @param surface {@link Surface} that we'll be drawing into
-     * @param width width of the surface texture
-     * @param height height of the surface texture
-     */
-    protected void setReady(Surface surface, int width, int height) {
-        //Log.d(TAG, "setReady - "+width+", "+height);
+    protected void setReady(final Surface surface, final int width, final int height) {
+        Log.d(TAG, "setReady("+width+", "+height+")");
         mRenderer = new CameraRenderer(this, surface, width, height);
         mCameraFragment.setOnViewportSizeUpdatedListener(mRenderer);
         mRenderer.setCameraFragment(mCameraFragment);
@@ -121,34 +111,25 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
     }
 
 
-    /**
-     * kills the camera in camera fragment and shutsdown render thread
-     * @param restart whether or not to restart the camera after shutdown is complete
-     */
-    private void shutdownCamera(boolean restart)
-    {
-        //Log.d(TAG, "shutdownCamera - "+restart);
+    private void shutdownCamera() {
+        Log.d(TAG, "shutdownCamera()");
 
-        //check to make sure we've even created the cam and renderer yet
         if(mCameraFragment == null || mRenderer == null) return;
-
-        mCameraFragment.closeCamera();
-
-        mRestartCamera = restart;
-        mRenderer.shutdown();
-        mRenderer = null;
+        if(mCameraFragment != null){
+            mCameraFragment.closeCamera();
+        }
+        if(mRendererHandler != null){
+            mRendererHandler.sendMessage(mRendererHandler.obtainMessage(Messaging.SYSTEM_SHUTDOWN));
+        }
+        if(mValidatorHandler != null){
+            mValidatorHandler.sendMessage(mValidatorHandler.obtainMessage(Messaging.SYSTEM_SHUTDOWN));
+        }
     }
 
-    /**
-     * Since these are being called from inside the CameraRenderer thread, we need to make sure
-     * that we call our methods from the {@link #runOnUiThread(Runnable)} method, so that we don't
-     * throw any exceptions about touching the UI from non-UI threads.
-     *
-     */
     @Override
     public void onRendererReady() {
-        //Log.d(TAG, "onRendererReady");
-        runOnUiThread(new Runnable() {
+        Log.d(TAG, "onRendererReady()");
+        mMainHandler.post(new Runnable() {
             @Override
             public void run() {
                 mCameraFragment.setPreviewTexture(mRenderer.getPreviewTexture());
@@ -159,25 +140,22 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
 
     @Override
     public void onRendererFinished() {
-        //Log.d(TAG, "onRendererFinished");
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (mRestartCamera) {
-                    setReady(mSurfaceView.getHolder().getSurface(), mSurfaceView.getWidth(), mSurfaceView.getHeight());
-                    mRestartCamera = false;
-                }
-            }
-        });
+        Log.d(TAG, "onRendererFinished()");
     }
 
     @Override
-    public boolean handleMessage(Message message) {
-        //Log.d(TAG, "handleMessage(" + message+ ")");
+    public boolean handleMessage(final Message message) {
+        Log.d(TAG, "handleMessage(" + message+ ")");
         switch (message.what){
             case Messaging.SYSTEM_ERROR :
                 ErrorDialog.newInstance((String)message.obj)
                         .show(getSupportFragmentManager(), ErrorDialog.FRAGMENT_DIALOG);
+                break;
+            case Messaging.SYSTEM_CONNECT_RENDERER:
+                mRendererHandler = (Handler) message.obj;
+                break;
+            case Messaging.SYSTEM_CONNECT_VALIDATOR:
+                mValidatorHandler = (Handler) message.obj;
                 break;
         }
         return true;
@@ -186,18 +164,18 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
     private SurfaceHolder.Callback mSurfaceHolderCallback = new SurfaceHolder.Callback() {
         @Override
         public void surfaceCreated(SurfaceHolder surfaceHolder) {
-            //Log.d(TAG, "surfaceCreated");
+            Log.d(TAG, "surfaceCreated("+surfaceHolder+")");
         }
 
         @Override
         public void surfaceChanged(SurfaceHolder surfaceHolder, int format, int width, int height) {
-            //Log.d(TAG, "surfaceChanged - "+format+", "+width+", "+height);
+            Log.d(TAG, "surfaceChanged("+format+", "+width+", "+height+")");
             setReady(surfaceHolder.getSurface(), width, height);
         }
 
         @Override
         public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
-            //Log.d(TAG, "surfaceDestroyed");
+            Log.d(TAG, "surfaceDestroyed("+surfaceHolder+")");
         }
     };
 

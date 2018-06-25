@@ -20,6 +20,7 @@ import android.graphics.Bitmap;
 import android.opengl.EGL14;
 import android.opengl.EGLSurface;
 import android.opengl.GLES20;
+import android.util.Log;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -134,7 +135,7 @@ public class EglSurfaceBase {
     public boolean swapBuffers() {
         boolean result = mEglCore.swapBuffers(mEGLSurface);
         if (!result) {
-            //Log.d(TAG, "WARNING: swapBuffers() failed");
+            Log.d(TAG, "WARNING: swapBuffers() failed");
         }
         return result;
     }

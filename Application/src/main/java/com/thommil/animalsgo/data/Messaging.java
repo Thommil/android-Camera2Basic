@@ -7,16 +7,16 @@ public class Messaging {
 
     public static final int SYSTEM_ERROR = 0x000;
 
-    // System
-    public static final int SYSTEM_CONNECT_VIEW = 0x001;
+    // SYSTEM
+    public static final int SYSTEM_CONNECT_RENDERER = 0x001;
     public static final int SYSTEM_CONNECT_VALIDATOR = 0x002;
     public static final int SYSTEM_SHUTDOWN = 0x004;
 
-    // View
+    // RENDERER
 
-    // Validator
-    public static final int VALIDATOR_REQUEST = 0x010;
-    public static final int VALIDATOR_RESULT = 0x020;
+    // OPENCV
+    public static final int OPENCV_REQUEST = 0x010;
+    public static final int OPENCV_RESULT = 0x020;
 
     public static class Snapshot {
         // TODO Snapshot definition

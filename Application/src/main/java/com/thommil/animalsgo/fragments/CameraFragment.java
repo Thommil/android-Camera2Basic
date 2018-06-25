@@ -1,42 +1,33 @@
 package com.thommil.animalsgo.fragments;
 
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraDevice;
 import android.hardware.camera2.CameraManager;
-import android.hardware.camera2.CameraMetadata;
 import android.hardware.camera2.CaptureRequest;
-import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.StreamConfigurationMap;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
-import android.support.v4.app.DialogFragment;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.support.v4.util.Pools;
 import android.util.Log;
 import android.util.Size;
-import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
-import android.view.View;
 import android.widget.Toast;
 
+import com.thommil.animalsgo.R;
 import com.thommil.animalsgo.data.CapturePreview;
+import com.thommil.animalsgo.data.Messaging;
 import com.thommil.animalsgo.data.Settings;
 
 import java.util.ArrayList;
@@ -52,113 +43,58 @@ public class CameraFragment extends Fragment {
 
     private static final String TAG = "A_GO/CameraFragment";
 
-    //TODO test settings when recognition is OK
-    // Number of frames between 2 updates
-    private static final int CAPTURE_UPDATE_FREQUENCY = 10;
+    // A SurfaceView for camera preview.
+    private SurfaceView mSurfaceView;
 
-    // Mvt detection sensibility (more = less sensible)
-    private static final float MOVEMENT_THRESHOLD = 1f;
+    // A reference to the opened CameraDevice.
+    private CameraDevice mCameraDevice;
 
-    /**
-     * A {@link SurfaceView} for camera preview.
-     */
-    protected SurfaceView mSurfaceView;
+    // A reference to the current CameraCaptureSession for preview.
+    private CameraCaptureSession mPreviewSession;
 
-    /**
-     * A refernce to the opened {@link CameraDevice}.
-     */
-    protected CameraDevice mCameraDevice;
+    // Surface to render preview of camera
+    private SurfaceTexture mPreviewSurface;
 
-    /**
-     * A reference to the current {@link CameraCaptureSession} for preview.
-     */
-    protected CameraCaptureSession mPreviewSession;
+    //The Size of camera preview.
+    private Size mPreviewSize;
 
-    /**
-     * Surface to render preview of camera
-     */
-    protected SurfaceTexture mPreviewSurface;
+    // Camera preview.
+    private CaptureRequest.Builder mPreviewBuilder;
 
-    /**
-     * The {@link Size} of camera preview.
-     */
-    protected Size mPreviewSize;
+    // A Handler for running tasks in the renderer thread
+    private Handler mRendererHandler;
 
-    /**
-     * Camera preview.
-     */
-    protected CaptureRequest.Builder mPreviewBuilder;
+    // Main handler
+    private Handler mMainHandler;
 
-    /**
-     * A {@link Handler} for running tasks in the background.
-     */
-    protected Handler mBackgroundHandler;
+    // Listener for when openCamera is called and a proper video size is created
+    private OnViewportSizeUpdatedListener mOnViewportSizeUpdatedListener;
 
-    /**
-     * Use these for changing which camera to use on start
-     */
-    public static final int CAMERA_PRIMARY = 0;
+    // Current aspect ratio of preview
+    private float mPreviewSurfaceAspectRatio;
 
-    /**
-     * The id of what is typically the forward facing camera.
-     * If this fails, use {@link #CAMERA_PRIMARY}, as it might be the only camera registered.
-     */
-    public static final int CAMERA_FORWARD = 1;
+    // A Semaphore to prevent the app from exiting before closing the camera.
+    private Semaphore mCameraOpenCloseLock = new Semaphore(1);
 
-    /**
-     * Default Camera to use
-     */
-    protected int mCameraToUse = CAMERA_PRIMARY;
+    // Indicates if camera is open
+    private boolean mCameraIsOpen = false;
 
+    // Indicates if preview is running
+    private boolean mIsPaused = false;
 
-    /**
-     * Listener for when openCamera is called and a proper video size is created
-     */
-    protected OnViewportSizeUpdatedListener mOnViewportSizeUpdatedListener;
+    // Reference to the SensorManager
+    private SensorManager mSensorManager;
 
-    protected float mPreviewSurfaceAspectRatio;
-
-    /**
-     * A {@link Semaphore} to prevent the app from exiting before closing the camera.
-     */
-    protected Semaphore mCameraOpenCloseLock = new Semaphore(1);
-
-    protected boolean mCameraIsOpen = false;
-
-    private boolean bIsPaused = false;
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    private float mMaxZoom;
-    private float mCurrentZoom;
-    private Rect mActiveArraySize;
-    private Rect mCurrentZoomRect;
-
-    private Sensor mAccelerometer;
-    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    /**
-     * Switch between the back(primary) camera and the front(selfie) camera
-     */
-    public void swapCamera()
-    {
-        //Log.d(TAG, "swapCamera");
-        closeCamera();
-
-        if(mCameraToUse == CAMERA_FORWARD)
-            mCameraToUse = CAMERA_PRIMARY;
-        else
-            mCameraToUse = CAMERA_FORWARD;
-
-        openCamera();
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        mSensorManager = (SensorManager) getActivity().getSystemService(Context.SENSOR_SERVICE);
     }
 
-    /**
-     * Tries to open a CameraDevice. The result is listened by `mStateCallback`.
-     */
+
     public void openCamera()
     {
-        //Log.d(TAG, "openCamera");
+        Log.d(TAG, "openCamera()");
         final Activity activity = getActivity();
         if (null == activity || activity.isFinishing()) {
             return;
@@ -172,52 +108,58 @@ public class CameraFragment extends Fragment {
 
         try {
             if (!mCameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
-                throw new RuntimeException("Time out waiting to lock camera opening.");
+                showError(getString(R.string.error_camera_timeout));
             }
 
-            String[] cameraList = manager.getCameraIdList();
+            String cameraId = null;
+            final String[] cameraList = manager.getCameraIdList();
 
-            //make sure we dont get array out of bounds error, default to primary [0] if thats the case
-            if(mCameraToUse >= cameraList.length)
-                mCameraToUse = CAMERA_PRIMARY;
+            for (final String id : cameraList) {
+                final CameraCharacteristics characteristics = manager.getCameraCharacteristics(id);
 
-            String cameraId = cameraList[mCameraToUse];
+                final Integer facing = characteristics.get(CameraCharacteristics.LENS_FACING);
+                if (facing != null && facing == CameraCharacteristics.LENS_FACING_BACK) {
+                    cameraId = id;
+                    break;
+                }
+            }
 
-            CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
-            StreamConfigurationMap streamConfigurationMap = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+            if(cameraId == null){
+                showError(getString(R.string.error_camera_not_found));
+                mCameraOpenCloseLock.release();
+                return;
+            }
 
-            //typically these are identical
-            mPreviewSize = chooseVideoSize(streamConfigurationMap.getOutputSizes(SurfaceHolder.class));
+            final CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
+            final StreamConfigurationMap streamConfigurationMap = characteristics.get(CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
 
-            //send back for updates to renderer if needed
+            mPreviewSize = choosePreviewSize(streamConfigurationMap.getOutputSizes(SurfaceHolder.class));
+
             if(mOnViewportSizeUpdatedListener != null) {
                 mOnViewportSizeUpdatedListener.onViewportSizeUpdated(new Size(mSurfaceView.getWidth(), mSurfaceView.getHeight()),mPreviewSize);
             }
 
-            manager.openCamera(cameraId, mStateCallback, null);
+            manager.openCamera(cameraId, mStateCallback, mMainHandler);
         }
         catch (CameraAccessException e) {
-            Toast.makeText(activity, "Cannot access the camera.", Toast.LENGTH_SHORT).show();
-            activity.finish();
+            mCameraOpenCloseLock.release();
+            showError(getString(R.string.error_camera_generic));
         }
-        catch (NullPointerException e)
-        {
-            e.printStackTrace();
-
+        catch (NullPointerException e){
+            mCameraOpenCloseLock.release();
+            showError(getString(R.string.error_camera_generic));
         }
         catch (InterruptedException e) {
-            throw new RuntimeException("Interrupted while trying to lock camera opening.");
+            mCameraOpenCloseLock.release();
+            showError(getString(R.string.error_camera_generic));
         }
     }
 
-    /**
-     * {@link CameraDevice.StateCallback} is called when {@link CameraDevice} changes its status.
-     */
-    private CameraDevice.StateCallback mStateCallback = new CameraDevice.StateCallback() {
+    private final CameraDevice.StateCallback mStateCallback = new CameraDevice.StateCallback() {
 
         @Override
         public void onOpened(CameraDevice cameraDevice) {
-            //Log.d(TAG, "onOpened");
+            Log.d(TAG, "onOpened("+cameraDevice+")");
             mCameraOpenCloseLock.release();
             mCameraDevice = cameraDevice;
             mCameraIsOpen = true;
@@ -226,7 +168,7 @@ public class CameraFragment extends Fragment {
 
         @Override
         public void onDisconnected(CameraDevice cameraDevice) {
-            //Log.d(TAG, "onDisconnected");
+            Log.d(TAG, "onDisconnected("+cameraDevice+")");
             mCameraOpenCloseLock.release();
             cameraDevice.close();
             mCameraDevice = null;
@@ -235,36 +177,26 @@ public class CameraFragment extends Fragment {
 
         @Override
         public void onError(CameraDevice cameraDevice, int error) {
-            //Log.d(TAG, "onError - "+error);
+            Log.d(TAG, "onError("+cameraDevice+", "+error+")");
             mCameraOpenCloseLock.release();
             cameraDevice.close();
             mCameraDevice = null;
             mCameraIsOpen = false;
-
-            Activity activity = getActivity();
-            if (null != activity) {
-                activity.finish();
-            }
+            showError(getString(R.string.error_camera_generic));
         }
     };
 
-    /**
-     * chooseVideoSize makes a few assumptions for the sake of our use-case.
-     *
-     * @param choices The list of available sizes
-     * @return The video size
-     */
-    private Size chooseVideoSize(Size[] choices)
+    private Size choosePreviewSize(Size[] choices)
     {
-        //Log.d(TAG, "chooseVideoSize");
-        int sw = mSurfaceView.getWidth(); //surface width
-        int sh = mSurfaceView.getHeight(); //surface height
+        Log.d(TAG, "chooseVideoSize("+Arrays.toString(choices)+")");
+        final int sw = mSurfaceView.getWidth(); //surface width
+        final int sh = mSurfaceView.getHeight(); //surface height
 
-        //Log.d(TAG, "Surface size : "+sw+"x"+sh);
+        Log.d(TAG, "Surface size : "+sw+"x"+sh);
 
         mPreviewSurfaceAspectRatio = (float)sw / sh;
 
-        //Log.d(TAG, "chooseVideoSize() for landscape:" + (mPreviewSurfaceAspectRatio > 1.f) + " aspect: " + mPreviewSurfaceAspectRatio + " : " + Arrays.toString(choices) );
+        Log.d(TAG, "chooseVideoSize() for landscape:" + (mPreviewSurfaceAspectRatio > 1.f) + " aspect: " + mPreviewSurfaceAspectRatio);
 
         //rather than in-lining returns, use this size as placeholder so we can calc aspectratio upon completion
         Size sizeToReturn = null;
@@ -303,7 +235,7 @@ public class CameraFragment extends Fragment {
                 //check for potential perfect matches (usually full screen surfaces)
                 for(Size potential : potentials)
                     if(potential.getHeight() == sw) {
-                        //Log.d(TAG, "potential : " + potential);
+                        Log.d(TAG, "potential : " + potential);
                         sizeToReturn = potential;
                         break;
                     }
@@ -337,11 +269,8 @@ public class CameraFragment extends Fragment {
         return sizeToReturn;
     }
 
-    /**
-     * close camera when not in use/pausing/leaving
-     */
     public void closeCamera() {
-        //Log.d(TAG, "closeCamera");
+        Log.d(TAG, "closeCamera()");
         try {
             mCameraOpenCloseLock.acquire();
             if (null != mCameraDevice) {
@@ -350,17 +279,19 @@ public class CameraFragment extends Fragment {
                 mCameraIsOpen = false;
             }
         } catch (InterruptedException e) {
-            throw new RuntimeException("Interrupted while trying to lock camera closing.");
+            e.printStackTrace();
         } finally {
             mCameraOpenCloseLock.release();
         }
     }
 
 
-    private CameraCaptureSession.CaptureCallback mCaptureCallback = new CameraCaptureSession.CaptureCallback() {
+    private final CameraCaptureSession.CaptureCallback mCaptureCallback = new CameraCaptureSession.CaptureCallback() {
 
+        // Current frame count
         private int mFrameCount = 0;
 
+        // Reference to the CapturePreviewBuilder instance
         private final CapturePreviewBuilder mCapturePreviewBuilder = CapturePreviewBuilder.getInstance();
 
         @Override
@@ -378,38 +309,9 @@ public class CameraFragment extends Fragment {
 
     };
 
-    /**
-     * Start the camera preview.
-     */
-    protected void startPreview()
-    {
-        try {
-            final CameraManager manager = (CameraManager) getActivity().getSystemService(Context.CAMERA_SERVICE);
-            CameraCharacteristics characteristics = manager.getCameraCharacteristics(mCameraDevice.getId());
-
-            final SensorManager sensorManager = (SensorManager) getActivity().getSystemService(Context.SENSOR_SERVICE);
-            if(mAccelerometer == null) {
-                mAccelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-            }
-
-            mMaxZoom =  characteristics.get(CameraCharacteristics.SCALER_AVAILABLE_MAX_DIGITAL_ZOOM);
-            mCurrentZoom = 1.0f;
-            mActiveArraySize = characteristics.get(CameraCharacteristics.SENSOR_INFO_ACTIVE_ARRAY_SIZE);
-            mCurrentZoomRect = new Rect(mActiveArraySize);
-
-            this.setCaptureCallback(mCaptureCallback);
-
-            if(mAccelerometer != null) {
-                sensorManager.registerListener(CapturePreviewBuilder.getInstance(), mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-            }
-
-        }catch (CameraAccessException cae){
-            cae.printStackTrace();
-        }
-
-        //Log.d(TAG, "startPreview");
-        if (null == mCameraDevice || null == mPreviewSize) {
-            //if (null == mCameraDevice || !mTextureView.isAvailable() || null == mPreviewSize) {
+    protected void startPreview(){
+        Log.d(TAG, "startPreview()");
+        if (null == mCameraDevice || null == mPreviewSize || !mSurfaceView.getHolder().getSurface().isValid()) {
             return;
         }
         try {
@@ -422,6 +324,12 @@ public class CameraFragment extends Fragment {
             Surface previewSurface = new Surface(mPreviewSurface);
             surfaces.add(previewSurface);
             mPreviewBuilder.addTarget(previewSurface);
+
+            // Settings
+            mPreviewBuilder.set(CaptureRequest.CONTROL_CAPTURE_INTENT, CaptureRequest.CONTROL_CAPTURE_INTENT_VIDEO_SNAPSHOT); // High quality video
+            mPreviewBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF); // No Flash (don't bother animals)
+            mPreviewBuilder.set(CaptureRequest.STATISTICS_FACE_DETECT_MODE, CaptureRequest.STATISTICS_FACE_DETECT_MODE_OFF); // Faces using OpenCV outside
+            mPreviewBuilder.set(CaptureRequest.CONTROL_AE_ANTIBANDING_MODE, CaptureRequest.CONTROL_AE_ANTIBANDING_MODE_OFF); // Outside purpose
 
             mCameraDevice.createCaptureSession(surfaces, new CameraCaptureSession.StateCallback() {
 
@@ -439,111 +347,62 @@ public class CameraFragment extends Fragment {
                         Toast.makeText(activity, "CaptureSession Config Failed", Toast.LENGTH_SHORT).show();
                     }
                 }
-            }, mBackgroundHandler);
+            }, mRendererHandler);
         }
         catch (CameraAccessException e) {
-            e.printStackTrace();
+            showError(getString(R.string.error_camera_generic));
         }
     }
 
 
-    /**
-     * Update the camera preview. {@link #startPreview()} needs to be called in advance.
-     */
     protected void updatePreview() {
-        //Log.d(TAG, "updatePreview");
+        Log.d(TAG, "updatePreview()");
         if (null == mCameraDevice) {
             return;
         }
         try {
-            if(!bIsPaused) {
+            if(!mIsPaused) {
                 final Activity activity = getActivity();
                 if (null == activity || activity.isFinishing()) {
                     return;
                 }
 
-                //Settings
-                mPreviewBuilder.set(CaptureRequest.CONTROL_CAPTURE_INTENT, CaptureRequest.CONTROL_CAPTURE_INTENT_VIDEO_SNAPSHOT); // High quality video
-                mPreviewBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF); // No Flash (don't bother animals)
-                mPreviewBuilder.set(CaptureRequest.STATISTICS_FACE_DETECT_MODE, CaptureRequest.STATISTICS_FACE_DETECT_MODE_OFF); // Faces using OpenCV outside
-                mPreviewBuilder.set(CaptureRequest.CONTROL_AE_ANTIBANDING_MODE, CaptureRequest.CONTROL_AE_ANTIBANDING_MODE_OFF); // Outside purpose
-
-                //Zoom
-                if(mCurrentZoom != 1.0f) {
-                    mCurrentZoomRect.left = mActiveArraySize.centerX() - (int) ((mActiveArraySize.right / mCurrentZoom) / 2);
-                    mCurrentZoomRect.top = mActiveArraySize.centerY() - (int) ((mActiveArraySize.bottom / mCurrentZoom) / 2);
-                    mCurrentZoomRect.right = mCurrentZoomRect.left + (int) (mActiveArraySize.right / mCurrentZoom);
-                    mCurrentZoomRect.bottom = mCurrentZoomRect.top + (int) (mActiveArraySize.bottom / mCurrentZoom);
-                    mPreviewBuilder.set(CaptureRequest.SCALER_CROP_REGION, mCurrentZoomRect);
+                // Events & Sensors
+                final Sensor accelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+                if(accelerometer != null) {
+                    mSensorManager.registerListener(CapturePreviewBuilder.getInstance(), accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
                 }
-
                 this.mSurfaceView.setOnTouchListener(CapturePreviewBuilder.getInstance());
 
-                if (mCaptureCallback == null) {
-                    mCaptureCallback = new CameraCaptureSession.CaptureCallback() {
-                        @Override
-                        public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request, TotalCaptureResult result) {
-                            super.onCaptureCompleted(session, request, result);
-                        }
-                    };
-                }
-                mPreviewSession.setRepeatingRequest(mPreviewBuilder.build(), mCaptureCallback, mBackgroundHandler);
+                mPreviewSession.setRepeatingRequest(mPreviewBuilder.build(), mCaptureCallback, mRendererHandler);
             }
             else{
+                mSensorManager.unregisterListener(CapturePreviewBuilder.getInstance());
                 mPreviewSession.abortCaptures();
             }
         }
         catch (CameraAccessException e) {
-            e.printStackTrace();
+            showError(getString(R.string.error_camera_generic));
         }
     }
 
-    @Override
-    public void onPause() {
-        super.onPause();
-
-        final SensorManager sensorManager = (SensorManager) getActivity().getSystemService(Context.SENSOR_SERVICE);
-        sensorManager.unregisterListener(CapturePreviewBuilder.getInstance());
-    }
-
     public void setPaused(boolean isPaused){
-        bIsPaused = isPaused;
+        Log.d(TAG, "setPaused("+isPaused+")");
+        mIsPaused = isPaused;
         updatePreview();
     }
 
     public boolean isPaused(){
-        return bIsPaused;
+        return mIsPaused;
     }
 
-    public void setZoom(float zoomFactor){
-        mCurrentZoom = Math.abs(Math.min(zoomFactor, mMaxZoom));
-        this.updatePreview();
+    public void setRendererHandler(final Handler rendererHandler) {
+        Log.d(TAG, "setRendererHandler("+rendererHandler+")");
+        mRendererHandler = rendererHandler;
     }
 
-    /**
-     * Allow to set custom CameraCaptureSession.CaptureCallback
-     *
-     * @param captureCallback The CameraCaptureSession.CaptureCallback  to set
-     */
-    public void setCaptureCallback(CameraCaptureSession.CaptureCallback captureCallback){
-        mCaptureCallback = captureCallback;
-    }
-
-    /**
-     * Set external BG handler for capture session callbacks
-     *
-     * @param backgroundHandler
-     */
-    public void setBackgroundHandler(Handler backgroundHandler) {
-        this.mBackgroundHandler = backgroundHandler;
-    }
-
-    /**
-     * set the surfaceView to render the camera preview inside
-     * @param surfaceView
-     */
     public void setSurfaceView(SurfaceView surfaceView) {
-        //Log.d(TAG, "setSurfaceView");
+        Log.d(TAG, "setSurfaceView("+surfaceView+")");
         mSurfaceView = surfaceView;
     }
 
@@ -551,43 +410,27 @@ public class CameraFragment extends Fragment {
         return mSurfaceView;
     }
 
-    /**
-     * Get the current camera type. Either {@link #CAMERA_FORWARD} or {@link #CAMERA_PRIMARY}
-     * @return current camera type
-     */
-    public int getCurrentCameraType(){
-        //Log.d(TAG, "getCurrentCameraType");
-        return mCameraToUse;
+    public void setMainHandler(final Handler mainHandler){
+        Log.d(TAG, "setMainHandler("+mainHandler+")");
+        mMainHandler = mainHandler;
     }
 
-    /**
-     * Set which camera to use, defaults to {@link #CAMERA_PRIMARY}.
-     * @param camera_id can also be {@link #CAMERA_FORWARD} for forward facing, but use primary if that fails.
-     */
-    public void setCameraToUse(int camera_id)
-    {
-        //Log.d(TAG, "setCameraToUse - " + camera_id);
-        mCameraToUse = camera_id;
+    private void showError(final String message){
+        if(mMainHandler != null){
+            mMainHandler.sendMessage(mMainHandler.obtainMessage(Messaging.SYSTEM_ERROR, message));
+        }
     }
 
-    /**
-     * Set the texture that we'll be drawing our camera preview to. This is created from our TextureView
-     * in our Renderer to be used with our shaders.
-     * @param previewSurface
-     */
     public void setPreviewTexture(SurfaceTexture previewSurface) {
-        //Log.d(TAG, "setPreviewTexture");
+        Log.d(TAG, "setPreviewTexture()");
         this.mPreviewSurface = previewSurface;
     }
 
     public void setOnViewportSizeUpdatedListener(OnViewportSizeUpdatedListener listener) {
-        //Log.d(TAG, "setOnViewportSizeUpdatedListener");
+        Log.d(TAG, "setOnViewportSizeUpdatedListener()");
         this.mOnViewportSizeUpdatedListener = listener;
     }
 
-    /**
-     * Listener interface that will send back the newly created {@link Size} of our camera output
-     */
     public interface OnViewportSizeUpdatedListener {
         void onViewportSizeUpdated(Size surfaceSize, Size previewSize);
     }

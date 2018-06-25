@@ -29,6 +29,7 @@
         ERRORS
      -->
     <string name="error_camera_generic">An error has occured while using camera !</string>
+    <string name="error_camera_not_found">Failed to find a suitable camera !</string>
     <string name="error_camera_not_supported">Camera2 not supported by device !</string>
     <string name="error_camera_timeout">Time out waiting to lock camera opening !</string>
 

@@ -22,11 +22,17 @@ public class SnapshotValidator extends HandlerThread implements Handler.Callback
     // Main handler
     private Handler mMainHandler;
 
-    /**
-     * Constructor
-     */
-    public SnapshotValidator() {
+    private static SnapshotValidator sSnapshotValidatorInstance;
+
+    private SnapshotValidator() {
         super(THREAD_NAME);
+    }
+
+    public static SnapshotValidator getInstance(){
+        if(sSnapshotValidatorInstance == null){
+            sSnapshotValidatorInstance = new SnapshotValidator();
+        }
+        return sSnapshotValidatorInstance;
     }
 
     @Override
@@ -39,8 +45,7 @@ public class SnapshotValidator extends HandlerThread implements Handler.Callback
             mMainHandler.sendMessage(mMainHandler.obtainMessage(Messaging.SYSTEM_CONNECT_VALIDATOR, mHandler));
         }
         else{
-            Log.e(TAG, "Main UI handler reference must be set before start()");
-            this.quit();
+            throw new RuntimeException("Main UI handler reference must be set before start()");
         }
 
     }
@@ -49,7 +54,7 @@ public class SnapshotValidator extends HandlerThread implements Handler.Callback
     public boolean handleMessage(Message message) {
         Log.d(TAG, "handleMessage(" + message+ ")");
         switch (message.what){
-            case Messaging.VALIDATOR_REQUEST :
+            case Messaging.OPENCV_REQUEST :
                 validateSnaphot((Messaging.Snapshot) message.obj);
                 break;
             case Messaging.SYSTEM_SHUTDOWN:
@@ -73,7 +78,7 @@ public class SnapshotValidator extends HandlerThread implements Handler.Callback
     protected void shutdown(){
         Log.d(TAG, "shutdown()");
         quitSafely();
-        // TODO free resources
+        sSnapshotValidatorInstance = null;
     }
 
     public void setMainHandler(final Handler mainHandler) {

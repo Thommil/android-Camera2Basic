@@ -15,127 +15,97 @@ import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.View;
 
+import com.thommil.animalsgo.data.Messaging;
 import com.thommil.animalsgo.fragments.CameraFragment;
-import com.thommil.animalsgo.opencv.SnapshotValidator;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
+import java.util.Arrays;
 
-/** *
- * Base camera rendering class. Responsible for rendering to proper window contexts, as well as
- * recording video with built-in media recorder.
- *
- * Subclass this and add any kind of fun stuff u want, new shaders, textures, uniforms - go to town!
- *
- * TODO Android < 6 -> Fix Ratio (using gravity ?)
- *
- */
 
-public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFrameAvailableListener, CameraFragment.OnViewportSizeUpdatedListener, Handler.Callback, View.OnTouchListener {
+public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFrameAvailableListener, CameraFragment.OnViewportSizeUpdatedListener, Handler.Callback {
 
     private static final String TAG = "A_GO/CameraRenderer";
     private static final String THREAD_NAME = "CameraRendererThread";
 
-    /**
-     * if you create new files, just override these defaults in your subclass and
-     * don't edit the {@link #vertexShaderCode} and {@link #fragmentShaderCode} variables
-     */
-    protected String DEFAULT_FRAGMENT_SHADER = "camera.frag.glsl";
+    private final String DEFAULT_FRAGMENT_SHADER = "camera.frag.glsl";
+    private final String DEFAULT_VERTEX_SHADER = "camera.vert.glsl";
 
-    protected String DEFAULT_VERTEX_SHADER = "camera.vert.glsl";
-
-    /**
-     * Current context for use with utility methods
-     */
+    // Current context for use with utility methods
     protected Context mContext;
 
-    protected int mSurfaceWidth, mSurfaceHeight;
+    // Underlying surface dimensions
+    private int mSurfaceWidth, mSurfaceHeight;
 
-    protected float mSurfaceAspectRatio;
+    // Underlying surface ratio
+    private float mSurfaceAspectRatio;
 
-    /**
-     * main texture for display, based on TextureView that is created in activity or fragment
-     * and passed in after onSurfaceTextureAvailable is called, guaranteeing its existence.
-     */
-    protected Surface mSurface;
+    // main texture for display, based on TextureView that is created in activity or fragment
+    // and passed in after onSurfaceTextureAvailable is called, guaranteeing its existence.
+    private Surface mSurface;
 
-    /**
-     * EGLCore used for creating {@link WindowSurface}s for preview and recording
-     */
-    protected EglCore mEglCore;
+    // EGLCore used for creating WindowSurface for preview
+    private EglCore mEglCore;
 
-    /**
-     * Primary {@link WindowSurface} for rendering to screen
-     */
-    protected WindowSurface mWindowSurface;
+    // Primary WindowSurface for rendering to screen
+    private WindowSurface mWindowSurface;
 
-    /**
-     * Texture created for GLES rendering of camera data
-     */
-    protected SurfaceTexture mPreviewTexture;
+    // Texture created for GLES rendering of camera data
+    private SurfaceTexture mPreviewTexture;
 
-    /**
-     * if you override these in ctor of subclass, loader will ignore the files listed above
-     */
-    protected String vertexShaderCode;
+    // shaders identifier
+    private int mCameraShaderProgram;
 
-    protected String fragmentShaderCode;
-
-    /**
-     * Basic mesh rendering code
-     */
-    protected static float squareSize = 1.0f;
-
-    protected static float squareCoords[] = {
-            -squareSize, squareSize, // 0.0f,     // top left
-            squareSize, squareSize, // 0.0f,   // top right
-            -squareSize, -squareSize, // 0.0f,   // bottom left
-            squareSize, -squareSize, // 0.0f,   // bottom right
+    // Basic mesh rendering code
+    private static final float SQUARE_SIZE = 1.0f;
+    private static final float SQUARE_COORDS[] = {
+            -SQUARE_SIZE, SQUARE_SIZE, // 0.0f,     // top left
+            SQUARE_SIZE, SQUARE_SIZE, // 0.0f,   // top right
+            -SQUARE_SIZE, -SQUARE_SIZE, // 0.0f,   // bottom left
+            SQUARE_SIZE, -SQUARE_SIZE, // 0.0f,   // bottom right
     };
+    private static final short DRAW_ORDER[] = {0, 1, 2, 1, 3, 2};
 
-    protected static short drawOrder[] = {0, 1, 2, 1, 3, 2};
+    // Texture coord buffer
+    private FloatBuffer mTextureBuffer;
 
-    protected FloatBuffer textureBuffer;
-
-    protected float textureCoords[] = {
+    // Texture coords values (can be modified)
+    private float mTextureCoords[] = {
             0.0f, 1.0f,
             1.0f, 1.0f,
             0.0f, 0.0f,
             1.0f, 0.0f,
     };
 
-    protected int mCameraShaderProgram;
+    // Shader handle for texture coordinates
+    private int textureCoordinateHandle;
 
-    protected FloatBuffer vertexBuffer;
+    // Shader handle for texture ID
+    private int mTextureParamHandle;
 
-    protected ShortBuffer drawListBuffer;
+    // Shader handle for texture tranform matrix
+    private int mTextureTranformHandle;
 
-    protected int textureCoordinateHandle;
+    // Texture verrices buffer
+    private FloatBuffer mVertexBuffer;
 
-    protected int positionHandle;
+    // Texture vertices order buffer
+    private ShortBuffer mDrawListBuffer;
 
-    protected long lastTime = 0;
-    protected long lastLog = 0;
-    protected int fps = 0;
+    // GSLG handle for texture vertices
+    private int mPositionHandle;
 
-    /**
-     * Cam texture ID
-     */
+    // Cam texture ID
     private int mCamTextureId;
 
-    /**
-     * matrix for transforming our camera texture, available immediately after {@link #mPreviewTexture}s
-     * {@code updateTexImage()} is called in our main {@link #draw()} loop.
-     */
-    protected float[] mCameraTransformMatrix = new float[16];
+    // matrix for transforming our camera texture, available immediately after PreviewTexture.updateTexImage()
+    private final float[] mCameraTransformMatrix = new float[16];
 
-    /**
-     * Handler for communcation with the UI thread. Implementation below at
-     */
-    protected Handler mHandler;
+    // Handler for communcation with the UI thread. Implementation below at
+    private Handler mHandler;
 
     // Main handler
     private Handler mMainHandler;
@@ -151,81 +121,21 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
      */
     protected CameraFragment mCameraFragment;
 
-    private String mFragmentShaderPath;
-    private String mVertexShaderPath;
-
-    private static final int SNAPSHOT_SCORE_THRESHOLD = 70;
-
-    private final Handler mainHandler;
-
-    public final static int STATE_PREVIEW = 0x00;
-    public final static int STATE_START_ANALYZE = 0x01;
-    public final static int STATE_ANALYZING = 0X02;
-    public final static int STATE_CONFIRM_SNAPSHOT = 0X04;
-
-    public final static int STATE_SHUTDOWN = 0X08;
-
-    private int mState;
 
     public CameraRenderer(Context context, Surface surface, int width, int height) {
         super(THREAD_NAME);
-        init(context, surface, width, height, DEFAULT_FRAGMENT_SHADER, DEFAULT_VERTEX_SHADER);
-        //Log.d(TAG, "AGCameraRenderer");
-        mState = STATE_PREVIEW;
-        mainHandler = new Handler(Looper.getMainLooper());
-    }
 
-    private void init(Context context, Surface surface, int width, int height, String fragPath, String vertPath)
-    {
-        //Log.d(TAG, "init - "+width+", "+height+", "+fragPath+", "+vertPath);
         this.mContext = context;
         this.mSurface = surface;
 
         this.mSurfaceWidth = width;
         this.mSurfaceHeight = height;
         this.mSurfaceAspectRatio = (float)width / height;
-
-        this.mFragmentShaderPath = fragPath;
-        this.mVertexShaderPath = vertPath;
-
     }
 
-    protected void initialize() {
-        //Log.d(TAG, "initialize");
-        setupCameraFragment();
-
-        if(fragmentShaderCode == null || vertexShaderCode == null) {
-            loadFromShadersFromAssets(mFragmentShaderPath, mVertexShaderPath);
-        }
-    }
-
-    protected void setupCameraFragment() {
-        //Log.d(TAG, "setupCameraFragment");
-        if(mCameraFragment == null) {
-            throw new RuntimeException("CameraFragment is null! Please call setCameraFragment prior to initialization.");
-        }
-        }
-
-    protected void loadFromShadersFromAssets(String pathToFragment, String pathToVertex)
-    {
-        //Log.d(TAG, "loadFromShadersFromAssets - "+pathToFragment+", "+pathToVertex);
-        try {
-            fragmentShaderCode = ShaderUtils.getStringFromFileInAssets(mContext, pathToFragment);
-            vertexShaderCode = ShaderUtils.getStringFromFileInAssets(mContext, pathToVertex);
-        }
-        catch (IOException e) {
-            Log.e(TAG, "loadFromShadersFromAssets() failed. Check paths to assets.\n" + e.getMessage());
-        }
-    }
-
-
-    /**
-     * Initialize all necessary components for GLES rendering, creating window surfaces for drawing
-     * the preview as well as the surface that will be used by MediaRecorder for recording
-     */
     public void initGL() {
-        //Log.d(TAG, "initGL");
-        mEglCore = new EglCore(null, /*EglCore.FLAG_RECORDABLE |*/ EglCore.FLAG_TRY_GLES3);
+        Log.d(TAG, "initGL()");
+        mEglCore = new EglCore(null, EglCore.FLAG_TRY_GLES3);
 
         //create preview surface
         mWindowSurface = new WindowSurface(mEglCore, mSurface, true);
@@ -235,7 +145,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     }
 
     protected void initGLComponents() {
-        //Log.d(TAG, "initGLComponents");
+        Log.d(TAG, "initGLComponents()");
         onPreSetupGLComponents();
 
         setupVertexBuffer();
@@ -247,12 +157,8 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     }
 
 
-    // ------------------------------------------------------------
-    // deinit
-    // ------------------------------------------------------------
-
     public void deinitGL() {
-        //Log.d(TAG, "deinitGL");
+        Log.d(TAG, "deinitGL()");
         deinitGLComponents();
 
         mWindowSurface.release();
@@ -262,7 +168,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     }
 
     protected void deinitGLComponents() {
-        //Log.d(TAG, "deinitGLComponents");
+        Log.d(TAG, "deinitGLComponents()");
         GLES20.glDeleteTextures(1, new int[]{mCamTextureId}, 0);
         GLES20.glDeleteProgram(mCameraShaderProgram);
 
@@ -270,23 +176,18 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         mPreviewTexture.setOnFrameAvailableListener(null);
     }
 
-    // ------------------------------------------------------------
-    // setup
-    // ------------------------------------------------------------
-
-
     @Override
     public void onViewportSizeUpdated(Size surfaceSize, Size previewSize) {
-        //Log.d(TAG, "onViewportSizeUpdated - " +surfaceSize+","+previewSize);
-        float surfaceRatio = (float)surfaceSize.getWidth()/(float)surfaceSize.getHeight();
-        float previewRatio = (float)previewSize.getHeight()/(float)previewSize.getWidth();
+        Log.d(TAG, "onViewportSizeUpdated(" +surfaceSize+", "+previewSize+")");
+        final float surfaceRatio = (float)surfaceSize.getWidth()/(float)surfaceSize.getHeight();
+        final float previewRatio = (float)previewSize.getHeight()/(float)previewSize.getWidth();
 
-        //Log.d(TAG, "Ratios - S : " +surfaceRatio+", P : "+previewRatio);
+        Log.d(TAG, "Ratios - S : " +surfaceRatio+", P : "+previewRatio);
 
         //We must crop preview vertically
         if(previewRatio > surfaceRatio){
-            float delta = (previewRatio - surfaceRatio) / 2f;
-            textureCoords = new float[]{
+            final float delta = (previewRatio - surfaceRatio) / 2f;
+            mTextureCoords = new float[]{
                     delta, 1.0f,
                     1.0f-delta, 1.0f,
                     delta, 0.0f,
@@ -295,8 +196,8 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         }
         //We must crop preview horizontally
         else{
-            float delta = (surfaceRatio - previewRatio ) / 2f;
-            textureCoords = new float[]{
+            final float delta = (surfaceRatio - previewRatio ) / 2f;
+            mTextureCoords = new float[]{
                     0.0f, 1.0f-delta,
                     1.0f, 1.0f-delta,
                     0.0f, delta,
@@ -304,55 +205,48 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
             };
         }
 
-        //Log.d(TAG, "TextureCoords : " + Arrays.toString(textureCoords));
+        Log.d(TAG, "TextureCoords : " + Arrays.toString(mTextureCoords));
 
         setupCameraTextureCoords();
     }
 
-    /**
-     * override this method if there's anything else u want to accomplish before
-     * the main camera setup gets underway
-     */
     protected void onPreSetupGLComponents() {
-        //Log.d(TAG, "onPreSetupGLComponents");
+        Log.d(TAG, "onPreSetupGLComponents()");
         GLES20.glViewport(0, 0, mSurfaceWidth, mSurfaceHeight);
         GLES20.glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+        GLES20.glDisable(GLES20.GL_BLEND);
     }
 
     protected void setupVertexBuffer() {
-        //Log.d(TAG, "setupVertexBuffer");
+        Log.d(TAG, "setupVertexBuffer()");
         // Draw list buffer
-        ByteBuffer dlb = ByteBuffer.allocateDirect(drawOrder.length * 2);
+        ByteBuffer dlb = ByteBuffer.allocateDirect(DRAW_ORDER.length * Short.BYTES);
         dlb.order(ByteOrder.nativeOrder());
-        drawListBuffer = dlb.asShortBuffer();
-        drawListBuffer.put(drawOrder);
-        drawListBuffer.position(0);
+        mDrawListBuffer = dlb.asShortBuffer();
+        mDrawListBuffer .put(DRAW_ORDER);
+        mDrawListBuffer .position(0);
 
         // Initialize the texture holder
-        ByteBuffer bb = ByteBuffer.allocateDirect(squareCoords.length * 4);
+        ByteBuffer bb = ByteBuffer.allocateDirect(SQUARE_COORDS.length * Float.BYTES);
         bb.order(ByteOrder.nativeOrder());
-        vertexBuffer = bb.asFloatBuffer();
-        vertexBuffer.put(squareCoords);
-        vertexBuffer.position(0);
+        mVertexBuffer = bb.asFloatBuffer();
+        mVertexBuffer.put(SQUARE_COORDS);
+        mVertexBuffer.position(0);
     }
 
     protected void setupCameraTextureCoords(){
-        //Log.d(TAG, "setupCameraTextureCoord");
-        ByteBuffer texturebb = ByteBuffer.allocateDirect(textureCoords.length * 4);
+        Log.d(TAG, "setupCameraTextureCoord()");
+        ByteBuffer texturebb = ByteBuffer.allocateDirect(mTextureCoords.length * Float.BYTES);
         texturebb.order(ByteOrder.nativeOrder());
 
-        textureBuffer = texturebb.asFloatBuffer();
-        textureBuffer.put(textureCoords);
-        textureBuffer.position(0);
+        mTextureBuffer = texturebb.asFloatBuffer();
+        mTextureBuffer.put(mTextureCoords);
+        mTextureBuffer.position(0);
     }
 
-    /**
-     * Remember that Android's camera api returns camera texture not as {@link GLES20#GL_TEXTURE_2D}
-     * but rather as {@link GLES11Ext#GL_TEXTURE_EXTERNAL_OES}, which we bind here
-     */
     protected void setupCameraTexture() {
-        //Log.d(TAG, "setupCameraTexture");
+        Log.d(TAG, "setupCameraTexture()");
 
         int[] texturesId = new int[1];
         GLES20.glGenTextures(1, texturesId , 0);
@@ -368,84 +262,89 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         mPreviewTexture.setOnFrameAvailableListener(this);
     }
 
-    /**
-     * Handling this manually here but check out another impl at {@link GlUtil#createProgram(String, String)}
-     */
     protected void setupShaders() {
-        //Log.d(TAG, "setupShaders");
-        int vertexShaderHandle = GLES20.glCreateShader(GLES20.GL_VERTEX_SHADER);
-        GLES20.glShaderSource(vertexShaderHandle, vertexShaderCode);
-        GLES20.glCompileShader(vertexShaderHandle);
-        checkGlError("Vertex shader compile");
+        Log.d(TAG, "setupShaders()");
+        try {
+            int vertexShaderHandle = GLES20.glCreateShader(GLES20.GL_VERTEX_SHADER);
+            final String vertexShaderCode = ShaderUtils.getStringFromFileInAssets(mContext, DEFAULT_VERTEX_SHADER);
+            GLES20.glShaderSource(vertexShaderHandle, vertexShaderCode);
+            GLES20.glCompileShader(vertexShaderHandle);
+            checkGlError("Vertex shader compile");
 
-        //Log.d(TAG, "vertexShader info log:\n " + GLES20.glGetShaderInfoLog(vertexShaderHandle));
+            Log.d(TAG, "vertexShader info log:\n " + GLES20.glGetShaderInfoLog(vertexShaderHandle));
 
-        int fragmentShaderHandle = GLES20.glCreateShader(GLES20.GL_FRAGMENT_SHADER);
-        GLES20.glShaderSource(fragmentShaderHandle, fragmentShaderCode);
-        GLES20.glCompileShader(fragmentShaderHandle);
-        checkGlError("Pixel shader compile");
+            int fragmentShaderHandle = GLES20.glCreateShader(GLES20.GL_FRAGMENT_SHADER);
+            final String fragmentShaderCode = ShaderUtils.getStringFromFileInAssets(mContext, DEFAULT_FRAGMENT_SHADER);
+            GLES20.glShaderSource(fragmentShaderHandle, fragmentShaderCode);
+            GLES20.glCompileShader(fragmentShaderHandle);
+            checkGlError("Pixel shader compile");
 
-        //Log.d(TAG, "fragmentShader info log:\n " + GLES20.glGetShaderInfoLog(fragmentShaderHandle));
+            Log.d(TAG, "fragmentShader info log:\n " + GLES20.glGetShaderInfoLog(fragmentShaderHandle));
 
-        mCameraShaderProgram = GLES20.glCreateProgram();
-        GLES20.glAttachShader(mCameraShaderProgram, vertexShaderHandle);
-        GLES20.glAttachShader(mCameraShaderProgram, fragmentShaderHandle);
-        GLES20.glLinkProgram(mCameraShaderProgram);
-        checkGlError("Shader program compile");
+            mCameraShaderProgram = GLES20.glCreateProgram();
+            GLES20.glAttachShader(mCameraShaderProgram, vertexShaderHandle);
+            GLES20.glAttachShader(mCameraShaderProgram, fragmentShaderHandle);
+            GLES20.glLinkProgram(mCameraShaderProgram);
+            checkGlError("Shader program compile");
 
-        int[] status = new int[1];
-        GLES20.glGetProgramiv(mCameraShaderProgram, GLES20.GL_LINK_STATUS, status, 0);
-        if (status[0] != GLES20.GL_TRUE) {
-            String error = GLES20.glGetProgramInfoLog(mCameraShaderProgram);
-            Log.e("SurfaceTest", "Error while linking program:\n" + error);
+            int[] status = new int[1];
+            GLES20.glGetProgramiv(mCameraShaderProgram, GLES20.GL_LINK_STATUS, status, 0);
+            if (status[0] != GLES20.GL_TRUE) {
+                String error = GLES20.glGetProgramInfoLog(mCameraShaderProgram);
+                Log.e("SurfaceTest", "Error while linking program:\n" + error);
+            }
+
+            GLES20.glUseProgram(mCameraShaderProgram);
+            mTextureParamHandle = GLES20.glGetUniformLocation(mCameraShaderProgram, "camTexture");
+            mTextureTranformHandle = GLES20.glGetUniformLocation(mCameraShaderProgram, "camTextureTransform");
+            textureCoordinateHandle = GLES20.glGetAttribLocation(mCameraShaderProgram, "camTexCoordinate");
+            mPositionHandle = GLES20.glGetAttribLocation(mCameraShaderProgram, "position");
+        }catch(IOException ioe){
+            throw new RuntimeException("Failed to find shaders source.");
         }
     }
 
-    /**
-     * called when all setup is complete on basic GL stuffs
-     * override for adding textures and other shaders and make sure to call
-     * super so that we can let them know we're done
-     */
     protected void onSetupComplete() {
-        //Log.d(TAG, "onSetupComplete");
+        Log.d(TAG, "onSetupComplete()");
         mOnRendererReadyListener.onRendererReady();
     }
 
     @Override
     public synchronized void start() {
-        //Log.d(TAG, "start");
-        initialize();
+        Log.d(TAG, "start()");
+        if(mCameraFragment == null) {
+            throw new RuntimeException("CameraFragment is null! Please call setCameraFragment prior to initialization.");
+        }
 
-        if(mOnRendererReadyListener == null)
+        if(mOnRendererReadyListener == null) {
             throw new RuntimeException("OnRenderReadyListener is not set! Set listener prior to calling start()");
+        }
+
+        if(mMainHandler == null){
+            throw new RuntimeException("Main UI handler reference must be set before start()");
+        }
 
         super.start();
     }
 
 
-    /**
-     * primary loop - this does all the good things
-     */
     @Override
-    public void run()
-    {
-        //Log.d(TAG, "run");
+    public void run() {
+        Log.d(TAG, "run()");
 
         Looper.prepare();
 
         //create handler for communication from UI
         mHandler = new Handler(Looper.myLooper(), this);
+        mMainHandler.sendMessage(mMainHandler.obtainMessage(Messaging.SYSTEM_CONNECT_RENDERER, mHandler));
 
         //Associated GL Thread to capture completion
-        mCameraFragment.setBackgroundHandler(mHandler);
+        mCameraFragment.setRendererHandler(mHandler);
 
         //initialize all GL on this context
         initGL();
 
-        lastTime = System.currentTimeMillis();
-        lastLog = lastTime;
-
-        //LOOOOOOOOOOOOOOOOP
+        //Loop
         Looper.loop();
 
         //we're done here
@@ -456,124 +355,59 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
 
     @Override
-    public void onFrameAvailable(SurfaceTexture surfaceTexture)
-    {
-        boolean swapResult;
+    public synchronized void onFrameAvailable(SurfaceTexture surfaceTexture) {
+        mPreviewTexture.updateTexImage();
+        mPreviewTexture.getTransformMatrix(mCameraTransformMatrix);
 
-        synchronized (this)
-        {
-            mPreviewTexture.updateTexImage();
-            mPreviewTexture.getTransformMatrix(mCameraTransformMatrix);
+        draw();
+        mWindowSurface.makeCurrent();
 
-            draw();
-            mWindowSurface.makeCurrent();
-            swapResult = mWindowSurface.swapBuffers();
-
-            if (!swapResult) {
-                // This can happen if the Activity stops without waiting for us to halt.
-                Log.e(TAG, "swapBuffers failed, killing renderer thread");
-                shutdown();
-            }
+        if (!mWindowSurface.swapBuffers()) {
+            shutdown();
         }
     }
 
-    protected void logFPS(){
-        fps++;
-        long currentTime = System.currentTimeMillis();
-
-        if(currentTime - lastLog > 1000){
-            Log.i(TAG, "FPS : "+fps);
-            fps=0;
-            lastLog = currentTime;
-        }
-
-        lastTime = currentTime;
-    }
-
-    /**
-     * main draw routine
-     */
-    public void drawPreview()
-    {
+    public void draw() {
         //set shader
         GLES20.glUseProgram(mCameraShaderProgram);
-        int textureParamHandle = GLES20.glGetUniformLocation(mCameraShaderProgram, "camTexture");
-        int textureTranformHandle = GLES20.glGetUniformLocation(mCameraShaderProgram, "camTextureTransform");
-        textureCoordinateHandle = GLES20.glGetAttribLocation(mCameraShaderProgram, "camTexCoordinate");
-        positionHandle = GLES20.glGetAttribLocation(mCameraShaderProgram, "position");
 
-
-        GLES20.glEnableVertexAttribArray(positionHandle);
-        GLES20.glVertexAttribPointer(positionHandle, 2, GLES20.GL_FLOAT, false, 8, vertexBuffer);
+        GLES20.glEnableVertexAttribArray(mPositionHandle);
+        GLES20.glVertexAttribPointer(mPositionHandle, 2, GLES20.GL_FLOAT, false, 8, mVertexBuffer);
 
         //camera texture
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mCamTextureId);
-        GLES20.glUniform1i(textureParamHandle, 0);
+        GLES20.glUniform1i(mTextureParamHandle, 0);
 
         GLES20.glEnableVertexAttribArray(textureCoordinateHandle);
-        GLES20.glVertexAttribPointer(textureCoordinateHandle, 2, GLES20.GL_FLOAT, false, 8, textureBuffer);
+        GLES20.glVertexAttribPointer(textureCoordinateHandle, 2, GLES20.GL_FLOAT, false, 8, mTextureBuffer);
 
-        GLES20.glUniformMatrix4fv(textureTranformHandle, 1, false, mCameraTransformMatrix, 0);
+        GLES20.glUniformMatrix4fv(mTextureTranformHandle, 1, false, mCameraTransformMatrix, 0);
 
-        GLES20.glDrawElements(GLES20.GL_TRIANGLES, 6, GLES20.GL_UNSIGNED_SHORT, drawListBuffer);
+        GLES20.glDrawElements(GLES20.GL_TRIANGLES, 6, GLES20.GL_UNSIGNED_SHORT, mDrawListBuffer );
 
-        GLES20.glDisableVertexAttribArray(positionHandle);
+        GLES20.glDisableVertexAttribArray(mPositionHandle);
         GLES20.glDisableVertexAttribArray(textureCoordinateHandle);
     }
 
     @Override
     public boolean handleMessage(Message message) {
-        //Log.d(TAG, "handleMessage - " + message);
+        Log.d(TAG, "handleMessage(" + message);
 
         switch(message.what){
-
+            case Messaging.SYSTEM_SHUTDOWN:
+                shutdown();
+                break;
         }
         return true;
     }
 
-    @Override
-    public boolean onTouch(View view, MotionEvent motionEvent) {
-        // TODO Remove mock for UI events
-        mState = STATE_PREVIEW;
-        mainHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                mCameraFragment.setPaused(false);
-            }
-        });
-        return true;
-    }
 
-    public void draw() {
-        logFPS();
-        drawPreview();
-    }
-
-    private void drawHUD(){
-
-        //TODO HUD
-    }
-
-    private void drawConfirmSnapshot(){
-        mainHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                mCameraFragment.setPaused(true);
-                mCameraFragment.getSurfaceView().setOnTouchListener(CameraRenderer.this);
-            }
-        });
-    }
-
-    public void shutdown() {
-        //Log.d(TAG, "shutdown");
+    protected void shutdown() {
+        Log.d(TAG, "shutdown");
         mHandler.getLooper().quit();
     }
 
-    /**
-     * utility for checking GL errors
-     * @param op
-     */
     public void checkGlError(String op) {
         int error;
         while ((error = GLES20.glGetError()) != GLES20.GL_NO_ERROR) {
@@ -581,26 +415,31 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         }
     }
 
-    //getters and setters
     public SurfaceTexture getPreviewTexture() {
-        //Log.d(TAG, "getPreviewTexture");
+        Log.d(TAG, "getPreviewTexture()");
         return mPreviewTexture;
     }
 
     public void setOnRendererReadyListener(OnRendererReadyListener listener) {
-        //Log.d(TAG, "setOnRendererReadyListener");
+        Log.d(TAG, "setOnRendererReadyListener()");
         mOnRendererReadyListener = listener;
 
     }
 
 
     public void setCameraFragment(CameraFragment cameraFragment) {
-        //Log.d(TAG, "setCameraFragment");
+        Log.d(TAG, "setCameraFragment()");
         mCameraFragment = cameraFragment;
     }
 
     public void setMainHandler(final Handler mainHandler) {
         this.mMainHandler = mainHandler;
+    }
+
+    private void showError(final String message){
+        if(mMainHandler != null){
+            mMainHandler.sendMessage(mMainHandler.obtainMessage(Messaging.SYSTEM_ERROR, message));
+        }
     }
 
     /**

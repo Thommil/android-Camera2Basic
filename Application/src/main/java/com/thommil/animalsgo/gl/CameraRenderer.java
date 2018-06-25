@@ -34,7 +34,7 @@ import java.nio.ShortBuffer;
  *
  */
 
-public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFrameAvailableListener, CameraFragment.OnViewportSizeUpdatedListener, Handler.Callback, CameraFragment.OnCaptureCompletedListener, View.OnTouchListener {
+public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFrameAvailableListener, CameraFragment.OnViewportSizeUpdatedListener, Handler.Callback, View.OnTouchListener {
 
     private static final String TAG = "A_GO/CameraRenderer";
     private static final String THREAD_NAME = "CameraRendererThread";
@@ -137,6 +137,9 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
      */
     protected Handler mHandler;
 
+    // Main handler
+    private Handler mMainHandler;
+
     /**
      * Interface listener for some callbacks to the UI thread when rendering is setup and finished.
      */
@@ -155,12 +158,6 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
     private final Handler mainHandler;
 
-    private final SnapshotValidator snapshotValidator;
-
-    private final SnapshotValidator.Snapshot snapshotInstance;
-
-    private final CameraFragment.CaptureData mCurrentCaptureData;
-
     public final static int STATE_PREVIEW = 0x00;
     public final static int STATE_START_ANALYZE = 0x01;
     public final static int STATE_ANALYZING = 0X02;
@@ -176,10 +173,6 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         //Log.d(TAG, "AGCameraRenderer");
         mState = STATE_PREVIEW;
         mainHandler = new Handler(Looper.getMainLooper());
-        snapshotValidator = new SnapshotValidator();
-        snapshotInstance = new SnapshotValidator.Snapshot();
-        mCurrentCaptureData = new CameraFragment.CaptureData();
-        snapshotValidator.start();
     }
 
     private void init(Context context, Surface surface, int width, int height, String fragPath, String vertPath)
@@ -314,10 +307,6 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         //Log.d(TAG, "TextureCoords : " + Arrays.toString(textureCoords));
 
         setupCameraTextureCoords();
-
-        snapshotInstance.width = surfaceSize.getWidth();
-        snapshotInstance.height = surfaceSize.getHeight();
-        snapshotInstance.data = ByteBuffer.allocateDirect(snapshotInstance.width * snapshotInstance.height * 4);
     }
 
     /**
@@ -538,39 +527,9 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         //Log.d(TAG, "handleMessage - " + message);
 
         switch(message.what){
-            case SnapshotValidator.ANALYZE :
-                switch(mState){
-                    case STATE_ANALYZING :
-                        if (message.arg1 > SNAPSHOT_SCORE_THRESHOLD) {
-                            mState = STATE_CONFIRM_SNAPSHOT;
-                        }
-                        else{
-                            mState = STATE_PREVIEW;
-                        }
-                        break;
-                }
-                break;
+
         }
         return true;
-    }
-
-    @Override
-    public void onCaptureDataReceived(final CameraFragment.CaptureData captureData) {
-        //Log.d(TAG, "onCaptureDataReceived - "+captureData);
-        //TODO add HUD state and drawing
-        switch(mState){
-            //Only in PREVIEW
-            case STATE_PREVIEW :
-                mCurrentCaptureData.lightState = captureData.lightState;
-                mCurrentCaptureData.movementState = captureData.movementState;
-                mCurrentCaptureData.touchState = captureData.touchState;
-                mCurrentCaptureData.cameraState = captureData.cameraState;
-                System.arraycopy(captureData.gravity, 0, mCurrentCaptureData.gravity, 0, 3);
-                if(captureData.lightState & captureData.movementState & captureData.touchState & captureData.cameraState){
-                    mState = STATE_START_ANALYZE;
-                }
-                break;
-        }
     }
 
     @Override
@@ -588,29 +547,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
     public void draw() {
         logFPS();
-        switch(mState){
-            case STATE_PREVIEW :
-                drawPreview();
-                drawHUD();
-                break;
-            case STATE_START_ANALYZE :
-                drawPreview();
-                final Handler handler = snapshotValidator.getHandler();
-                snapshotInstance.callBackHandler = mHandler;
-                snapshotInstance.data.rewind();
-                //TODO only capture square inside HUD
-                GLES20.glReadPixels(0, 0, snapshotInstance.width, snapshotInstance.height, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, snapshotInstance.data);
-                GlUtil.checkGlError("glReadPixels");
-                snapshotInstance.data.rewind();
-                System.arraycopy(mCurrentCaptureData.gravity, 0, snapshotInstance.gravity, 0, 3);
-                handler.sendMessage(handler.obtainMessage(SnapshotValidator.ANALYZE, snapshotInstance));
-                drawHUD();
-                mState = STATE_ANALYZING;
-                break;
-            case STATE_CONFIRM_SNAPSHOT :
-                drawConfirmSnapshot();
-                break;
-        }
+        drawPreview();
     }
 
     private void drawHUD(){
@@ -630,8 +567,6 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
     public void shutdown() {
         //Log.d(TAG, "shutdown");
-        snapshotValidator.shutdown();
-        mState = STATE_SHUTDOWN;
         mHandler.getLooper().quit();
     }
 
@@ -662,6 +597,10 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     public void setCameraFragment(CameraFragment cameraFragment) {
         //Log.d(TAG, "setCameraFragment");
         mCameraFragment = cameraFragment;
+    }
+
+    public void setMainHandler(final Handler mainHandler) {
+        this.mMainHandler = mainHandler;
     }
 
     /**

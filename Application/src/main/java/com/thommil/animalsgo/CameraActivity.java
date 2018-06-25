@@ -1,12 +1,17 @@
 package com.thommil.animalsgo;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentTransaction;
+import android.util.Log;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
+import com.thommil.animalsgo.data.Messaging;
 import com.thommil.animalsgo.fragments.CameraFragment;
 import com.thommil.animalsgo.gl.CameraRenderer;
 import com.thommil.animalsgo.gl.ShaderUtils;
@@ -20,7 +25,7 @@ import com.thommil.animalsgo.gl.ShaderUtils;
  * // TODO handle error in global way
  * // TODO display permission on cam start only
  */
-public class CameraActivity extends FragmentActivity implements CameraRenderer.OnRendererReadyListener
+public class CameraActivity extends FragmentActivity implements CameraRenderer.OnRendererReadyListener, Handler.Callback
 {
     private static final String TAG = "A_GO/CameraActivity";
     private static final String TAG_CAMERA_FRAGMENT = "tag_camera_frag";
@@ -37,6 +42,9 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
      * shaders, which turns shit green, which is easy.
      */
     private CameraRenderer mRenderer;
+
+    // Main handler
+    private Handler mMainHandler;
 
     /**
      * boolean for triggering restart of camera after completed rendering
@@ -83,16 +91,15 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
         super.onResume();
         ShaderUtils.goFullscreen(this.getWindow());
         mSurfaceView.getHolder().addCallback(mSurfaceHolderCallback);
+        mMainHandler = new Handler(Looper.getMainLooper(), this);
     }
 
     @Override
     protected void onPause() {
         //Log.d(TAG, "onPause");
         super.onPause();
-
-        shutdownCamera(false);
         mSurfaceView.getHolder().removeCallback(mSurfaceHolderCallback);
-
+        shutdownCamera(false);
         finish();
     }
 
@@ -107,9 +114,9 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
         //Log.d(TAG, "setReady - "+width+", "+height);
         mRenderer = new CameraRenderer(this, surface, width, height);
         mCameraFragment.setOnViewportSizeUpdatedListener(mRenderer);
-        mCameraFragment.setOnCaptureCompletedListener(mRenderer);
         mRenderer.setCameraFragment(mCameraFragment);
         mRenderer.setOnRendererReadyListener(this);
+        mRenderer.setMainHandler(mMainHandler);
         mRenderer.start();
     }
 
@@ -164,6 +171,17 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
         });
     }
 
+    @Override
+    public boolean handleMessage(Message message) {
+        //Log.d(TAG, "handleMessage(" + message+ ")");
+        switch (message.what){
+            case Messaging.SYSTEM_ERROR :
+                ErrorDialog.newInstance((String)message.obj)
+                        .show(getSupportFragmentManager(), ErrorDialog.FRAGMENT_DIALOG);
+                break;
+        }
+        return true;
+    }
 
     private SurfaceHolder.Callback mSurfaceHolderCallback = new SurfaceHolder.Callback() {
         @Override

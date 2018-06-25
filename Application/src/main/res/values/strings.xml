@@ -1,21 +1,35 @@
-<?xml version="1.0" encoding="utf-8"?><!--
- Copyright 2014 The Android Open Source Project
-
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
-
-     http://www.apache.org/licenses/LICENSE-2.0
-
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
--->
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="picture">Picture</string>
-    <string name="description_info">Info</string>
-    <string name="request_permission">This sample needs camera permission.</string>
-    <string name="camera_error">This device doesn\'t support Camera2 API.</string>
+    <string name="app_name">Animals GO</string>
+
+    <!--
+        PREFERENCES
+     -->
+    <string name="prefs_file_key">preferences</string>
+
+    <!-- Camera -->
+    <string name="prefs_camera">Camera</string>
+
+    <string name="prefs_camera_preview_quality_title">Preview quality : </string>
+    <string name="prefs_camera_preview_quality_summary">Quality of the preview</string>
+    <string name="prefs_camera_preview_quality_dialog">Choose quality level :</string>
+    <string-array name="prefs_camera_preview_quality_entries">
+        <item>low</item>
+        <item>medium</item>
+        <item>high</item>
+    </string-array>
+    <string-array name="prefs_camera_preview_quality_entries_values">
+        <item>low</item>
+        <item>medium</item>
+        <item>high</item>
+    </string-array>
+    <string name="prefs_camera_preview_quality_default">high</string>
+
+    <!--
+        ERRORS
+     -->
+    <string name="error_camera_generic">An error has occured while using camera !</string>
+    <string name="error_camera_not_supported">Camera2 not supported by device !</string>
+    <string name="error_camera_timeout">Time out waiting to lock camera opening !</string>
+
 </resources>

@@ -11,12 +11,12 @@ public class OpenCVUtils {
 
     private static final String TAG = "A_GO/OpenCVUtils";
 
-    private static boolean OPENCV_AVAILABLE = false;
+    private static boolean sIsAvailable = false;
 
     // Initializes OpenCV
     static {
-        OPENCV_AVAILABLE = OpenCVLoader.initDebug();
-        if (OPENCV_AVAILABLE ) {
+        sIsAvailable = OpenCVLoader.initDebug();
+        if (sIsAvailable ) {
             Log.i(TAG, "OpenCV initialize success");
         } else {
             Log.i(TAG, "OpenCV initialize failed");
@@ -29,7 +29,8 @@ public class OpenCVUtils {
      * @return true if available and initialized
      */
     public static boolean init() {
-        return OPENCV_AVAILABLE;
+        Log.d(TAG, "init()");
+        return sIsAvailable;
     }
 
     /**
@@ -38,6 +39,6 @@ public class OpenCVUtils {
      * @return true if available and initialized
      */
     public static boolean isAvailable() {
-        return OPENCV_AVAILABLE;
+        return sIsAvailable;
     }
 }

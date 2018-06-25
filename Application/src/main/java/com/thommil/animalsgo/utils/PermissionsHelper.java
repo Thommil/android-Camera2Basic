@@ -1,4 +1,4 @@
-package com.thommil.animalsgo.fragments;
+package com.thommil.animalsgo.utils;
 
 import android.content.pm.PackageManager;
 import android.os.Build;

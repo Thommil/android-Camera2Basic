@@ -35,6 +35,7 @@
         </activity>
 
         <activity android:name=".CameraActivity" android:screenOrientation="portrait"/>
+        <activity android:name=".SettingsActivity"/>
     </application>
 
 </manifest>

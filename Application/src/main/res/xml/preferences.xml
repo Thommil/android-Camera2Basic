@@ -13,4 +13,30 @@
             android:defaultValue="@string/prefs_camera_preview_quality_default"
             android:dialogTitle="@string/prefs_camera_preview_quality_dialog" />
     </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/prefs_plugins">
+        <ListPreference
+            android:key="prefs_plugins_default"
+            android:title="@string/prefs_plugins_default_title"
+            android:summary="@string/prefs_plugins_default_title_summary"
+            android:entries="@array/prefs_plugins_default_entries"
+            android:entryValues="@array/prefs_plugins_default_entries_values"
+            android:defaultValue="@string/prefs_plugins_default_default"
+            android:dialogTitle="@string/prefs_plugins_default_dialog" />
+        <PreferenceScreen
+            android:key="prefs_plugins_enabled"
+            android:title="@string/prefs_plugins_enabled_title"
+            android:summary="@string/prefs_plugins_enabled_summary">
+            <CheckBoxPreference
+                android:key="prefs_plugins_basic_enabled"
+                android:summary="@string/plugins_basic_summary"
+                android:title="@string/plugins_basic_name"
+                android:defaultValue="true"/>
+            <CheckBoxPreference
+                android:key="prefs_plugins_toon_enabled"
+                android:summary="@string/plugins_toon_summary"
+                android:title="@string/plugins_toon_name"
+                android:defaultValue="true"/>
+        </PreferenceScreen>
+    </PreferenceCategory>
 </PreferenceScreen>

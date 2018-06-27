@@ -20,9 +20,11 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.util.Size;
+import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+import android.view.View;
 import android.widget.Toast;
 
 import com.thommil.animalsgo.R;
@@ -353,7 +355,6 @@ public class CameraFragment extends Fragment {
             showError(getString(R.string.error_camera_generic));
         }
     }
-
 
     protected void updatePreview() {
         Log.d(TAG, "updatePreview()");

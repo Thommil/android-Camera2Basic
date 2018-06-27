@@ -11,18 +11,17 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 import android.util.Size;
-import android.view.MotionEvent;
 import android.view.Surface;
-import android.view.View;
 
+import com.thommil.animalsgo.R;
 import com.thommil.animalsgo.data.Messaging;
+import com.thommil.animalsgo.data.Settings;
 import com.thommil.animalsgo.fragments.CameraFragment;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
-import java.nio.ShortBuffer;
 import java.util.Arrays;
 
 
@@ -59,25 +58,22 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     // shaders identifier
     private int mCameraShaderProgram;
 
-    // Basic mesh rendering code
-    private static final float SQUARE_SIZE = 1.0f;
     private static final float SQUARE_COORDS[] = {
-            -SQUARE_SIZE, SQUARE_SIZE, // 0.0f,     // top left
-            SQUARE_SIZE, SQUARE_SIZE, // 0.0f,   // top right
-            -SQUARE_SIZE, -SQUARE_SIZE, // 0.0f,   // bottom left
-            SQUARE_SIZE, -SQUARE_SIZE, // 0.0f,   // bottom right
+            -1.0f,  -1.0f,
+            -1.0f,   1.0f,
+             1.0f,  -1.0f,
+             1.0f,   1.0f
     };
-    private static final short DRAW_ORDER[] = {0, 1, 2, 1, 3, 2};
 
     // Texture coord buffer
     private FloatBuffer mTextureBuffer;
 
     // Texture coords values (can be modified)
     private float mTextureCoords[] = {
-            0.0f, 1.0f,
-            1.0f, 1.0f,
-            0.0f, 0.0f,
-            1.0f, 0.0f,
+            0.0f,  0.0f,
+            0.0f,  1.0f,
+            1.0f,  0.0f,
+            1.0f,  1.0f,
     };
 
     // Shader handle for texture coordinates
@@ -92,14 +88,17 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     // Texture verrices buffer
     private FloatBuffer mVertexBuffer;
 
-    // Texture vertices order buffer
-    private ShortBuffer mDrawListBuffer;
-
     // GSLG handle for texture vertices
     private int mPositionHandle;
 
     // Cam texture ID
     private int mCamTextureId;
+
+    // FBO ID
+    private int mFBOId;
+
+    // FBO texture ID
+    private int mFBOTextureId;
 
     // matrix for transforming our camera texture, available immediately after PreviewTexture.updateTexImage()
     private final float[] mCameraTransformMatrix = new float[16];
@@ -110,17 +109,17 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     // Main handler
     private Handler mMainHandler;
 
-    /**
-     * Interface listener for some callbacks to the UI thread when rendering is setup and finished.
-     */
+    // Interface listener for some callbacks to the UI thread when rendering is setup and finished.
     private OnRendererReadyListener mOnRendererReadyListener;
 
-    /**
-     * Reference to our users CameraFragment to ease setting viewport size. Thought about decoupling but wasn't
-     * worth the listener/callback hastle
-     */
+    // Reference to our users CameraFragment to ease setting viewport size. Thought about decoupling but wasn't
     protected CameraFragment mCameraFragment;
 
+    // Plugins manager
+    private PluginManager mPluginManager;
+
+    // Current plugin
+    private RendererPlugin mPlugin;
 
     public CameraRenderer(Context context, Surface surface, int width, int height) {
         super(THREAD_NAME);
@@ -131,6 +130,8 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         this.mSurfaceWidth = width;
         this.mSurfaceHeight = height;
         this.mSurfaceAspectRatio = (float)width / height;
+
+        this.mPluginManager = PluginManager.getInstance(context);
     }
 
     public void initGL() {
@@ -146,12 +147,15 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
     protected void initGLComponents() {
         Log.d(TAG, "initGLComponents()");
-        onPreSetupGLComponents();
 
         setupVertexBuffer();
         setupCameraTextureCoords();
         setupCameraTexture();
         setupShaders();
+        setupFBO();
+
+        mPluginManager.initialize();
+        mPlugin = mPluginManager.getPlugin(Settings.getInstance().getString(Settings.PLUGINS_DEFAULT));
 
         onSetupComplete();
     }
@@ -160,18 +164,17 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     public void deinitGL() {
         Log.d(TAG, "deinitGL()");
         deinitGLComponents();
-
         mWindowSurface.release();
-
         mEglCore.release();
 
     }
 
     protected void deinitGLComponents() {
         Log.d(TAG, "deinitGLComponents()");
+        deleteFBO();
         GLES20.glDeleteTextures(1, new int[]{mCamTextureId}, 0);
         GLES20.glDeleteProgram(mCameraShaderProgram);
-
+        mPluginManager.destroy();
         mPreviewTexture.release();
         mPreviewTexture.setOnFrameAvailableListener(null);
     }
@@ -188,20 +191,20 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         if(previewRatio > surfaceRatio){
             final float delta = (previewRatio - surfaceRatio) / 2f;
             mTextureCoords = new float[]{
-                    delta, 1.0f,
-                    1.0f-delta, 1.0f,
                     delta, 0.0f,
-                    1.0f-delta, 0.0f
+                    delta, 1.0f,
+                    1.0f-delta, 0.0f,
+                    1.0f-delta, 1.0f
             };
         }
         //We must crop preview horizontally
         else{
             final float delta = (surfaceRatio - previewRatio ) / 2f;
             mTextureCoords = new float[]{
-                    0.0f, 1.0f-delta,
-                    1.0f, 1.0f-delta,
                     0.0f, delta,
-                    1.0f, delta
+                    0.0f, 1.0f-delta,
+                    1.0f, delta,
+                    1.0f, 1.0f-delta
             };
         }
 
@@ -210,25 +213,11 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         setupCameraTextureCoords();
     }
 
-    protected void onPreSetupGLComponents() {
-        Log.d(TAG, "onPreSetupGLComponents()");
-        GLES20.glViewport(0, 0, mSurfaceWidth, mSurfaceHeight);
-        GLES20.glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-        GLES20.glDisable(GLES20.GL_BLEND);
-    }
 
     protected void setupVertexBuffer() {
         Log.d(TAG, "setupVertexBuffer()");
-        // Draw list buffer
-        ByteBuffer dlb = ByteBuffer.allocateDirect(DRAW_ORDER.length * Short.BYTES);
-        dlb.order(ByteOrder.nativeOrder());
-        mDrawListBuffer = dlb.asShortBuffer();
-        mDrawListBuffer .put(DRAW_ORDER);
-        mDrawListBuffer .position(0);
-
         // Initialize the texture holder
-        ByteBuffer bb = ByteBuffer.allocateDirect(SQUARE_COORDS.length * Float.BYTES);
+        final ByteBuffer bb = ByteBuffer.allocateDirect(SQUARE_COORDS.length * Float.BYTES);
         bb.order(ByteOrder.nativeOrder());
         mVertexBuffer = bb.asFloatBuffer();
         mVertexBuffer.put(SQUARE_COORDS);
@@ -237,7 +226,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
     protected void setupCameraTextureCoords(){
         Log.d(TAG, "setupCameraTextureCoord()");
-        ByteBuffer texturebb = ByteBuffer.allocateDirect(mTextureCoords.length * Float.BYTES);
+        final ByteBuffer texturebb = ByteBuffer.allocateDirect(mTextureCoords.length * Float.BYTES);
         texturebb.order(ByteOrder.nativeOrder());
 
         mTextureBuffer = texturebb.asFloatBuffer();
@@ -248,7 +237,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     protected void setupCameraTexture() {
         Log.d(TAG, "setupCameraTexture()");
 
-        int[] texturesId = new int[1];
+        final int[] texturesId = new int[1];
         GLES20.glGenTextures(1, texturesId , 0);
         checkGlError("Texture generate");
         mCamTextureId = texturesId[0];
@@ -256,6 +245,10 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         //set texture[0] to camera texture
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mCamTextureId);
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
+        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
         checkGlError("Texture bind");
 
         mPreviewTexture = new SurfaceTexture(mCamTextureId);
@@ -265,7 +258,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     protected void setupShaders() {
         Log.d(TAG, "setupShaders()");
         try {
-            int vertexShaderHandle = GLES20.glCreateShader(GLES20.GL_VERTEX_SHADER);
+            final int vertexShaderHandle = GLES20.glCreateShader(GLES20.GL_VERTEX_SHADER);
             final String vertexShaderCode = ShaderUtils.getStringFromFileInAssets(mContext, DEFAULT_VERTEX_SHADER);
             GLES20.glShaderSource(vertexShaderHandle, vertexShaderCode);
             GLES20.glCompileShader(vertexShaderHandle);
@@ -273,7 +266,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
             Log.d(TAG, "vertexShader info log:\n " + GLES20.glGetShaderInfoLog(vertexShaderHandle));
 
-            int fragmentShaderHandle = GLES20.glCreateShader(GLES20.GL_FRAGMENT_SHADER);
+            final int fragmentShaderHandle = GLES20.glCreateShader(GLES20.GL_FRAGMENT_SHADER);
             final String fragmentShaderCode = ShaderUtils.getStringFromFileInAssets(mContext, DEFAULT_FRAGMENT_SHADER);
             GLES20.glShaderSource(fragmentShaderHandle, fragmentShaderCode);
             GLES20.glCompileShader(fragmentShaderHandle);
@@ -287,11 +280,11 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
             GLES20.glLinkProgram(mCameraShaderProgram);
             checkGlError("Shader program compile");
 
-            int[] status = new int[1];
+            final int[] status = new int[1];
             GLES20.glGetProgramiv(mCameraShaderProgram, GLES20.GL_LINK_STATUS, status, 0);
             if (status[0] != GLES20.GL_TRUE) {
                 String error = GLES20.glGetProgramInfoLog(mCameraShaderProgram);
-                Log.e("SurfaceTest", "Error while linking program:\n" + error);
+                checkGlError("Error while linking program:\n" + error);
             }
 
             GLES20.glUseProgram(mCameraShaderProgram);
@@ -302,6 +295,44 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         }catch(IOException ioe){
             throw new RuntimeException("Failed to find shaders source.");
         }
+    }
+
+    private void deleteFBO() {
+        Log.d(TAG, "deleteFBO()");
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, GLES20.GL_NONE);
+        GLES20.glDeleteFramebuffers(1, new int[]{mFBOId}, 0);
+        GLES20.glDeleteTextures(1, new int[]{mFBOTextureId}, 0);
+    }
+
+    private void setupFBO()
+    {
+        Log.d(TAG, "setupFBO()");
+
+        deleteFBO();
+
+        final int[] ids = new int[1];
+
+        GLES20.glGenTextures(1, ids, 0);
+        mFBOTextureId = ids[0];
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mFBOTextureId);
+        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, mSurfaceWidth, mSurfaceHeight, 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
+
+        //int hFBO;
+        GLES20.glGenFramebuffers(1, ids, 0);
+        mFBOId = ids[0];
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFBOId);
+        GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0, GLES20.GL_TEXTURE_2D, mFBOTextureId, 0);
+        checkGlError("initFBO error");
+
+        final int FBOstatus = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER);
+        if (FBOstatus != GLES20.GL_FRAMEBUFFER_COMPLETE)
+            checkGlError("initFBO failed, status : " + FBOstatus);
+
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, GLES20.GL_NONE);
     }
 
     protected void onSetupComplete() {
@@ -367,14 +398,18 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         }
     }
 
+
     public void draw() {
-        //set shader
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFBOId);
+
+        GLES20.glViewport(0, 0, mSurfaceWidth, mSurfaceHeight);
+
+        //Camera shader -> FBO
         GLES20.glUseProgram(mCameraShaderProgram);
 
         GLES20.glEnableVertexAttribArray(mPositionHandle);
         GLES20.glVertexAttribPointer(mPositionHandle, 2, GLES20.GL_FLOAT, false, 8, mVertexBuffer);
 
-        //camera texture
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mCamTextureId);
         GLES20.glUniform1i(mTextureParamHandle, 0);
@@ -384,10 +419,15 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
         GLES20.glUniformMatrix4fv(mTextureTranformHandle, 1, false, mCameraTransformMatrix, 0);
 
-        GLES20.glDrawElements(GLES20.GL_TRIANGLES, 6, GLES20.GL_UNSIGNED_SHORT, mDrawListBuffer );
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 
         GLES20.glDisableVertexAttribArray(mPositionHandle);
         GLES20.glDisableVertexAttribArray(textureCoordinateHandle);
+
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, GLES20.GL_NONE);
+
+        //Plugin draw
+        mPlugin.draw(mFBOTextureId, mSurfaceWidth, mSurfaceHeight);
     }
 
     @Override
@@ -397,6 +437,9 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         switch(message.what){
             case Messaging.SYSTEM_SHUTDOWN:
                 shutdown();
+                break;
+            case Messaging.RENDERER_CHANGE_PLUGIN:
+                mPlugin = mPluginManager.getPlugin((String)message.obj);
                 break;
         }
         return true;
@@ -408,7 +451,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         mHandler.getLooper().quit();
     }
 
-    public void checkGlError(String op) {
+    public static void checkGlError(String op) {
         int error;
         while ((error = GLES20.glGetError()) != GLES20.GL_NO_ERROR) {
             Log.e("SurfaceTest", op + ": glError " + GLUtils.getEGLErrorString(error));

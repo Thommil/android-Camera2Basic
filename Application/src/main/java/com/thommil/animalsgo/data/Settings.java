@@ -33,7 +33,10 @@ public class Settings {
     public static final String PREVIEW_QUALITY_MEDIUM = "medium";
     public static final String PREVIEW_QUALITY_HIGH = "high";
 
+    //Plugins default values
+
     private static Settings sInstance;
+    public static final String PLUGINS_DEFAULT = "prefs_plugins_default";
 
     private final SharedPreferences mSharedPreferences;
 

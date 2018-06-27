@@ -55,10 +55,19 @@ public class PluginManager {
         }
     }
 
-    public void initialize(){
+    public void initialize(final boolean previewPlugins, final boolean cardPlugins){
         Log.d(TAG, "destroy()");
         for(final RendererPlugin plugin : mPluginsMap.values()){
-            plugin.create();
+            if(previewPlugins) {
+                if(plugin.isPreviewPlugin()) {
+                    plugin.create();
+                }
+            }
+            else if(cardPlugins) {
+                if(plugin.isCardPlugin()) {
+                    plugin.create();
+                }
+            }
         }
     }
 

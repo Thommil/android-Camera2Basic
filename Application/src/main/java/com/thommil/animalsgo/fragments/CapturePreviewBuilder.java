@@ -58,7 +58,6 @@ public class CapturePreviewBuilder implements View.OnTouchListener, SensorEventL
         final float delta = Math.abs(mAccelCurrent - mAccelLast);
         mAccel = mAccel * 0.9f + delta;
         mIsmoving = (mAccel > Settings.MOVEMENT_THRESHOLD);
-        //TODO set landscape state
     }
 
     @Override

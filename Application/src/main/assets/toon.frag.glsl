@@ -3,6 +3,7 @@
 precision mediump float;
 
 uniform sampler2D sTexture;
+uniform vec2 viewSize;
 
 varying vec2 vTexCoord;
 
@@ -119,8 +120,8 @@ vec4 get_pixel(vec2 coords, float dx, float dy) {
 }
 // returns pixel color
 float IsEdge(in vec2 coords){
-  float dxtex = 1.0 / 720.0 ;
-  float dytex = 1.0 / 1280.0 ;
+  float dxtex = 1.0 / viewSize.x ;
+  float dytex = 1.0 / viewSize.y ;
 
   float pix[9];
 

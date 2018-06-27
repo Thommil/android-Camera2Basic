@@ -27,6 +27,10 @@ public abstract class RendererPlugin{
 
     public abstract String getSummary();
 
+    public abstract boolean isPreviewPlugin();
+
+    public abstract boolean isCardPlugin();
+
     public void create(){
         Log.d(TAG, "create()");
         try {
@@ -72,6 +76,6 @@ public abstract class RendererPlugin{
     }
 
     public static class Settings {
-        //TODO
+        // TODO implements settings definition
     }
 }

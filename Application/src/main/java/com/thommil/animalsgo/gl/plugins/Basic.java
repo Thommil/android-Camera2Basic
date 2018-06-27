@@ -38,6 +38,16 @@ public class Basic extends RendererPlugin {
     }
 
     @Override
+    public boolean isPreviewPlugin() {
+        return true;
+    }
+
+    @Override
+    public boolean isCardPlugin() {
+        return true;
+    }
+
+    @Override
     public void create() {
         super.create();
         GLES20.glUseProgram(mPluginShaderProgram);

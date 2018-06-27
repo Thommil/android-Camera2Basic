@@ -6,6 +6,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
+import com.thommil.animalsgo.R;
 import com.thommil.animalsgo.data.Messaging;
 
 /**
@@ -38,14 +39,21 @@ public class SnapshotValidator extends HandlerThread implements Handler.Callback
     @Override
     protected void onLooperPrepared() {
         Log.d(TAG, "onLooperPrepared()");
-        //TODO error here if OpenCV is KO
         OpenCVUtils.init();
-        mHandler = new Handler(getLooper(), this);
-        if(mMainHandler != null){
-            mMainHandler.sendMessage(mMainHandler.obtainMessage(Messaging.SYSTEM_CONNECT_VALIDATOR, mHandler));
+        if(!OpenCVUtils.isAvailable()) {
+            mHandler = new Handler(getLooper(), this);
+            if (mMainHandler != null) {
+                mMainHandler.sendMessage(mMainHandler.obtainMessage(Messaging.SYSTEM_CONNECT_VALIDATOR, mHandler));
+            } else {
+                throw new RuntimeException("Main UI handler reference must be set before start()");
+            }
         }
         else{
-            throw new RuntimeException("Main UI handler reference must be set before start()");
+            if (mMainHandler != null) {
+                showError(R.string.error_opencv_init);
+            } else {
+                throw new RuntimeException("Main UI handler reference must be set before start()");
+            }
         }
 
     }
@@ -69,9 +77,11 @@ public class SnapshotValidator extends HandlerThread implements Handler.Callback
         Log.d(TAG, "validateSnaphot("+snapshot+")");
     }
 
-    private void showError(final String message){
-        Log.d(TAG, "showError(" + message+ ")");
-        mMainHandler.sendMessage(mMainHandler.obtainMessage(Messaging.SYSTEM_ERROR, message));
+    private void showError(final int messageResourceId){
+        Log.d(TAG, "showError(" + messageResourceId+ ")");
+        if(mMainHandler != null) {
+            mMainHandler.sendMessage(mMainHandler.obtainMessage(Messaging.SYSTEM_ERROR, messageResourceId));
+        }
 
     }
 

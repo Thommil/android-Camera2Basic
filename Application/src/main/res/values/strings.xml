@@ -68,4 +68,7 @@
     <string name="error_camera_not_supported">Camera2 not supported by device !</string>
     <string name="error_camera_timeout">Time out waiting to lock camera opening !</string>
 
+    <string name="error_opencv_init">Failed to start analyzer !</string>
+
+
 </resources>

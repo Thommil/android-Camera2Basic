@@ -1,6 +1,5 @@
 package com.thommil.animalsgo.gl.plugins;
 
-import android.content.Context;
 import android.opengl.GLES20;
 
 import com.thommil.animalsgo.R;
@@ -19,7 +18,7 @@ public class Toon extends RendererPlugin {
     private int mPositionParamHandle;
     private int mTextureCoordinateParamHandle;
     private int mTextureParamHandle;
-    private int mSizeParamHandle;
+    private int mviewSizeParamHandle;
 
     private FloatBuffer mTextureBuffer;
     private FloatBuffer mVertexBuffer;
@@ -40,13 +39,23 @@ public class Toon extends RendererPlugin {
     }
 
     @Override
+    public boolean isPreviewPlugin() {
+        return true;
+    }
+
+    @Override
+    public boolean isCardPlugin() {
+        return true;
+    }
+
+    @Override
     public void create() {
         super.create();
         GLES20.glUseProgram(mPluginShaderProgram);
         mPositionParamHandle = GLES20.glGetAttribLocation(mPluginShaderProgram, "position");
         mTextureCoordinateParamHandle = GLES20.glGetAttribLocation(mPluginShaderProgram, "texCoord");
         mTextureParamHandle = GLES20.glGetUniformLocation(mPluginShaderProgram, "sTexture");
-        mSizeParamHandle = GLES20.glGetUniformLocation(mPluginShaderProgram, "size");
+        mviewSizeParamHandle = GLES20.glGetUniformLocation(mPluginShaderProgram, "viewSize");
 
         final ByteBuffer bb = ByteBuffer.allocateDirect(8 * Float.BYTES);
         bb.order(ByteOrder.nativeOrder());
@@ -72,7 +81,7 @@ public class Toon extends RendererPlugin {
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texId);
         GLES20.glUniform1i(mTextureParamHandle, 0);
-        //TODO HERE size
+        GLES20.glUniform2f(mviewSizeParamHandle, width, height);
 
         GLES20.glEnableVertexAttribArray(mTextureCoordinateParamHandle);
         GLES20.glVertexAttribPointer(mTextureCoordinateParamHandle, 2, GLES20.GL_FLOAT, false, 8, mTextureBuffer);

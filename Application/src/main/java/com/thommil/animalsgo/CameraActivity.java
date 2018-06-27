@@ -148,7 +148,7 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
         Log.d(TAG, "handleMessage(" + message+ ")");
         switch (message.what){
             case Messaging.SYSTEM_ERROR :
-                ErrorDialog.newInstance((String)message.obj)
+                ErrorDialog.newInstance(getString((int)message.obj))
                         .show(getSupportFragmentManager(), ErrorDialog.FRAGMENT_DIALOG);
                 break;
             case Messaging.SYSTEM_CONNECT_RENDERER:

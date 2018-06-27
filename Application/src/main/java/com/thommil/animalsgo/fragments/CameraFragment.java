@@ -110,7 +110,7 @@ public class CameraFragment extends Fragment {
 
         try {
             if (!mCameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
-                showError(getString(R.string.error_camera_timeout));
+                showError(R.string.error_camera_timeout);
             }
 
             String cameraId = null;
@@ -127,7 +127,7 @@ public class CameraFragment extends Fragment {
             }
 
             if(cameraId == null){
-                showError(getString(R.string.error_camera_not_found));
+                showError(R.string.error_camera_not_found);
                 mCameraOpenCloseLock.release();
                 return;
             }
@@ -145,15 +145,15 @@ public class CameraFragment extends Fragment {
         }
         catch (CameraAccessException e) {
             mCameraOpenCloseLock.release();
-            showError(getString(R.string.error_camera_generic));
+            showError(R.string.error_camera_generic);
         }
         catch (NullPointerException e){
             mCameraOpenCloseLock.release();
-            showError(getString(R.string.error_camera_generic));
+            showError(R.string.error_camera_generic);
         }
         catch (InterruptedException e) {
             mCameraOpenCloseLock.release();
-            showError(getString(R.string.error_camera_generic));
+            showError(R.string.error_camera_generic);
         }
     }
 
@@ -184,10 +184,11 @@ public class CameraFragment extends Fragment {
             cameraDevice.close();
             mCameraDevice = null;
             mCameraIsOpen = false;
-            showError(getString(R.string.error_camera_generic));
+            showError(R.string.error_camera_generic);
         }
     };
 
+    // TODO Find fix for android < 6 & allow quality choice
     private Size choosePreviewSize(Size[] choices)
     {
         Log.d(TAG, "chooseVideoSize("+Arrays.toString(choices)+")");
@@ -352,7 +353,7 @@ public class CameraFragment extends Fragment {
             }, mRendererHandler);
         }
         catch (CameraAccessException e) {
-            showError(getString(R.string.error_camera_generic));
+            showError(R.string.error_camera_generic);
         }
     }
 
@@ -383,7 +384,7 @@ public class CameraFragment extends Fragment {
             }
         }
         catch (CameraAccessException e) {
-            showError(getString(R.string.error_camera_generic));
+            showError(R.string.error_camera_generic);
         }
     }
 
@@ -416,9 +417,9 @@ public class CameraFragment extends Fragment {
         mMainHandler = mainHandler;
     }
 
-    private void showError(final String message){
+    private void showError(final int messageResourceId){
         if(mMainHandler != null){
-            mMainHandler.sendMessage(mMainHandler.obtainMessage(Messaging.SYSTEM_ERROR, message));
+            mMainHandler.sendMessage(mMainHandler.obtainMessage(Messaging.SYSTEM_ERROR, messageResourceId));
         }
     }
 

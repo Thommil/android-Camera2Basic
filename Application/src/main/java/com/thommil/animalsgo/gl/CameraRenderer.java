@@ -154,7 +154,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         setupShaders();
         setupFBO();
 
-        mPluginManager.initialize();
+        mPluginManager.initialize(true, false);
         mPlugin = mPluginManager.getPlugin(Settings.getInstance().getString(Settings.PLUGINS_DEFAULT));
 
         onSetupComplete();
@@ -479,9 +479,9 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         this.mMainHandler = mainHandler;
     }
 
-    private void showError(final String message){
+    private void showError(final int messageResourceId){
         if(mMainHandler != null){
-            mMainHandler.sendMessage(mMainHandler.obtainMessage(Messaging.SYSTEM_ERROR, message));
+            mMainHandler.sendMessage(mMainHandler.obtainMessage(Messaging.SYSTEM_ERROR, messageResourceId));
         }
     }
 

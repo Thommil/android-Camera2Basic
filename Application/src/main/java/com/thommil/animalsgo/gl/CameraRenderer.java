@@ -58,7 +58,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     // shaders identifier
     private int mCameraShaderProgram;
 
-    private static final float SQUARE_COORDS[] = {
+    private static final float sVertexCoords[] = {
             -1.0f,  -1.0f,
             -1.0f,   1.0f,
              1.0f,  -1.0f,
@@ -69,7 +69,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     private FloatBuffer mTextureBuffer;
 
     // Texture coords values (can be modified)
-    private float mTextureCoords[] = {
+    private static final float sTextureCoords[] = {
             0.0f,  0.0f,
             0.0f,  1.0f,
             1.0f,  0.0f,
@@ -154,7 +154,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         setupShaders();
         setupFBO();
 
-        mPluginManager.initialize(true, false);
+        mPluginManager.initialize(RendererPlugin.TYPE_PREVIEW | RendererPlugin.TYPE_CAPTURE);
         mPlugin = mPluginManager.getPlugin(Settings.getInstance().getString(Settings.PLUGINS_DEFAULT));
 
         onSetupComplete();
@@ -182,7 +182,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     @Override
     public void onViewportSizeUpdated(Size surfaceSize, Size previewSize) {
         Log.d(TAG, "onViewportSizeUpdated(" +surfaceSize+", "+previewSize+")");
-        final float surfaceRatio = (float)surfaceSize.getWidth()/(float)surfaceSize.getHeight();
+        /*final float surfaceRatio = (float)surfaceSize.getWidth()/(float)surfaceSize.getHeight();
         final float previewRatio = (float)previewSize.getHeight()/(float)previewSize.getWidth();
 
         Log.d(TAG, "Ratios - S : " +surfaceRatio+", P : "+previewRatio);
@@ -210,27 +210,39 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
         Log.d(TAG, "TextureCoords : " + Arrays.toString(mTextureCoords));
 
-        setupCameraTextureCoords();
+        setupCameraTextureCoords();*/
+        //setupVertexBuffer();
+        //setupCameraTextureCoords();
+        //setupFBO();
     }
 
 
     protected void setupVertexBuffer() {
         Log.d(TAG, "setupVertexBuffer()");
         // Initialize the texture holder
-        final ByteBuffer bb = ByteBuffer.allocateDirect(SQUARE_COORDS.length * Float.BYTES);
-        bb.order(ByteOrder.nativeOrder());
-        mVertexBuffer = bb.asFloatBuffer();
-        mVertexBuffer.put(SQUARE_COORDS);
+        if(mVertexBuffer == null) {
+            final ByteBuffer bb = ByteBuffer.allocateDirect(sVertexCoords.length * Float.BYTES);
+            bb.order(ByteOrder.nativeOrder());
+            mVertexBuffer = bb.asFloatBuffer();
+        }
+        else{
+            mVertexBuffer.position(0);
+        }
+        mVertexBuffer.put(sVertexCoords);
         mVertexBuffer.position(0);
     }
 
     protected void setupCameraTextureCoords(){
         Log.d(TAG, "setupCameraTextureCoord()");
-        final ByteBuffer texturebb = ByteBuffer.allocateDirect(mTextureCoords.length * Float.BYTES);
-        texturebb.order(ByteOrder.nativeOrder());
-
-        mTextureBuffer = texturebb.asFloatBuffer();
-        mTextureBuffer.put(mTextureCoords);
+        if(mTextureBuffer == null) {
+            final ByteBuffer texturebb = ByteBuffer.allocateDirect(sTextureCoords.length * Float.BYTES);
+            texturebb.order(ByteOrder.nativeOrder());
+            mTextureBuffer = texturebb.asFloatBuffer();
+        }
+        else{
+            mTextureBuffer.position(0);
+        }
+        mTextureBuffer.put(sTextureCoords);
         mTextureBuffer.position(0);
     }
 

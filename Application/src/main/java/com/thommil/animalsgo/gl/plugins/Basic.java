@@ -15,6 +15,8 @@ public class Basic extends RendererPlugin {
 
     private static final String ID = "basic";
 
+    private static final int MASK = TYPE_PREVIEW | TYPE_CAPTURE | TYPE_CARD;
+
     private int mPositionParamHandle;
     private int mTextureCoordinateParamHandle;
     private int mTextureParamHandle;
@@ -38,13 +40,8 @@ public class Basic extends RendererPlugin {
     }
 
     @Override
-    public boolean isPreviewPlugin() {
-        return true;
-    }
-
-    @Override
-    public boolean isCardPlugin() {
-        return true;
+    public boolean isSupporting(final int flag) {
+        return (flag & MASK) > 0;
     }
 
     @Override

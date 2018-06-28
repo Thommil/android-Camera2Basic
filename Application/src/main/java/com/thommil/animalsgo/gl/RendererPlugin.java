@@ -13,9 +13,15 @@ public abstract class RendererPlugin{
 
     private static final String TAG = "A_GO/RendererPlugin";
 
+    public static final int TYPE_PREVIEW = 0x01;
+    public static final int TYPE_CAPTURE = 0x02;
+    public static final int TYPE_CARD = 0x04;
+
     protected Context mContext;
 
     protected int mPluginShaderProgram;
+
+    protected int mask;
 
     public void setContext(final Context context){
         this.mContext = context;
@@ -27,9 +33,8 @@ public abstract class RendererPlugin{
 
     public abstract String getSummary();
 
-    public abstract boolean isPreviewPlugin();
+    public abstract boolean isSupporting(final int flag);
 
-    public abstract boolean isCardPlugin();
 
     public void create(){
         Log.d(TAG, "create()");

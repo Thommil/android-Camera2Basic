@@ -39,23 +39,19 @@ public class SnapshotValidator extends HandlerThread implements Handler.Callback
     @Override
     protected void onLooperPrepared() {
         Log.d(TAG, "onLooperPrepared()");
-        OpenCVUtils.init();
-        if(!OpenCVUtils.isAvailable()) {
-            mHandler = new Handler(getLooper(), this);
-            if (mMainHandler != null) {
-                mMainHandler.sendMessage(mMainHandler.obtainMessage(Messaging.SYSTEM_CONNECT_VALIDATOR, mHandler));
-            } else {
-                throw new RuntimeException("Main UI handler reference must be set before start()");
-            }
-        }
-        else{
-            if (mMainHandler != null) {
-                showError(R.string.error_opencv_init);
-            } else {
-                throw new RuntimeException("Main UI handler reference must be set before start()");
-            }
+
+        mHandler = new Handler(getLooper(), this);
+        if (mMainHandler != null) {
+            mMainHandler.sendMessage(mMainHandler.obtainMessage(Messaging.SYSTEM_CONNECT_VALIDATOR, mHandler));
+        } else {
+            throw new RuntimeException("Main UI handler reference must be set before start()");
         }
 
+        OpenCVUtils.init();
+
+        if(!OpenCVUtils.isAvailable()) {
+            showError(R.string.error_opencv_init);
+        }
     }
 
     @Override

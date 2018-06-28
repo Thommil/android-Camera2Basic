@@ -15,6 +15,8 @@ public class Toon extends RendererPlugin {
 
     private static final String ID = "toon";
 
+    private static final int MASK = TYPE_PREVIEW | TYPE_CARD;
+
     private int mPositionParamHandle;
     private int mTextureCoordinateParamHandle;
     private int mTextureParamHandle;
@@ -39,13 +41,8 @@ public class Toon extends RendererPlugin {
     }
 
     @Override
-    public boolean isPreviewPlugin() {
-        return true;
-    }
-
-    @Override
-    public boolean isCardPlugin() {
-        return true;
+    public boolean isSupporting(final int flag) {
+        return (flag & MASK) > 0;
     }
 
     @Override

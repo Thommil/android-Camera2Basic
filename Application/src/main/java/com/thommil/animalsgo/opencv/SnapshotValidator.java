@@ -50,7 +50,7 @@ public class SnapshotValidator extends HandlerThread implements Handler.Callback
         OpenCVUtils.init();
 
         if(!OpenCVUtils.isAvailable()) {
-            showError(R.string.error_opencv_init);
+            showError(R.string.error_unsupported);
         }
     }
 

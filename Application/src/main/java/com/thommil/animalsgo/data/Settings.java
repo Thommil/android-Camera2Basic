@@ -29,16 +29,13 @@ public class Settings {
 
     //Preview Settings values
     public static final String CAMERA_PREVIEW_QUALITY = "prefs_camera_preview_quality";
-    public static final String PREVIEW_QUALITY_LOW = "low";
-    public static final String PREVIEW_QUALITY_MEDIUM = "medium";
-    public static final String PREVIEW_QUALITY_HIGH = "high";
 
     //Plugins default values
-
-    private static Settings sInstance;
     public static final String PLUGINS_DEFAULT = "prefs_plugins_default";
 
     private final SharedPreferences mSharedPreferences;
+
+    private static Settings sInstance;
 
     private Settings(final Context context){
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);

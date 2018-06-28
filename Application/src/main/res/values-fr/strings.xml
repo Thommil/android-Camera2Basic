@@ -12,9 +12,11 @@
     <string name="prefs_camera_preview_quality_summary">Qualité de l\'aperçu</string>
     <string name="prefs_camera_preview_quality_dialog">Choisir le niveau :</string>
     <string-array name="prefs_camera_preview_quality_entries">
+        <item>très faible</item>
         <item>faible</item>
         <item>moyen</item>
         <item>élevé</item>
+        <item>très élevé</item>
     </string-array>
 
 </resources>

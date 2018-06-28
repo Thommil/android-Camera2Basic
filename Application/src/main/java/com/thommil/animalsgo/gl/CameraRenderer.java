@@ -154,6 +154,8 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         setupShaders();
         setupFBO();
 
+        GLES20.glClearColor(0,0,0, 1);
+
         mPluginManager.initialize(RendererPlugin.TYPE_PREVIEW | RendererPlugin.TYPE_CAPTURE);
         mPlugin = mPluginManager.getPlugin(Settings.getInstance().getString(Settings.PLUGINS_DEFAULT));
 
@@ -211,8 +213,17 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         Log.d(TAG, "TextureCoords : " + Arrays.toString(mTextureCoords));
 
         setupCameraTextureCoords();*/
-        //setupVertexBuffer();
-        //setupCameraTextureCoords();
+        //sVertexCoords[0] = sVertexCoords[1] = sVertexCoords[2] = sVertexCoords[5] = -0.8f;
+        //sVertexCoords[3] = sVertexCoords[4] = sVertexCoords[6] = sVertexCoords[7] = 0.8f;
+        //sVertexCoords[1] = sVertexCoords[5] = -0.8f;
+        //sVertexCoords[3] = sVertexCoords[7] = 0.8f;
+
+                //-1.0f,  -1.0f,
+                //-1.0f,   1.0f,
+                //1.0f,  -1.0f,
+                //1.0f,   1.0f
+        //TODO Crop using above
+        setupVertexBuffer();
         //setupFBO();
     }
 
@@ -414,7 +425,10 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     public void draw() {
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFBOId);
 
+        //TODO Transform matrix when android < 6 (using accelerometer)
+
         GLES20.glViewport(0, 0, mSurfaceWidth, mSurfaceHeight);
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
         //Camera shader -> FBO
         GLES20.glUseProgram(mCameraShaderProgram);

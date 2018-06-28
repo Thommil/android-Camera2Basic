@@ -21,8 +21,6 @@ public abstract class RendererPlugin{
 
     protected int mPluginShaderProgram;
 
-    protected int mask;
-
     public void setContext(final Context context){
         this.mContext = context;
     }

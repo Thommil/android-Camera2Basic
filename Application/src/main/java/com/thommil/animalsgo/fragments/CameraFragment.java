@@ -34,6 +34,7 @@ import com.thommil.animalsgo.data.Settings;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -44,6 +45,12 @@ import java.util.concurrent.TimeUnit;
 public class CameraFragment extends Fragment {
 
     private static final String TAG = "A_GO/CameraFragment";
+
+    // Max preview width that is guaranteed by Camera2 API
+    private static final int MAX_PREVIEW_WIDTH = 1920;
+
+    // Max preview height that is guaranteed by Camera2 API
+    private static final int MAX_PREVIEW_HEIGHT = 1080;
 
     // A SurfaceView for camera preview.
     private SurfaceView mSurfaceView;
@@ -86,6 +93,7 @@ public class CameraFragment extends Fragment {
 
     // Reference to the SensorManager
     private SensorManager mSensorManager;
+
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -188,7 +196,6 @@ public class CameraFragment extends Fragment {
         }
     };
 
-    // TODO Find fix for android < 6 & allow quality choice
     private Size choosePreviewSize(Size[] choices)
     {
         Log.d(TAG, "chooseVideoSize("+Arrays.toString(choices)+")");
@@ -201,70 +208,84 @@ public class CameraFragment extends Fragment {
 
         Log.d(TAG, "chooseVideoSize() for landscape:" + (mPreviewSurfaceAspectRatio > 1.f) + " aspect: " + mPreviewSurfaceAspectRatio);
 
-        //rather than in-lining returns, use this size as placeholder so we can calc aspectratio upon completion
         Size sizeToReturn = null;
 
-        //video is 'landscape' if over 1.f
-        if(mPreviewSurfaceAspectRatio > 1.f) {
-            for (Size size : choices) {
-                if (size.getHeight() == size.getWidth() * 9 / 16 && size.getHeight() <= 1080) {
-                    sizeToReturn = size;
+        final String qualitySettings = Settings.getInstance().getString(Settings.CAMERA_PREVIEW_QUALITY);
+        final String[] qualityValues = getResources().getStringArray(R.array.prefs_camera_preview_quality_entries_values);
+
+        //Lowest setting
+        if(qualitySettings.equals(qualityValues[0])){
+            sizeToReturn = choices[choices.length-1];
+        }
+        // Other
+        else {
+            int qualityIndex = qualityValues.length - 1;
+            for (final String quality : qualityValues) {
+                if (qualitySettings.equals(quality)) {
+                    break;
+                }
+                qualityIndex--;
+            }
+
+            final List<Size> choicesList = new LinkedList<>(Arrays.asList(choices));
+            Log.d(TAG, "All valid choices :" + choicesList);
+
+            final List<Size> bestChoicesList = new ArrayList<>();
+            for (int i = 0; i < choicesList.size(); i++) {
+                final Size size = choicesList.get(i);
+                if (size.getWidth() > MAX_PREVIEW_WIDTH || size.getHeight() > MAX_PREVIEW_HEIGHT
+                        || (size.getWidth() * size.getHeight() > sh * sw)) {
+                    choicesList.remove(i);
+                    i--;
+                } else {
+                    if (((float) size.getHeight() / size.getWidth()) == mPreviewSurfaceAspectRatio) {
+                        bestChoicesList.add(size);
+                        choicesList.remove(i);
+                        i--;
+                    }
                 }
             }
+            Log.d(TAG, "Best available choices :" + bestChoicesList);
 
-            //final check
-            if(sizeToReturn == null)
-                sizeToReturn = choices[0];
 
-        }
-        else //portrait or square
-        {
-            /**
-             * find a potential aspect ratio match so that our video on screen is the same
-             * as what we record out - what u see is what u get
-             */
-            ArrayList<Size> potentials = new ArrayList<>();
-            for (Size size : choices)
-            {
-                // height / width because we're portrait
-                float aspect = (float)size.getHeight() / size.getWidth();
-                if(aspect == mPreviewSurfaceAspectRatio)
-                    potentials.add(size);
+            //Find in best choices
+            if (!bestChoicesList.isEmpty() && qualityIndex < bestChoicesList.size()) {
+                sizeToReturn = bestChoicesList.get(qualityIndex);
             }
-            Log.i(TAG, "---potentials: " + potentials.size() + " : " + potentials);
 
-            if(potentials.size() > 0)
-            {
-                //check for potential perfect matches (usually full screen surfaces)
-                for(Size potential : potentials)
-                    if(potential.getHeight() == sw) {
-                        Log.d(TAG, "potential : " + potential);
-                        sizeToReturn = potential;
-                        break;
-                    }
-                if(sizeToReturn == null) {
-                    Log.i(TAG, "---no perfect match, check for 'normal'");
-
-
-                    //if that fails - check for largest 'normal size' video
-                    for (Size potential : potentials) {
-                        if (potential.getHeight() == 1080 || potential.getHeight() == 720) {
-                            sizeToReturn = potential;
-                            break;
+            //Find in other choices
+            if (sizeToReturn == null) {
+                if (!bestChoicesList.isEmpty()) {
+                    for (int i = 0; i < choicesList.size(); i++) {
+                        if (choicesList.get(i).getWidth() > bestChoicesList.get(0).getWidth() || choicesList.get(i).getHeight() > bestChoicesList.get(0).getHeight()) {
+                            choicesList.remove(i);
+                            i--;
                         }
                     }
+                }
 
-                    if (sizeToReturn == null) {
-                        Log.i(TAG, "---no 'normal' match, return largest ");
-                        sizeToReturn = potentials.get(0);
+                Log.d(TAG, "No best choice found, use fallback : " + choicesList);
+
+                if (choicesList.size() < qualityValues.length) {
+                    qualityIndex = Math.min(choicesList.size() - 1, qualityIndex);
+                    sizeToReturn = choicesList.get(qualityIndex);
+                } else {
+                    final int startIndex = choicesList.size() / qualityValues.length * qualityIndex;
+                    final int stopIndex = choicesList.size() / qualityValues.length * qualityIndex + choicesList.size() / qualityValues.length;
+                    float bestRatioDelta = 10;
+                    for (final Size size : choicesList.subList(startIndex, stopIndex)) {
+                        final float currentRatioDelta = Math.abs(((float) size.getHeight() / size.getWidth()) - mPreviewSurfaceAspectRatio);
+                        if (currentRatioDelta < bestRatioDelta) {
+                            sizeToReturn = size;
+                            bestRatioDelta = currentRatioDelta;
+                        }
                     }
                 }
             }
 
-            //final check
-            if(sizeToReturn == null)
-                sizeToReturn = choices[0];
-
+            if (sizeToReturn == null) {
+                sizeToReturn = choicesList.get(0);
+            }
         }
 
         Log.i(TAG, "Final choice : " + sizeToReturn);
@@ -332,7 +353,6 @@ public class CameraFragment extends Fragment {
             mPreviewBuilder.set(CaptureRequest.CONTROL_CAPTURE_INTENT, CaptureRequest.CONTROL_CAPTURE_INTENT_VIDEO_SNAPSHOT); // High quality video
             mPreviewBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF); // No Flash (don't bother animals)
             mPreviewBuilder.set(CaptureRequest.STATISTICS_FACE_DETECT_MODE, CaptureRequest.STATISTICS_FACE_DETECT_MODE_OFF); // Faces using OpenCV outside
-            mPreviewBuilder.set(CaptureRequest.CONTROL_AE_ANTIBANDING_MODE, CaptureRequest.CONTROL_AE_ANTIBANDING_MODE_OFF); // Outside purpose
 
             mCameraDevice.createCaptureSession(surfaces, new CameraCaptureSession.StateCallback() {
 

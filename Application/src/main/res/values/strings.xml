@@ -29,16 +29,20 @@
     <string name="prefs_camera_preview_quality_summary">Quality of the preview</string>
     <string name="prefs_camera_preview_quality_dialog">Choose quality level :</string>
     <string-array name="prefs_camera_preview_quality_entries">
+        <item>very low</item>
         <item>low</item>
         <item>medium</item>
         <item>high</item>
+        <item>very high</item>
     </string-array>
     <string-array name="prefs_camera_preview_quality_entries_values">
+        <item>very low</item>
         <item>low</item>
         <item>medium</item>
         <item>high</item>
+        <item>very high</item>
     </string-array>
-    <string name="prefs_camera_preview_quality_default">high</string>
+    <string name="prefs_camera_preview_quality_default">medium</string>
 
     <!-- Plugins -->
     <string name="prefs_plugins">Plugins</string>
@@ -68,7 +72,7 @@
     <string name="error_camera_not_supported">Camera2 not supported by device !</string>
     <string name="error_camera_timeout">Time out waiting to lock camera opening !</string>
 
-    <string name="error_opencv_init">Failed to start analyzer !</string>
+    <string name="error_unsupported">Device not compliant !</string>
 
 
 </resources>

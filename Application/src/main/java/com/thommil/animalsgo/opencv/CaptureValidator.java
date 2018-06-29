@@ -2,20 +2,27 @@ package com.thommil.animalsgo.opencv;
 
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
 import com.thommil.animalsgo.R;
+import com.thommil.animalsgo.data.Capture;
 import com.thommil.animalsgo.data.Messaging;
 
 /**
  * OpenCV analyzer to validate a camera snaphot
  */
-public class SnapshotValidator extends HandlerThread implements Handler.Callback {
+public class CaptureValidator extends HandlerThread implements Handler.Callback {
 
-    private static final String TAG = "A_GO/SnapshotValidator";
-    private static final String THREAD_NAME = "SnapshotValidator";
+    private static final String TAG = "A_GO/CaptureValidator";
+    private static final String THREAD_NAME = "CaptureValidator";
+
+    // Machine states
+    private final static int STATE_ERROR = 0x00;
+    private final static int STATE_WAITING = 0x01;
+
+    // Current Thread state
+    private int mState = STATE_WAITING;
 
     // Thread Handler
     private Handler mHandler;
@@ -23,15 +30,15 @@ public class SnapshotValidator extends HandlerThread implements Handler.Callback
     // Main handler
     private Handler mMainHandler;
 
-    private static SnapshotValidator sSnapshotValidatorInstance;
+    private static CaptureValidator sSnapshotValidatorInstance;
 
-    private SnapshotValidator() {
+    private CaptureValidator() {
         super(THREAD_NAME);
     }
 
-    public static SnapshotValidator getInstance(){
+    public static CaptureValidator getInstance(){
         if(sSnapshotValidatorInstance == null){
-            sSnapshotValidatorInstance = new SnapshotValidator();
+            sSnapshotValidatorInstance = new CaptureValidator();
         }
         return sSnapshotValidatorInstance;
     }
@@ -52,14 +59,15 @@ public class SnapshotValidator extends HandlerThread implements Handler.Callback
         if(!OpenCVUtils.isAvailable()) {
             showError(R.string.error_unsupported);
         }
+        mState = STATE_WAITING;
     }
 
     @Override
     public boolean handleMessage(Message message) {
         Log.d(TAG, "handleMessage(" + message+ ")");
         switch (message.what){
-            case Messaging.OPENCV_REQUEST :
-                validateSnaphot((Messaging.Snapshot) message.obj);
+            case Messaging.VALIDATION_REQUEST :
+                validateCapture((Capture) message.obj);
                 break;
             case Messaging.SYSTEM_SHUTDOWN:
                 shutdown();
@@ -68,13 +76,12 @@ public class SnapshotValidator extends HandlerThread implements Handler.Callback
         return true;
     }
 
-    //TODO Implementation
-    protected void validateSnaphot(final Messaging.Snapshot snapshot){
-        Log.d(TAG, "validateSnaphot("+snapshot+")");
+    protected void validateCapture(final Capture capture){
+        Log.d(TAG, "validateCaptureRequest("+capture+")");
     }
 
     private void showError(final int messageResourceId){
-        Log.d(TAG, "showError(" + messageResourceId+ ")");
+        mState = STATE_ERROR;
         if(mMainHandler != null) {
             mMainHandler.sendMessage(mMainHandler.obtainMessage(Messaging.SYSTEM_ERROR, messageResourceId));
         }

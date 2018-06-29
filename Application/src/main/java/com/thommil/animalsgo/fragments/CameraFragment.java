@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
@@ -25,10 +27,9 @@ import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
-import android.widget.Toast;
 
 import com.thommil.animalsgo.R;
-import com.thommil.animalsgo.data.CapturePreview;
+import com.thommil.animalsgo.data.Capture;
 import com.thommil.animalsgo.data.Messaging;
 import com.thommil.animalsgo.data.Settings;
 
@@ -42,7 +43,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Fragment for operating the camera, it doesnt have any UI elements, just controllers
  */
-public class CameraFragment extends Fragment {
+public class CameraFragment extends Fragment implements View.OnTouchListener, SensorEventListener {
 
     private static final String TAG = "A_GO/CameraFragment";
 
@@ -51,6 +52,13 @@ public class CameraFragment extends Fragment {
 
     // Max preview height that is guaranteed by Camera2 API
     private static final int MAX_PREVIEW_HEIGHT = 1080;
+
+    // Machine states
+    private final static int STATE_ERROR = 0x00;
+    private final static int STATE_PREVIEW = 0x01;
+
+    // Current Thread state
+    private int mState = STATE_PREVIEW;
 
     // A SurfaceView for camera preview.
     private SurfaceView mSurfaceView;
@@ -94,13 +102,36 @@ public class CameraFragment extends Fragment {
     // Reference to the SensorManager
     private SensorManager mSensorManager;
 
+    // Indicates if view is in touch down state
+    private boolean mIsTouched = false;
+
+    // Indicates if device is moving
+    private boolean mIsmoving = false;
+
+    // Storaga for movt tests
+    private float mAccel;
+    private float mAccelCurrent;
+    private float mAccelLast;
+
+    //Gravity sensor
+    final private float[] mGravity = new float[]{0,SensorManager.GRAVITY_EARTH,0};
+
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mState = STATE_PREVIEW;
         mSensorManager = (SensorManager) getActivity().getSystemService(Context.SENSOR_SERVICE);
+        mAccel = 0.00f;
+        mAccelCurrent = SensorManager.GRAVITY_EARTH;
+        mAccelLast = SensorManager.GRAVITY_EARTH;
     }
 
+    @Override
+    public void onStop() {
+        super.onStop();
+        mSensorManager.unregisterListener(this);
+    }
 
     public void openCamera()
     {
@@ -332,20 +363,35 @@ public class CameraFragment extends Fragment {
         // Current frame count
         private int mFrameCount = 0;
 
-        // Reference to the CapturePreviewBuilder instance
-        private final CapturePreviewBuilder mCapturePreviewBuilder = CapturePreviewBuilder.getInstance();
+        // Reference to the CaptureBuilder instance
+        private final CaptureBuilder mCaptureBuilder = CaptureBuilder.getInstance();
 
         @Override
         public void onCaptureCompleted(@NonNull CameraCaptureSession session, @NonNull CaptureRequest request, @NonNull TotalCaptureResult result) {
-            if(mFrameCount > Settings.CAPTURE_UPDATE_FREQUENCY){
-                final CapturePreview capturePreview = mCapturePreviewBuilder.buildCapturePreview(result);
-                //TODO get data from image reader and send to snapshotvalidator (set STATE_VALIDATE)
-                //Log.d(TAG, capturePreview.toString());
-                //stopPreview();
-                mCapturePreviewBuilder.releaseCapturePreview(capturePreview);
-                mFrameCount = 0;
+            switch(mState){
+                case STATE_PREVIEW :
+                    if(mFrameCount > Settings.CAPTURE_UPDATE_FREQUENCY){
+                        final Capture capture = mCaptureBuilder.buildCapture(result);
+                        //TODO setting touch
+                        if(!mIsTouched && !mIsmoving &&
+                                capture.cameraState != Capture.STATE_NOT_READY &&
+                                capture.lightState != Capture.STATE_NOT_READY){
+                            Log.d(TAG, "GO GO GO GO GO GO GO GO GO GO ");
+                            System.arraycopy(mGravity, 0, capture.gravity, 0, 3);
+
+
+                        }
+                        //TODO get data from image reader and send to snapshotvalidator (set STATE_VALIDATE)
+
+                        //Log.d(TAG, capturePreview.toString());
+                        //stopPreview();
+                        mCaptureBuilder.releaseCapture(capture);
+                        mFrameCount = 0;
+                    }
+                    mFrameCount++;
+                    break;
             }
-            mFrameCount++;
+
         }
 
     };
@@ -356,6 +402,14 @@ public class CameraFragment extends Fragment {
             return;
         }
         try {
+            // Events & Sensors
+            final Sensor accelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+            if(accelerometer != null) {
+                mSensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+            }
+
+            mSurfaceView.setOnTouchListener(this);
+
             mPreviewSurface.setDefaultBufferSize(mPreviewSize.getWidth(), mPreviewSize.getHeight());
 
             mPreviewBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
@@ -384,7 +438,7 @@ public class CameraFragment extends Fragment {
                     Activity activity = getActivity();
                     Log.e(TAG, "config failed: " + cameraCaptureSession);
                     if (null != activity) {
-                        Toast.makeText(activity, "CaptureSession Config Failed", Toast.LENGTH_SHORT).show();
+                        showError(R.string.error_camera_generic);
                     }
                 }
             }, mRendererHandler);
@@ -400,23 +454,15 @@ public class CameraFragment extends Fragment {
             return;
         }
         try {
+            final Activity activity = getActivity();
+            if (null == activity || activity.isFinishing()) {
+                return;
+            }
+
             if(!mIsPaused) {
-                final Activity activity = getActivity();
-                if (null == activity || activity.isFinishing()) {
-                    return;
-                }
-
-                // Events & Sensors
-                final Sensor accelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-                if(accelerometer != null) {
-                    mSensorManager.registerListener(CapturePreviewBuilder.getInstance(), accelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-                }
-                this.mSurfaceView.setOnTouchListener(CapturePreviewBuilder.getInstance());
-
                 mPreviewSession.setRepeatingRequest(mPreviewBuilder.build(), mCaptureCallback, mRendererHandler);
             }
             else{
-                mSensorManager.unregisterListener(CapturePreviewBuilder.getInstance());
                 mPreviewSession.abortCaptures();
             }
         }
@@ -455,6 +501,7 @@ public class CameraFragment extends Fragment {
     }
 
     private void showError(final int messageResourceId){
+        mState = STATE_ERROR;
         if(mMainHandler != null){
             mMainHandler.sendMessage(mMainHandler.obtainMessage(Messaging.SYSTEM_ERROR, messageResourceId));
         }
@@ -474,4 +521,27 @@ public class CameraFragment extends Fragment {
         void onViewportSizeUpdated(Size surfaceSize, Size previewSize);
     }
 
+    @Override
+    public boolean onTouch(View view, MotionEvent motionEvent) {
+        mIsTouched = !(motionEvent.getActionMasked() == MotionEvent.ACTION_UP && motionEvent.getPointerCount() == 1);
+        return true;
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent sensorEvent) {
+        System.arraycopy(sensorEvent.values, 0, mGravity, 0, 3); ;
+        final float x = mGravity[0];
+        final float y = mGravity[1];
+        final float z = mGravity[2];
+        mAccelLast = mAccelCurrent;
+        mAccelCurrent = (float)Math.sqrt(x*x + y*y + z*z);
+        final float delta = Math.abs(mAccelCurrent - mAccelLast);
+        mAccel = mAccel * 0.9f + delta;
+        mIsmoving = (mAccel > Settings.MOVEMENT_THRESHOLD);
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int i) {
+        //PASS
+    }
 }

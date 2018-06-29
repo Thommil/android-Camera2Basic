@@ -15,11 +15,8 @@ public class Messaging {
     // RENDERER
     public static final int RENDERER_CHANGE_PLUGIN = 0x010;
 
-    // OPENCV
-    public static final int OPENCV_REQUEST = 0x100;
-    public static final int OPENCV_RESULT = 0x200;
+    // Validator
+    public static final int VALIDATION_REQUEST = 0x100;
+    public static final int VALIDATION_RESULT = 0x200;
 
-    public static class Snapshot {
-        // TODO Snapshot definition
-    }
 }

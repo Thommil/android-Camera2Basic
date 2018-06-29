@@ -15,7 +15,7 @@ import android.view.View;
 import com.thommil.animalsgo.data.Messaging;
 import com.thommil.animalsgo.fragments.CameraFragment;
 import com.thommil.animalsgo.gl.CameraRenderer;
-import com.thommil.animalsgo.opencv.SnapshotValidator;
+import com.thommil.animalsgo.opencv.CaptureValidator;
 
 
 public class CameraActivity extends FragmentActivity implements CameraRenderer.OnRendererReadyListener, Handler.Callback {
@@ -87,8 +87,8 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
         mMainHandler = new Handler(Looper.getMainLooper(), this);
         mCameraFragment.setMainHandler(mMainHandler);
 
-        SnapshotValidator.getInstance().setMainHandler(mMainHandler);
-        SnapshotValidator.getInstance().start();
+        CaptureValidator.getInstance().setMainHandler(mMainHandler);
+        CaptureValidator.getInstance().start();
     }
 
     @Override

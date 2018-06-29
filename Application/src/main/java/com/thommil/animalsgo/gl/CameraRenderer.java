@@ -33,6 +33,13 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     private final String DEFAULT_FRAGMENT_SHADER = "camera.frag.glsl";
     private final String DEFAULT_VERTEX_SHADER = "camera.vert.glsl";
 
+    // Machine states
+    private final static int STATE_ERROR = 0x00;
+    private final static int STATE_PREVIEW = 0x01;
+
+    // Current Thread state
+    private int mState = STATE_PREVIEW;
+
     // Current context for use with utility methods
     protected Context mContext;
 
@@ -58,7 +65,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     // shaders identifier
     private int mCameraShaderProgram;
 
-    private static final float sVertexCoords[] = {
+    private final float mVertexCoords[] = {
             -1.0f,  -1.0f,
             -1.0f,   1.0f,
             1.0f,  -1.0f,
@@ -69,7 +76,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     private FloatBuffer mTextureBuffer;
 
     // Texture coords values (can be modified)
-    private static final float sTextureCoords[] = {
+    private final float mTextureCoords[] = {
             0.0f,  0.0f,
             0.0f,  1.0f,
             1.0f,  0.0f,
@@ -124,14 +131,16 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     public CameraRenderer(Context context, Surface surface, int width, int height) {
         super(THREAD_NAME);
 
-        this.mContext = context;
-        this.mSurface = surface;
+        mContext = context;
+        mSurface = surface;
 
-        this.mSurfaceWidth = width;
-        this.mSurfaceHeight = height;
-        this.mSurfaceAspectRatio = (float)width / height;
+        mSurfaceWidth = width;
+        mSurfaceHeight = height;
+        mSurfaceAspectRatio = (float)width / height;
 
-        this.mPluginManager = PluginManager.getInstance(context);
+        mPluginManager = PluginManager.getInstance(context);
+
+        mState = STATE_PREVIEW;
     }
 
     public void initGL() {
@@ -192,16 +201,16 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         Log.d(TAG, "Ratios - Surface : " +surfaceRatio+", Draw : "+drawRatio);
 
         if(surfaceRatio > drawRatio){
-            sVertexCoords[1] = sVertexCoords[5] = -(1.0f + (surfaceRatio - drawRatio));
-            sVertexCoords[3] = sVertexCoords[7] = (1.0f + (surfaceRatio - drawRatio));
+            mVertexCoords[1] = mVertexCoords[5] = -(1.0f + (surfaceRatio - drawRatio));
+            mVertexCoords[3] = mVertexCoords[7] = (1.0f + (surfaceRatio - drawRatio));
 
         }
         else if(surfaceRatio < drawRatio){
-            sVertexCoords[1] = sVertexCoords[5] = -(1.0f - (drawRatio - surfaceRatio));
-            sVertexCoords[3] = sVertexCoords[7] = (1.0f - (drawRatio - surfaceRatio));
+            mVertexCoords[1] = mVertexCoords[5] = -(1.0f - (drawRatio - surfaceRatio));
+            mVertexCoords[3] = mVertexCoords[7] = (1.0f - (drawRatio - surfaceRatio));
         }
 
-        Log.d(TAG, "Adapted vertices : " + Arrays.toString(sVertexCoords));
+        Log.d(TAG, "Adapted vertices : " + Arrays.toString(mVertexCoords));
 
         setupVertexBuffer();
     }
@@ -211,28 +220,28 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         Log.d(TAG, "setupVertexBuffer()");
         // Initialize the texture holder
         if(mVertexBuffer == null) {
-            final ByteBuffer bb = ByteBuffer.allocateDirect(sVertexCoords.length * Float.BYTES);
+            final ByteBuffer bb = ByteBuffer.allocateDirect(mVertexCoords.length * Float.BYTES);
             bb.order(ByteOrder.nativeOrder());
             mVertexBuffer = bb.asFloatBuffer();
         }
         else{
             mVertexBuffer.position(0);
         }
-        mVertexBuffer.put(sVertexCoords);
+        mVertexBuffer.put(mVertexCoords);
         mVertexBuffer.position(0);
     }
 
     protected void setupCameraTextureCoords(){
         Log.d(TAG, "setupCameraTextureCoord()");
         if(mTextureBuffer == null) {
-            final ByteBuffer texturebb = ByteBuffer.allocateDirect(sTextureCoords.length * Float.BYTES);
+            final ByteBuffer texturebb = ByteBuffer.allocateDirect(mTextureCoords.length * Float.BYTES);
             texturebb.order(ByteOrder.nativeOrder());
             mTextureBuffer = texturebb.asFloatBuffer();
         }
         else{
             mTextureBuffer.position(0);
         }
-        mTextureBuffer.put(sTextureCoords);
+        mTextureBuffer.put(mTextureCoords);
         mTextureBuffer.position(0);
     }
 
@@ -456,7 +465,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         mHandler.getLooper().quit();
     }
 
-    public static void checkGlError(String op) {
+    protected void checkGlError(String op) {
         int error;
         while ((error = GLES20.glGetError()) != GLES20.GL_NO_ERROR) {
             Log.e("SurfaceTest", op + ": glError " + GLUtils.getEGLErrorString(error));
@@ -485,6 +494,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     }
 
     private void showError(final int messageResourceId){
+        mState = STATE_ERROR;
         if(mMainHandler != null){
             mMainHandler.sendMessage(mMainHandler.obtainMessage(Messaging.SYSTEM_ERROR, messageResourceId));
         }

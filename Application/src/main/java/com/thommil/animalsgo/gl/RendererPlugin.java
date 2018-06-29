@@ -2,6 +2,7 @@ package com.thommil.animalsgo.gl;
 
 import android.content.Context;
 import android.opengl.GLES20;
+import android.opengl.GLUtils;
 import android.util.Log;
 
 import java.io.IOException;
@@ -41,7 +42,7 @@ public abstract class RendererPlugin{
             final String vertexShaderCode = ShaderUtils.getStringFromFileInAssets(mContext, this.getId() + ".vert.glsl");
             GLES20.glShaderSource(vertexShaderHandle, vertexShaderCode);
             GLES20.glCompileShader(vertexShaderHandle);
-            CameraRenderer.checkGlError("Vertex shader compile");
+            checkGlError("Vertex shader compile");
 
             Log.d(TAG, "vertexShader info log:\n " + GLES20.glGetShaderInfoLog(vertexShaderHandle));
 
@@ -49,7 +50,7 @@ public abstract class RendererPlugin{
             final String fragmentShaderCode = ShaderUtils.getStringFromFileInAssets(mContext, this.getId() + ".frag.glsl");
             GLES20.glShaderSource(fragmentShaderHandle, fragmentShaderCode);
             GLES20.glCompileShader(fragmentShaderHandle);
-            CameraRenderer.checkGlError("Pixel shader compile");
+            checkGlError("Pixel shader compile");
 
             Log.d(TAG, "fragmentShader info log:\n " + GLES20.glGetShaderInfoLog(fragmentShaderHandle));
 
@@ -57,13 +58,13 @@ public abstract class RendererPlugin{
             GLES20.glAttachShader(mPluginShaderProgram, vertexShaderHandle);
             GLES20.glAttachShader(mPluginShaderProgram, fragmentShaderHandle);
             GLES20.glLinkProgram(mPluginShaderProgram);
-            CameraRenderer.checkGlError("Shader program compile");
+            checkGlError("Shader program compile");
 
             final int[] status = new int[1];
             GLES20.glGetProgramiv(mPluginShaderProgram, GLES20.GL_LINK_STATUS, status, 0);
             if (status[0] != GLES20.GL_TRUE) {
                 String error = GLES20.glGetProgramInfoLog(mPluginShaderProgram);
-                CameraRenderer.checkGlError("Error while linking program:\n" + error);
+                checkGlError("Error while linking program:\n" + error);
             }
         }catch(IOException ioe){
             throw new RuntimeException("Failed to find shaders source.");
@@ -72,6 +73,12 @@ public abstract class RendererPlugin{
 
     public abstract void draw(final int texId, final int width, final int height);
 
+    protected void checkGlError(String op) {
+        int error;
+        while ((error = GLES20.glGetError()) != GLES20.GL_NO_ERROR) {
+            Log.e("SurfaceTest", op + ": glError " + GLUtils.getEGLErrorString(error));
+        }
+    }
 
     public void delete(){
         Log.d(TAG, "create()");

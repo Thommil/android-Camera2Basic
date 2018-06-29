@@ -1,5 +1,6 @@
 package com.thommil.animalsgo.gl.plugins;
 
+import android.nfc.Tag;
 import android.opengl.GLES20;
 
 import com.thommil.animalsgo.R;
@@ -20,6 +21,9 @@ public class Basic extends RendererPlugin {
     private int mPositionParamHandle;
     private int mTextureCoordinateParamHandle;
     private int mTextureParamHandle;
+
+    private static final float[]VERTEX_COORDS = new float[]{ -1.0f,-1.0f,-1.0f,1.0f, 1.0f,-1.0f, 1.0f,1.0f};
+    private static final float[]TEXTURE_COORDS = new float[]{0.0f,0.0f,0.0f,1.0f,1.0f,0.0f,1.0f,  1.0f};
 
     private FloatBuffer mTextureBuffer;
     private FloatBuffer mVertexBuffer;
@@ -55,13 +59,13 @@ public class Basic extends RendererPlugin {
         final ByteBuffer bb = ByteBuffer.allocateDirect(8 * Float.BYTES);
         bb.order(ByteOrder.nativeOrder());
         mVertexBuffer = bb.asFloatBuffer();
-        mVertexBuffer.put(new float[]{ -1.0f,-1.0f,-1.0f,1.0f, 1.0f,-1.0f, 1.0f,1.0f});
+        mVertexBuffer.put(VERTEX_COORDS);
         mVertexBuffer.position(0);
 
         final ByteBuffer texturebb = ByteBuffer.allocateDirect(8 * Float.BYTES);
         texturebb.order(ByteOrder.nativeOrder());
         mTextureBuffer = texturebb.asFloatBuffer();
-        mTextureBuffer.put(new float[]{0.0f,0.0f,0.0f,1.0f,1.0f,0.0f,1.0f,  1.0f});
+        mTextureBuffer.put(TEXTURE_COORDS);
         mTextureBuffer.position(0);
     }
 

@@ -4,6 +4,10 @@
 
     <!-- Camera -->
     <PreferenceCategory android:title="@string/prefs_camera">
+        <CheckBoxPreference android:key="prefs_camera_preview_quality_auto"
+            android:title="@string/prefs_camera_preview_quality_auto_title"
+            android:summary="@string/prefs_camera_preview_quality_auto_summary"
+            android:defaultValue="true"/>
         <ListPreference
             android:key="prefs_camera_preview_quality"
             android:title="@string/prefs_camera_preview_quality_title"
@@ -11,22 +15,20 @@
             android:entries="@array/prefs_camera_preview_quality_entries"
             android:entryValues="@array/prefs_camera_preview_quality_entries_values"
             android:defaultValue="@string/prefs_camera_preview_quality_default"
+            android:enabled="false"
             android:dialogTitle="@string/prefs_camera_preview_quality_dialog" />
-    </PreferenceCategory>
-
-    <PreferenceCategory android:title="@string/prefs_plugins">
         <ListPreference
             android:key="prefs_plugins_default"
-            android:title="@string/prefs_plugins_default_title"
-            android:summary="@string/prefs_plugins_default_title_summary"
-            android:entries="@array/prefs_plugins_default_entries"
-            android:entryValues="@array/prefs_plugins_default_entries_values"
-            android:defaultValue="@string/prefs_plugins_default_default"
-            android:dialogTitle="@string/prefs_plugins_default_dialog" />
+            android:title="@string/prefs_camera_plugins_default_title"
+            android:summary="@string/prefs_camera_plugins_default_title_summary"
+            android:entries="@array/prefs_camera_plugins_default_entries"
+            android:entryValues="@array/prefs_camera_plugins_default_entries_values"
+            android:defaultValue="@string/prefs_camera_plugins_default_default"
+            android:dialogTitle="@string/prefs_camera_plugins_default_dialog" />
         <PreferenceScreen
             android:key="prefs_plugins_enabled"
-            android:title="@string/prefs_plugins_enabled_title"
-            android:summary="@string/prefs_plugins_enabled_summary">
+            android:title="@string/prefs_camera_plugins_enabled_title"
+            android:summary="@string/prefs_camera_plugins_enabled_summary">
             <CheckBoxPreference
                 android:key="prefs_plugins_basic_enabled"
                 android:summary="@string/plugins_basic_summary"

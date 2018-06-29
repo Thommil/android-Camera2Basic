@@ -3,9 +3,12 @@ package com.thommil.animalsgo.data;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.Preference;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
+import android.support.annotation.Nullable;
 import android.util.Log;
+import android.view.View;
 
 import com.thommil.animalsgo.R;
 
@@ -26,11 +29,8 @@ public class Settings {
     public static final float MOVEMENT_THRESHOLD = 1f;
 
     // Settings keys & values
-
-    //Preview Settings values
+    public static final String CAMERA_PREVIEW_QUALITY_AUTO = "prefs_camera_preview_quality_auto";
     public static final String CAMERA_PREVIEW_QUALITY = "prefs_camera_preview_quality";
-
-    //Plugins default values
     public static final String PLUGINS_DEFAULT = "prefs_plugins_default";
 
     private final SharedPreferences mSharedPreferences;
@@ -91,13 +91,35 @@ public class Settings {
         editor.commit();
     }
 
-    public static class SettingsFragment extends PreferenceFragment {
+    public static class SettingsFragment extends PreferenceFragment implements SharedPreferences.OnSharedPreferenceChangeListener {
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
 
             // Load the preferences from an XML resource
             addPreferencesFromResource(R.xml.preferences);
+        }
+
+        @Override
+        public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+            //Auto/manual quality preview
+            if(key.equals(CAMERA_PREVIEW_QUALITY_AUTO)){
+                findPreference(CAMERA_PREVIEW_QUALITY).setEnabled(!getInstance().getBoolean(CAMERA_PREVIEW_QUALITY_AUTO));
+            }
+
+        }
+
+        @Override
+        public void onResume() {
+            super.onResume();
+            findPreference(CAMERA_PREVIEW_QUALITY).setEnabled(!getInstance().getBoolean(CAMERA_PREVIEW_QUALITY_AUTO));
+            getPreferenceScreen().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
+        }
+
+        @Override
+        public void onPause() {
+            super.onPause();
+            getPreferenceScreen().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
         }
     }
 

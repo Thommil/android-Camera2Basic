@@ -212,80 +212,97 @@ public class CameraFragment extends Fragment {
 
         final String qualitySettings = Settings.getInstance().getString(Settings.CAMERA_PREVIEW_QUALITY);
         final String[] qualityValues = getResources().getStringArray(R.array.prefs_camera_preview_quality_entries_values);
+        final List<Size> choicesList = new LinkedList<>(Arrays.asList(choices));
+        Log.d(TAG, "All valid choices :" + choicesList);
 
-        //Lowest setting
-        if(qualitySettings.equals(qualityValues[0])){
-            sizeToReturn = choices[choices.length-1];
-        }
-        // Other
-        else {
-            int qualityIndex = qualityValues.length - 1;
-            for (final String quality : qualityValues) {
-                if (qualitySettings.equals(quality)) {
-                    break;
-                }
-                qualityIndex--;
-            }
-
-            final List<Size> choicesList = new LinkedList<>(Arrays.asList(choices));
-            Log.d(TAG, "All valid choices :" + choicesList);
-
-            final List<Size> bestChoicesList = new ArrayList<>();
-            for (int i = 0; i < choicesList.size(); i++) {
-                final Size size = choicesList.get(i);
-                if (size.getWidth() > MAX_PREVIEW_WIDTH || size.getHeight() > MAX_PREVIEW_HEIGHT
-                        || (size.getWidth() * size.getHeight() > sh * sw)) {
+        final List<Size> bestChoicesList = new ArrayList<>();
+        for (int i = 0; i < choicesList.size(); i++) {
+            final Size size = choicesList.get(i);
+            if (size.getWidth() > MAX_PREVIEW_WIDTH || size.getHeight() > MAX_PREVIEW_HEIGHT
+                    || (size.getWidth() * size.getHeight() > sh * sw)) {
+                choicesList.remove(i);
+                i--;
+            } else {
+                if (((float) size.getHeight() / size.getWidth()) == mPreviewSurfaceAspectRatio) {
+                    bestChoicesList.add(size);
                     choicesList.remove(i);
                     i--;
-                } else {
-                    if (((float) size.getHeight() / size.getWidth()) == mPreviewSurfaceAspectRatio) {
-                        bestChoicesList.add(size);
-                        choicesList.remove(i);
-                        i--;
+                }
+            }
+        }
+        Log.d(TAG, "Best available choices :" + bestChoicesList);
+
+        //Auto
+        if(Settings.getInstance().getBoolean(Settings.CAMERA_PREVIEW_QUALITY_AUTO)){
+            if(!bestChoicesList.isEmpty()){
+                // TODO if opencv is laggy, select last one
+                sizeToReturn = bestChoicesList.get(0);
+            }
+            else {
+                for (final Size size : choicesList) {
+                    if (size.getHeight() >= sw) {
+                        sizeToReturn = size;
+                    } else {
+                        break;
                     }
                 }
             }
-            Log.d(TAG, "Best available choices :" + bestChoicesList);
-
-
-            //Find in best choices
-            if (!bestChoicesList.isEmpty() && qualityIndex < bestChoicesList.size()) {
-                sizeToReturn = bestChoicesList.get(qualityIndex);
+        }
+        //Manual
+        else {
+            //Lowest setting
+            if (qualitySettings.equals(qualityValues[0])) {
+                sizeToReturn = choices[choices.length - 1];
             }
+            // Other
+            else {
+                int qualityIndex = qualityValues.length - 1;
+                for (final String quality : qualityValues) {
+                    if (qualitySettings.equals(quality)) {
+                        break;
+                    }
+                    qualityIndex--;
+                }
 
-            //Find in other choices
-            if (sizeToReturn == null) {
-                if (!bestChoicesList.isEmpty()) {
-                    for (int i = 0; i < choicesList.size(); i++) {
-                        if (choicesList.get(i).getWidth() > bestChoicesList.get(0).getWidth() || choicesList.get(i).getHeight() > bestChoicesList.get(0).getHeight()) {
-                            choicesList.remove(i);
-                            i--;
+                //Find in best choices
+                if (!bestChoicesList.isEmpty() && qualityIndex < bestChoicesList.size()) {
+                    sizeToReturn = bestChoicesList.get(qualityIndex);
+                }
+
+                //Find in other choices
+                if (sizeToReturn == null) {
+                    if (!bestChoicesList.isEmpty()) {
+                        for (int i = 0; i < choicesList.size(); i++) {
+                            if (choicesList.get(i).getWidth() > bestChoicesList.get(0).getWidth() || choicesList.get(i).getHeight() > bestChoicesList.get(0).getHeight()) {
+                                choicesList.remove(i);
+                                i--;
+                            }
+                        }
+                    }
+
+                    Log.d(TAG, "No best choice found, use fallback : " + choicesList);
+
+                    if (choicesList.size() < qualityValues.length) {
+                        qualityIndex = Math.min(choicesList.size() - 1, qualityIndex);
+                        sizeToReturn = choicesList.get(qualityIndex);
+                    } else {
+                        final int startIndex = choicesList.size() / qualityValues.length * qualityIndex;
+                        final int stopIndex = choicesList.size() / qualityValues.length * qualityIndex + choicesList.size() / qualityValues.length;
+                        float bestRatioDelta = 10;
+                        for (final Size size : choicesList.subList(startIndex, stopIndex)) {
+                            final float currentRatioDelta = Math.abs(((float) size.getHeight() / size.getWidth()) - mPreviewSurfaceAspectRatio);
+                            if (currentRatioDelta < bestRatioDelta) {
+                                sizeToReturn = size;
+                                bestRatioDelta = currentRatioDelta;
+                            }
                         }
                     }
                 }
-
-                Log.d(TAG, "No best choice found, use fallback : " + choicesList);
-
-                if (choicesList.size() < qualityValues.length) {
-                    qualityIndex = Math.min(choicesList.size() - 1, qualityIndex);
-                    sizeToReturn = choicesList.get(qualityIndex);
-                } else {
-                    final int startIndex = choicesList.size() / qualityValues.length * qualityIndex;
-                    final int stopIndex = choicesList.size() / qualityValues.length * qualityIndex + choicesList.size() / qualityValues.length;
-                    float bestRatioDelta = 10;
-                    for (final Size size : choicesList.subList(startIndex, stopIndex)) {
-                        final float currentRatioDelta = Math.abs(((float) size.getHeight() / size.getWidth()) - mPreviewSurfaceAspectRatio);
-                        if (currentRatioDelta < bestRatioDelta) {
-                            sizeToReturn = size;
-                            bestRatioDelta = currentRatioDelta;
-                        }
-                    }
-                }
             }
+        }
 
-            if (sizeToReturn == null) {
-                sizeToReturn = choicesList.get(0);
-            }
+        if (sizeToReturn == null) {
+            sizeToReturn = choicesList.get(0);
         }
 
         Log.i(TAG, "Final choice : " + sizeToReturn);

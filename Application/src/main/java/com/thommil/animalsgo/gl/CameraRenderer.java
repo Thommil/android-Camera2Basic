@@ -61,8 +61,8 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     private static final float sVertexCoords[] = {
             -1.0f,  -1.0f,
             -1.0f,   1.0f,
-             1.0f,  -1.0f,
-             1.0f,   1.0f
+            1.0f,  -1.0f,
+            1.0f,   1.0f
     };
 
     // Texture coord buffer
@@ -184,47 +184,26 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     @Override
     public void onViewportSizeUpdated(Size surfaceSize, Size previewSize) {
         Log.d(TAG, "onViewportSizeUpdated(" +surfaceSize+", "+previewSize+")");
-        /*final float surfaceRatio = (float)surfaceSize.getWidth()/(float)surfaceSize.getHeight();
-        final float previewRatio = (float)previewSize.getHeight()/(float)previewSize.getWidth();
+        final Size drawSize = new Size(previewSize.getHeight(), previewSize.getWidth());
 
-        Log.d(TAG, "Ratios - S : " +surfaceRatio+", P : "+previewRatio);
+        final float surfaceRatio = (float)surfaceSize.getWidth()/(float)surfaceSize.getHeight();
+        final float drawRatio = (float)drawSize.getWidth()/(float)drawSize.getHeight();
 
-        //We must crop preview vertically
-        if(previewRatio > surfaceRatio){
-            final float delta = (previewRatio - surfaceRatio) / 2f;
-            mTextureCoords = new float[]{
-                    delta, 0.0f,
-                    delta, 1.0f,
-                    1.0f-delta, 0.0f,
-                    1.0f-delta, 1.0f
-            };
+        Log.d(TAG, "Ratios - Surface : " +surfaceRatio+", Draw : "+drawRatio);
+
+        if(surfaceRatio > drawRatio){
+            sVertexCoords[1] = sVertexCoords[5] = -(1.0f + (surfaceRatio - drawRatio));
+            sVertexCoords[3] = sVertexCoords[7] = (1.0f + (surfaceRatio - drawRatio));
+
         }
-        //We must crop preview horizontally
-        else{
-            final float delta = (surfaceRatio - previewRatio ) / 2f;
-            mTextureCoords = new float[]{
-                    0.0f, delta,
-                    0.0f, 1.0f-delta,
-                    1.0f, delta,
-                    1.0f, 1.0f-delta
-            };
+        else if(surfaceRatio < drawRatio){
+            sVertexCoords[1] = sVertexCoords[5] = -(1.0f - (drawRatio - surfaceRatio));
+            sVertexCoords[3] = sVertexCoords[7] = (1.0f - (drawRatio - surfaceRatio));
         }
 
-        Log.d(TAG, "TextureCoords : " + Arrays.toString(mTextureCoords));
+        Log.d(TAG, "Adapted vertices : " + Arrays.toString(sVertexCoords));
 
-        setupCameraTextureCoords();*/
-        //sVertexCoords[0] = sVertexCoords[1] = sVertexCoords[2] = sVertexCoords[5] = -0.8f;
-        //sVertexCoords[3] = sVertexCoords[4] = sVertexCoords[6] = sVertexCoords[7] = 0.8f;
-        //sVertexCoords[1] = sVertexCoords[5] = -0.8f;
-        //sVertexCoords[3] = sVertexCoords[7] = 0.8f;
-
-                //-1.0f,  -1.0f,
-                //-1.0f,   1.0f,
-                //1.0f,  -1.0f,
-                //1.0f,   1.0f
-        //TODO Crop using above
         setupVertexBuffer();
-        //setupFBO();
     }
 
 

@@ -1,6 +1,5 @@
 package com.thommil.animalsgo.gl.plugins;
 
-import android.nfc.Tag;
 import android.opengl.GLES20;
 
 import com.thommil.animalsgo.R;
@@ -15,8 +14,6 @@ public class Basic extends RendererPlugin {
     private static final String TAG = "A_GO/Plugin/Basic";
 
     private static final String ID = "basic";
-
-    private static final int MASK = TYPE_PREVIEW | TYPE_CAPTURE | TYPE_CARD;
 
     private int mPositionParamHandle;
     private int mTextureCoordinateParamHandle;
@@ -44,8 +41,8 @@ public class Basic extends RendererPlugin {
     }
 
     @Override
-    public boolean isSupporting(final int flag) {
-        return (flag & MASK) > 0;
+    public int getType() {
+        return TYPE_PREVIEW;
     }
 
     @Override
@@ -70,7 +67,7 @@ public class Basic extends RendererPlugin {
     }
 
     @Override
-    public void draw(final int texId, final int width, final int height) {
+    public void draw(final int texId, final int width, final int height, final int orientation) {
         GLES20.glViewport(0, 0, width, height);
 
         GLES20.glUseProgram(mPluginShaderProgram);

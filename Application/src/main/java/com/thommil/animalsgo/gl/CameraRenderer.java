@@ -1,6 +1,8 @@
 package com.thommil.animalsgo.gl;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
@@ -14,7 +16,9 @@ import android.util.Size;
 import android.view.Surface;
 
 import com.thommil.animalsgo.R;
+import com.thommil.animalsgo.data.Capture;
 import com.thommil.animalsgo.data.Messaging;
+import com.thommil.animalsgo.data.Orientation;
 import com.thommil.animalsgo.data.Settings;
 import com.thommil.animalsgo.fragments.CameraFragment;
 
@@ -36,6 +40,9 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     // Machine states
     private final static int STATE_ERROR = 0x00;
     private final static int STATE_PREVIEW = 0x01;
+    private final static int STATE_VALIDATE_NEXT_FRAME = 0x02;
+    private final static int STATE_VALIDATION_IN_PROGRESS = 0x04;
+    private final static int STATE_VALIDATION_DONE = 0x08;
 
     // Current Thread state
     private int mState = STATE_PREVIEW;
@@ -45,9 +52,6 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
     // Underlying surface dimensions
     private int mSurfaceWidth, mSurfaceHeight;
-
-    // Underlying surface ratio
-    private float mSurfaceAspectRatio;
 
     // main texture for display, based on TextureView that is created in activity or fragment
     // and passed in after onSurfaceTextureAvailable is called, guaranteeing its existence.
@@ -128,6 +132,21 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     // Current plugin
     private RendererPlugin mPlugin;
 
+    // Current preview size
+    private Size mPreviewSize;
+
+    // Current orientation
+    private int mOrientation;
+
+    // Current capture zone
+    private final Rect mCaptureZone = new Rect();
+
+    // Buffer for storing capture data
+    private ByteBuffer mCaptureBuffer;
+
+    // Capture currently built
+    private Capture mCurrentCapture;
+
     public CameraRenderer(Context context, Surface surface, int width, int height) {
         super(THREAD_NAME);
 
@@ -136,10 +155,10 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
         mSurfaceWidth = width;
         mSurfaceHeight = height;
-        mSurfaceAspectRatio = (float)width / height;
 
         mPluginManager = PluginManager.getInstance(context);
 
+        mOrientation = Orientation.ORIENTATION_0;
         mState = STATE_PREVIEW;
     }
 
@@ -165,7 +184,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
         GLES20.glClearColor(0,0,0, 1);
 
-        mPluginManager.initialize(RendererPlugin.TYPE_PREVIEW | RendererPlugin.TYPE_CAPTURE);
+        mPluginManager.initialize(RendererPlugin.TYPE_PREVIEW | RendererPlugin.TYPE_CAPTURE | RendererPlugin.TYPE_UI);
         mPlugin = mPluginManager.getPlugin(Settings.getInstance().getString(Settings.PLUGINS_DEFAULT));
 
         onSetupComplete();
@@ -193,10 +212,10 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     @Override
     public void onViewportSizeUpdated(Size surfaceSize, Size previewSize) {
         Log.d(TAG, "onViewportSizeUpdated(" +surfaceSize+", "+previewSize+")");
-        final Size drawSize = new Size(previewSize.getHeight(), previewSize.getWidth());
+        mPreviewSize = new Size(previewSize.getHeight(), previewSize.getWidth());
 
         final float surfaceRatio = (float)surfaceSize.getWidth()/(float)surfaceSize.getHeight();
-        final float drawRatio = (float)drawSize.getWidth()/(float)drawSize.getHeight();
+        final float drawRatio = (float)mPreviewSize.getWidth()/(float)mPreviewSize.getHeight();
 
         Log.d(TAG, "Ratios - Surface : " +surfaceRatio+", Draw : "+drawRatio);
 
@@ -212,7 +231,37 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
         Log.d(TAG, "Adapted vertices : " + Arrays.toString(mVertexCoords));
 
+        updateCaptureZone();
         setupVertexBuffer();
+    }
+
+    private void updateCaptureZone(){
+        if(mCaptureBuffer == null) {
+            if (mSurfaceHeight > mSurfaceWidth) {
+                mCaptureBuffer = ByteBuffer.allocateDirect((int) (mSurfaceWidth / Settings.CAPTURE_RATIO) * mSurfaceWidth * Integer.BYTES);
+
+            } else {
+                mCaptureBuffer = ByteBuffer.allocateDirect((int) (mSurfaceHeight / Settings.CAPTURE_RATIO) * mSurfaceHeight * Integer.BYTES);
+            }
+            mCaptureBuffer.order(ByteOrder.LITTLE_ENDIAN);
+            mCaptureBuffer.rewind();
+        }
+
+        final int captureHeight;
+        switch (mOrientation) {
+            case Orientation.ORIENTATION_90:
+            case Orientation.ORIENTATION_270:
+                captureHeight = (int) (mSurfaceWidth / Settings.CAPTURE_RATIO);
+                break;
+            default:
+                captureHeight = (int) (mSurfaceWidth * Settings.CAPTURE_RATIO);
+        }
+        mCaptureZone.left = 0;
+        mCaptureZone.right = mSurfaceWidth;
+        mCaptureZone.bottom = (mSurfaceHeight - captureHeight) / 2;
+        mCaptureZone.top = mCaptureZone.bottom + captureHeight;
+
+        Log.d(TAG, "Capture size : " + mCaptureZone);
     }
 
 
@@ -411,9 +460,17 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
 
     public void draw() {
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFBOId);
+        switch (mState){
+            case STATE_PREVIEW :
+            case STATE_VALIDATE_NEXT_FRAME :
+            case STATE_VALIDATION_IN_PROGRESS :
+                drawPreview();
+                break;
+        }
+    }
 
-        //TODO Transform matrix when android < 6 (using accelerometer)
+    private void drawPreview(){
+        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFBOId);
 
         GLES20.glViewport(0, 0, mSurfaceWidth, mSurfaceHeight);
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
@@ -431,6 +488,8 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         GLES20.glEnableVertexAttribArray(textureCoordinateHandle);
         GLES20.glVertexAttribPointer(textureCoordinateHandle, 2, GLES20.GL_FLOAT, false, 8, mTextureBuffer);
 
+        //TODO Transform matrix when android < 6 (using accelerometer)
+        //TODO Transform matrix on zoom
         GLES20.glUniformMatrix4fv(mTextureTranformHandle, 1, false, mCameraTransformMatrix, 0);
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
@@ -438,22 +497,74 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         GLES20.glDisableVertexAttribArray(mPositionHandle);
         GLES20.glDisableVertexAttribArray(textureCoordinateHandle);
 
+        if(mState == STATE_VALIDATE_NEXT_FRAME){
+            mCaptureBuffer.rewind();
+            GLES20.glReadPixels(mCaptureZone.left, mCaptureZone.bottom, Math.abs(mCaptureZone.width()), Math.abs(mCaptureZone.height()),
+                    GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, mCaptureBuffer);
+            GlUtil.checkGlError("glReadPixels");
+            mCaptureBuffer.rewind();
+            Bitmap bmp = Bitmap.createBitmap(Math.abs(mCaptureZone.width()), Math.abs(mCaptureZone.height()), Bitmap.Config.ARGB_8888);
+            bmp.copyPixelsFromBuffer(mCaptureBuffer);
+            mState = STATE_VALIDATION_IN_PROGRESS;
+            bmp.recycle();
+            /*
+            int width = getWidth();
+        int height = getHeight();
+        ByteBuffer buf = ByteBuffer.allocateDirect(width * height * 4);
+        buf.order(ByteOrder.LITTLE_ENDIAN);
+        GLES20.glReadPixels(0, 0, width, height,
+                GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, buf);
+        GlUtil.checkGlError("glReadPixels");
+        buf.rewind();
+
+        Bitmap bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        bmp.copyPixelsFromBuffer(buf);
+             */
+        }
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, GLES20.GL_NONE);
 
         //Plugin draw
-        mPlugin.draw(mFBOTextureId, mSurfaceWidth, mSurfaceHeight);
+        mPlugin.draw(mFBOTextureId, mSurfaceWidth, mSurfaceHeight, mOrientation);
+
+        if(mState == STATE_VALIDATION_DONE){
+
+        }
+
+        //UI draw
+        drawUI();
+    }
+
+    private void drawUI(){
+
     }
 
     @Override
     public boolean handleMessage(Message message) {
         Log.d(TAG, "handleMessage(" + message);
-
         switch(message.what){
             case Messaging.SYSTEM_SHUTDOWN:
                 shutdown();
                 break;
+            case Messaging.SYSTEM_ORIENTATION_CHANGE:
+                if(mState == STATE_PREVIEW) {
+                    mOrientation = ((Orientation) message.obj).getOrientation();
+                    updateCaptureZone();
+                }
+                break;
             case Messaging.RENDERER_CHANGE_PLUGIN:
-                mPlugin = mPluginManager.getPlugin((String)message.obj);
+                if(mState == STATE_PREVIEW){
+                    mPlugin = mPluginManager.getPlugin((String)message.obj);
+                }
+                break;
+            case Messaging.RENDERER_VALIDATE_NEXT_FRAME:
+                if(mState == STATE_PREVIEW){
+                    mState = STATE_VALIDATE_NEXT_FRAME;
+                    mCurrentCapture = (Capture)message.obj;
+                }
+                break;
+            case Messaging.RENDERER_VALIDATION_DONE:
+                mState = STATE_VALIDATION_DONE;
+                mCurrentCapture = (Capture)message.obj;
                 break;
         }
         return true;

@@ -31,6 +31,7 @@ import android.view.View;
 import com.thommil.animalsgo.R;
 import com.thommil.animalsgo.data.Capture;
 import com.thommil.animalsgo.data.Messaging;
+import com.thommil.animalsgo.data.Orientation;
 import com.thommil.animalsgo.data.Settings;
 
 import java.util.ArrayList;
@@ -113,9 +114,11 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Se
     private float mAccelCurrent;
     private float mAccelLast;
 
-    //Gravity sensor
+    // Gravity sensor
     final private float[] mGravity = new float[]{0,SensorManager.GRAVITY_EARTH,0};
 
+    // Current orientation
+    private final Orientation mOrientation = new Orientation();
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -376,15 +379,11 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Se
                         if(!mIsTouched && !mIsmoving &&
                                 capture.cameraState != Capture.STATE_NOT_READY &&
                                 capture.lightState != Capture.STATE_NOT_READY){
-                            Log.d(TAG, "GO GO GO GO GO GO GO GO GO GO ");
                             System.arraycopy(mGravity, 0, capture.gravity, 0, 3);
-
-
+                            mRendererHandler.sendMessage(mRendererHandler.obtainMessage(Messaging.RENDERER_VALIDATE_NEXT_FRAME, capture));
                         }
-                        //TODO get data from image reader and send to snapshotvalidator (set STATE_VALIDATE)
 
-                        //Log.d(TAG, capturePreview.toString());
-                        //stopPreview();
+                        //TODO release async
                         mCaptureBuilder.releaseCapture(capture);
                         mFrameCount = 0;
                     }
@@ -398,7 +397,7 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Se
 
     protected void startPreview(){
         Log.d(TAG, "startPreview()");
-        if (null == mCameraDevice || null == mPreviewSize || !mSurfaceView.getHolder().getSurface().isValid()) {
+        if (null == mCameraDevice || null == mPreviewSize || !mSurfaceView.getHolder().getSurface().isValid() || mRendererHandler == null) {
             return;
         }
         try {
@@ -538,6 +537,16 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Se
         final float delta = Math.abs(mAccelCurrent - mAccelLast);
         mAccel = mAccel * 0.9f + delta;
         mIsmoving = (mAccel > Settings.MOVEMENT_THRESHOLD);
+
+        if(mAccel > Settings.MOVEMENT_ORIENTATION_CHANGE_THRESHOLD) {
+            final int previousOrientation = mOrientation.getOrientation();
+            mOrientation.setValue(x, y, z);
+            if (mOrientation.getOrientation() != previousOrientation) {
+                if (mRendererHandler != null) {
+                    mRendererHandler.sendMessage(mRendererHandler.obtainMessage(Messaging.SYSTEM_ORIENTATION_CHANGE, mOrientation));
+                }
+            }
+        }
     }
 
     @Override

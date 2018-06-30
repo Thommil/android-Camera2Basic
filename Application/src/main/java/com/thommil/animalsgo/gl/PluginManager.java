@@ -58,7 +58,7 @@ public class PluginManager {
     public void initialize(final int filter){
         Log.d(TAG, "destroy()");
         for(final RendererPlugin plugin : mPluginsMap.values()){
-            if(plugin.isSupporting(filter)){
+            if((plugin.getType() & filter) > 0){
                 plugin.create();
             }
         }

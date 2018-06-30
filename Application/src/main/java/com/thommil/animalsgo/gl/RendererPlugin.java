@@ -14,9 +14,14 @@ public abstract class RendererPlugin{
 
     private static final String TAG = "A_GO/RendererPlugin";
 
+    // Type for rendering effects on preview
     public static final int TYPE_PREVIEW = 0x01;
+
+    // Type for rendering effects on live captures
     public static final int TYPE_CAPTURE = 0x02;
-    public static final int TYPE_CARD = 0x04;
+
+    // Type for handling UI
+    public static final int TYPE_UI = 0x04;
 
     protected Context mContext;
 
@@ -32,8 +37,7 @@ public abstract class RendererPlugin{
 
     public abstract String getSummary();
 
-    public abstract boolean isSupporting(final int flag);
-
+    public abstract int getType();
 
     public void create(){
         Log.d(TAG, "create()");
@@ -71,7 +75,7 @@ public abstract class RendererPlugin{
         }
     }
 
-    public abstract void draw(final int texId, final int width, final int height);
+    public abstract void draw(final int texId, final int width, final int height, final int orientation);
 
     protected void checkGlError(String op) {
         int error;

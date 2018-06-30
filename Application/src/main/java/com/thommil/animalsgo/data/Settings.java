@@ -25,8 +25,17 @@ public class Settings {
     // Number of frames between 2 updates
     public static final int CAPTURE_UPDATE_FREQUENCY = 10;
 
+    // Capture image ratio (4/3)
+    public static final float CAPTURE_RATIO = 0.75f;
+
     // Mvt detection sensibility (more = less sensible)
     public static final float MOVEMENT_THRESHOLD = 1f;
+
+    // Mvt detection sensibility threshold for orientation change trigger
+    public static final float MOVEMENT_ORIENTATION_CHANGE_THRESHOLD = 2f;
+
+    // Landscape mode threshold on orientation
+    public static final float[] LANSCAPE_MODE_VERTICAL_TRESHOLDS = new float[]{9f, 6f};
 
     // Settings keys & values
     public static final String CAMERA_PREVIEW_QUALITY_AUTO = "prefs_camera_preview_quality_auto";

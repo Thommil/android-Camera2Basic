@@ -10,10 +10,13 @@ public class Messaging {
     // SYSTEM
     public static final int SYSTEM_CONNECT_RENDERER = 0x001;
     public static final int SYSTEM_CONNECT_VALIDATOR = 0x002;
-    public static final int SYSTEM_SHUTDOWN = 0x004;
+    public static final int SYSTEM_ORIENTATION_CHANGE = 0x004;
+    public static final int SYSTEM_SHUTDOWN = 0x008;
 
     // RENDERER
     public static final int RENDERER_CHANGE_PLUGIN = 0x010;
+    public static final int RENDERER_VALIDATE_NEXT_FRAME = 0x020;
+    public static final int RENDERER_VALIDATION_DONE = 0x040;
 
     // Validator
     public static final int VALIDATION_REQUEST = 0x100;

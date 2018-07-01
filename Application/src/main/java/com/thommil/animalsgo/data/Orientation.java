@@ -1,7 +1,5 @@
 package com.thommil.animalsgo.data;
 
-import org.opencv.core.Mat;
-
 /**
  * Orientation tooling (based on portrait mode only)
  */

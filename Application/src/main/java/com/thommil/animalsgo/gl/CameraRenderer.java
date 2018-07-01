@@ -14,14 +14,12 @@ import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 
-import com.thommil.animalsgo.data.Capture;
+import com.thommil.animalsgo.capture.Capture;
 import com.thommil.animalsgo.data.Messaging;
 import com.thommil.animalsgo.data.Orientation;
 import com.thommil.animalsgo.data.Settings;
 import com.thommil.animalsgo.fragments.CameraFragment;
-import com.thommil.animalsgo.fragments.CaptureBuilder;
-
-import org.opencv.core.Mat;
+import com.thommil.animalsgo.capture.CaptureBuilder;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

@@ -15,7 +15,7 @@ import android.view.View;
 import com.thommil.animalsgo.data.Messaging;
 import com.thommil.animalsgo.fragments.CameraFragment;
 import com.thommil.animalsgo.gl.CameraRenderer;
-import com.thommil.animalsgo.opencv.CaptureValidator;
+import com.thommil.animalsgo.capture.CaptureValidator;
 
 
 public class CameraActivity extends FragmentActivity implements CameraRenderer.OnRendererReadyListener, Handler.Callback {

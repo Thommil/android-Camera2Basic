@@ -29,7 +29,8 @@ import android.view.SurfaceView;
 import android.view.View;
 
 import com.thommil.animalsgo.R;
-import com.thommil.animalsgo.data.Capture;
+import com.thommil.animalsgo.capture.CaptureBuilder;
+import com.thommil.animalsgo.capture.Capture;
 import com.thommil.animalsgo.data.Messaging;
 import com.thommil.animalsgo.data.Orientation;
 import com.thommil.animalsgo.data.Settings;

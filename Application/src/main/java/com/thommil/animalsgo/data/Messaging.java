@@ -14,9 +14,9 @@ public class Messaging {
     public static final int SYSTEM_SHUTDOWN = 0x008;
 
     // RENDERER
-    public static final int RENDERER_CHANGE_PLUGIN = 0x010;
-    public static final int RENDERER_VALIDATE_NEXT_FRAME = 0x020;
-    public static final int RENDERER_VALIDATION_DONE = 0x040;
+    public static final int CHANGE_PLUGIN = 0x010;
+    public static final int CAPTURE_NEXT_FRAME = 0x020;
+    public static final int VALIDATION_DONE = 0x040;
 
     // Validator
     public static final int VALIDATION_REQUEST = 0x100;

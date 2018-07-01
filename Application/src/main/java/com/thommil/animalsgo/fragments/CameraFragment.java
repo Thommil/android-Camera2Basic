@@ -380,11 +380,11 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Se
                                 capture.cameraState != Capture.STATE_NOT_READY &&
                                 capture.lightState != Capture.STATE_NOT_READY){
                             System.arraycopy(mGravity, 0, capture.gravity, 0, 3);
-                            mRendererHandler.sendMessage(mRendererHandler.obtainMessage(Messaging.RENDERER_VALIDATE_NEXT_FRAME, capture));
+                            mRendererHandler.sendMessage(mRendererHandler.obtainMessage(Messaging.CAPTURE_NEXT_FRAME, capture));
                         }
-
-                        //TODO release async
-                        mCaptureBuilder.releaseCapture(capture);
+                        else {
+                            mCaptureBuilder.releaseCapture(capture);
+                        }
                         mFrameCount = 0;
                     }
                     mFrameCount++;

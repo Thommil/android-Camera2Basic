@@ -67,7 +67,9 @@ public class CaptureValidator extends HandlerThread implements Handler.Callback 
         Log.d(TAG, "handleMessage(" + message+ ")");
         switch (message.what){
             case Messaging.VALIDATION_REQUEST :
-                validateCapture((Capture) message.obj);
+                final Capture capture = (Capture) message.obj;
+                validateCapture(capture);
+                mMainHandler.sendMessage(mMainHandler.obtainMessage(Messaging.VALIDATION_RESULT, capture));
                 break;
             case Messaging.SYSTEM_SHUTDOWN:
                 shutdown();
@@ -77,7 +79,13 @@ public class CaptureValidator extends HandlerThread implements Handler.Callback 
     }
 
     protected void validateCapture(final Capture capture){
-        Log.d(TAG, "validateCaptureRequest("+capture+")");
+        Log.d(TAG, "validateCapture("+capture+")");
+        try {
+            Thread.sleep(1000);
+            capture.validationState = Capture.VALIDATION_SUCCEED;
+        }catch (InterruptedException ie){
+
+        }
     }
 
     private void showError(final int messageResourceId){

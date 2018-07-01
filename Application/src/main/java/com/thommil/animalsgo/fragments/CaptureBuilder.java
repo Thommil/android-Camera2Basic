@@ -104,6 +104,7 @@ public class CaptureBuilder {
     }
 
     public void releaseCapture(final Capture capture){
+        capture.validationState = Capture.VALIDATION_IN_PROGRESS;
         sCapturePreviewPool.release(capture);
     }
 }

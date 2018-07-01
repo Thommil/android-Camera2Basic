@@ -157,6 +157,12 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
             case Messaging.SYSTEM_CONNECT_VALIDATOR:
                 mValidatorHandler = (Handler) message.obj;
                 break;
+            case Messaging.VALIDATION_REQUEST:
+                mValidatorHandler.sendMessage(mValidatorHandler.obtainMessage(Messaging.VALIDATION_REQUEST, message.obj));
+                break;
+            case Messaging.VALIDATION_RESULT:
+                mRendererHandler.sendMessage(mRendererHandler.obtainMessage(Messaging.VALIDATION_DONE, message.obj));
+                break;
         }
         return true;
     }

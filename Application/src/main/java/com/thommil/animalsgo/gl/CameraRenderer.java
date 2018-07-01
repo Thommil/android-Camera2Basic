@@ -1,7 +1,6 @@
 package com.thommil.animalsgo.gl;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES11Ext;
@@ -15,12 +14,14 @@ import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 
-import com.thommil.animalsgo.R;
 import com.thommil.animalsgo.data.Capture;
 import com.thommil.animalsgo.data.Messaging;
 import com.thommil.animalsgo.data.Orientation;
 import com.thommil.animalsgo.data.Settings;
 import com.thommil.animalsgo.fragments.CameraFragment;
+import com.thommil.animalsgo.fragments.CaptureBuilder;
+
+import org.opencv.core.Mat;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -29,6 +30,8 @@ import java.nio.FloatBuffer;
 import java.util.Arrays;
 
 
+// TODO Import KeskGL (chunks for draw, RBO for photo capture...)
+// TODO GLRect Class to hide gl textcoords
 public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFrameAvailableListener, CameraFragment.OnViewportSizeUpdatedListener, Handler.Callback {
 
     private static final String TAG = "A_GO/CameraRenderer";
@@ -40,7 +43,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     // Machine states
     private final static int STATE_ERROR = 0x00;
     private final static int STATE_PREVIEW = 0x01;
-    private final static int STATE_VALIDATE_NEXT_FRAME = 0x02;
+    private final static int STATE_CAPTURE_NEXT_FRAME = 0x02;
     private final static int STATE_VALIDATION_IN_PROGRESS = 0x04;
     private final static int STATE_VALIDATION_DONE = 0x08;
 
@@ -459,17 +462,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     }
 
 
-    public void draw() {
-        switch (mState){
-            case STATE_PREVIEW :
-            case STATE_VALIDATE_NEXT_FRAME :
-            case STATE_VALIDATION_IN_PROGRESS :
-                drawPreview();
-                break;
-        }
-    }
-
-    private void drawPreview(){
+    private void draw(){
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFBOId);
 
         GLES20.glViewport(0, 0, mSurfaceWidth, mSurfaceHeight);
@@ -497,37 +490,60 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         GLES20.glDisableVertexAttribArray(mPositionHandle);
         GLES20.glDisableVertexAttribArray(textureCoordinateHandle);
 
-        if(mState == STATE_VALIDATE_NEXT_FRAME){
+        if(mState == STATE_CAPTURE_NEXT_FRAME){
             mCaptureBuffer.rewind();
-            GLES20.glReadPixels(mCaptureZone.left, mCaptureZone.bottom, Math.abs(mCaptureZone.width()), Math.abs(mCaptureZone.height()),
-                    GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, mCaptureBuffer);
-            GlUtil.checkGlError("glReadPixels");
+            GLES20.glReadPixels(mCaptureZone.left, mCaptureZone.bottom, mCaptureZone.width(), Math.abs(mCaptureZone.height()), GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, mCaptureBuffer);
             mCaptureBuffer.rewind();
-            Bitmap bmp = Bitmap.createBitmap(Math.abs(mCaptureZone.width()), Math.abs(mCaptureZone.height()), Bitmap.Config.ARGB_8888);
-            bmp.copyPixelsFromBuffer(mCaptureBuffer);
+            mCurrentCapture.mOriginalBuffer = mCaptureBuffer.asReadOnlyBuffer();
+            mMainHandler.sendMessage(mMainHandler.obtainMessage(Messaging.VALIDATION_REQUEST, mCurrentCapture));
             mState = STATE_VALIDATION_IN_PROGRESS;
-            bmp.recycle();
+            /*Bitmap bmp = Bitmap.createBitmap(mCaptureZone.width(), -mCaptureZone.height(), Bitmap.Config.ARGB_8888);
+            bmp.copyPixelsFromBuffer(mCaptureBuffer);
+            Mat mat = new Mat(-mCaptureZone.height(), mCaptureZone.width(), CvType.CV_8UC4, mCaptureBuffer);
+            //Mat mat = new Mat(-mCaptureZone.height(), mCaptureZone.width(), CvType.CV_8UC4);
+            //Utils.bitmapToMat(bmp, mat);
+            Mat dst = new Mat(-mCaptureZone.height(), mCaptureZone.width(), CvType.CV_8UC4);
+            Imgproc.Canny(mat, dst, 300, 600, 5, true);
+            //Photo.stylization(mat, dst);
+
+            //Utils.matToBitmap(dst, bmp);
+            //mCaptureBuffer.
+            //Bitmap bmp = Bitmap.createBitmap(mCaptureZone.width(), -mCaptureZone.height(), Bitmap.Config.ARGB_8888);
+            //bmp.copyPixelsFromBuffer(mCaptureBuffer);
+            mState = STATE_VALIDATION_IN_PROGRESS;
+            //bmp.recycle();*/
             /*
             int width = getWidth();
-        int height = getHeight();
-        ByteBuffer buf = ByteBuffer.allocateDirect(width * height * 4);
-        buf.order(ByteOrder.LITTLE_ENDIAN);
-        GLES20.glReadPixels(0, 0, width, height,
-                GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, buf);
-        GlUtil.checkGlError("glReadPixels");
-        buf.rewind();
+            int height = getHeight();
+            ByteBuffer buf = ByteBuffer.allocateDirect(width * height * 4);
+            buf.order(ByteOrder.LITTLE_ENDIAN);
+            GLES20.glReadPixels(0, 0, width, height,
+                    GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, buf);
+            GlUtil.checkGlError("glReadPixels");
+            buf.rewind();
 
-        Bitmap bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-        bmp.copyPixelsFromBuffer(buf);
-             */
+            Bitmap bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+            bmp.copyPixelsFromBuffer(buf);
+                 */
         }
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, GLES20.GL_NONE);
 
         //Plugin draw
         mPlugin.draw(mFBOTextureId, mSurfaceWidth, mSurfaceHeight, mOrientation);
 
-        if(mState == STATE_VALIDATION_DONE){
-
+        switch(mState){
+            case STATE_VALIDATION_IN_PROGRESS:
+                // TODO write RBO
+                // TODO possible scan effects
+                break;
+            case STATE_VALIDATION_DONE:
+                // TODO read RBO
+                // TODO STATE -> Choose/confirm
+                Log.d(TAG, "Capture done : " + mCurrentCapture);
+                mState = STATE_PREVIEW;
+                CaptureBuilder.getInstance().releaseCapture(mCurrentCapture);
+                mCurrentCapture = null;
+                break;
         }
 
         //UI draw
@@ -551,20 +567,31 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
                     updateCaptureZone();
                 }
                 break;
-            case Messaging.RENDERER_CHANGE_PLUGIN:
+            case Messaging.CHANGE_PLUGIN:
                 if(mState == STATE_PREVIEW){
                     mPlugin = mPluginManager.getPlugin((String)message.obj);
                 }
                 break;
-            case Messaging.RENDERER_VALIDATE_NEXT_FRAME:
+            case Messaging.CAPTURE_NEXT_FRAME:
                 if(mState == STATE_PREVIEW){
-                    mState = STATE_VALIDATE_NEXT_FRAME;
+                    mState = STATE_CAPTURE_NEXT_FRAME;
                     mCurrentCapture = (Capture)message.obj;
+                    mCurrentCapture.validationState = Capture.VALIDATION_IN_PROGRESS;
+                    mCurrentCapture.width = Math.abs(mCaptureZone.width());
+                    mCurrentCapture.height = Math.abs(mCaptureZone.height());
                 }
                 break;
-            case Messaging.RENDERER_VALIDATION_DONE:
-                mState = STATE_VALIDATION_DONE;
+            case Messaging.VALIDATION_DONE:
                 mCurrentCapture = (Capture)message.obj;
+                switch(mCurrentCapture.validationState){
+                    case Capture.VALIDATION_SUCCEED :
+                        mState = STATE_VALIDATION_DONE;
+                        break;
+                    default:
+                        mState = STATE_PREVIEW;
+                        CaptureBuilder.getInstance().releaseCapture(mCurrentCapture);
+                        mCurrentCapture = null;
+                }
                 break;
         }
         return true;

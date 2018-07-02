@@ -18,7 +18,7 @@ public class GlFrameBufferObject {
 	 * TAG log
 	 */
 	@SuppressWarnings("unused")
-	private final static String TAG = GlFrameBufferObject.class.getName();
+	private static final String TAG = "A_GO/GlFrameBufferObject";
 		
 	/**
 	 * Handle to use unbind current buffer

@@ -1,7 +1,6 @@
 package com.thommil.animalsgo.gl;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.thommil.animalsgo.R;
@@ -15,7 +14,7 @@ public class PluginManager {
 
     private static PluginManager sPluginManagerInstance;
 
-    private final Map<String, RendererPlugin> mPluginsMap;
+    private final Map<String, Plugin> mPluginsMap;
 
     private final Context mContext;
 
@@ -32,7 +31,7 @@ public class PluginManager {
         return sPluginManagerInstance;
     }
 
-    public RendererPlugin getPlugin(final String pluginId){
+    public Plugin getPlugin(final String pluginId){
         return mPluginsMap.get(pluginId);
     }
 
@@ -41,7 +40,7 @@ public class PluginManager {
         try {
             for (final String pluginClassname : mContext.getResources().getStringArray(R.array.plugins_list)) {
                 final Class pluginClass = this.getClass().getClassLoader().loadClass(pluginClassname);
-                final RendererPlugin plugin = (RendererPlugin) pluginClass.newInstance();
+                final Plugin plugin = (Plugin) pluginClass.newInstance();
                 plugin.setContext(mContext);
                 Log.d(TAG, "Plugin "+ plugin.getId()+" created");
                 mPluginsMap.put(plugin.getId(), plugin);
@@ -57,7 +56,7 @@ public class PluginManager {
 
     public void initialize(final int filter){
         Log.d(TAG, "destroy()");
-        for(final RendererPlugin plugin : mPluginsMap.values()){
+        for(final Plugin plugin : mPluginsMap.values()){
             if((plugin.getType() & filter) > 0){
                 plugin.create();
             }
@@ -67,7 +66,7 @@ public class PluginManager {
 
     public void destroy(){
         Log.d(TAG, "destroy()");
-        for(final RendererPlugin plugin : mPluginsMap.values()){
+        for(final Plugin plugin : mPluginsMap.values()){
             plugin.delete();
         }
     }

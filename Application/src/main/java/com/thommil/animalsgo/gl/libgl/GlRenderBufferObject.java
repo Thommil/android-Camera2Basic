@@ -14,7 +14,7 @@ public class GlRenderBufferObject implements GlFrameBufferObject.Attachment{
 	 * TAG log
 	 */
 	@SuppressWarnings("unused")
-	private final static String TAG = GlRenderBufferObject.class.getName();
+	private static final String TAG = "A_GO/GlRenderBufferObject";
 	
 	/**
 	 * Handle to use to unbind current buffer

@@ -1,6 +1,7 @@
 package com.thommil.animalsgo.gl.libgl;
 
 import android.opengl.GLES20;
+import android.opengl.GLException;
 import android.opengl.GLUtils;
 import android.util.Log;
 
@@ -343,7 +344,7 @@ public final class GlOperation {
 	 * 
 	 * @param srcFactor Source pixel blend factor should of BLEND_FACTOR_*
 	 * @param dstFactor Destination pixel blend factor should of BLEND_FACTOR_*
-	 * @param blendEquation The final operation on results should be of BLEND_OPERATION_*
+	 * @param blendOperation The final operation on results should be of BLEND_OPERATION_*
 	 * @param constantColor An optional constant color (float[4]) depending on srcFactor and dstFactor
 	 */
 	public static final void configureBlendTest(final int srcFactor, final int dstFactor, final int blendOperation, final float[] constantColor){
@@ -448,10 +449,55 @@ public final class GlOperation {
 	 *
 	 * @param op The opefation to check for message
 	 */
-	public static void checkGlError(String op) {
-		int error;
+	public static int checkGlError(String op) {
+		int error = GLES20.GL_NO_ERROR;
 		while ((error = GLES20.glGetError()) != GLES20.GL_NO_ERROR) {
-			Log.e("SurfaceTest", op + ": glError " + GLUtils.getEGLErrorString(error));
+			Log.e(TAG, op + ": glError " + GLUtils.getEGLErrorString(error));
 		}
+		return error;
 	}
+
+    /**
+     * Unified GL state accessor
+     *
+     * @param key The key of the state to get
+     * @return The state value(s) in a float array
+     */
+    public static float[] glGetState(final int key){
+        //android.util.Log.d(TAG,"getGlState("+key+")");
+        final float[] result;
+        switch(key){
+            //2
+            case GLES20.GL_ALIASED_LINE_WIDTH_RANGE :
+            case GLES20.GL_ALIASED_POINT_SIZE_RANGE :
+            case GLES20.GL_DEPTH_RANGE :
+            case GLES20.GL_MAX_VIEWPORT_DIMS :
+                result = new float[2];
+                break;
+            //4
+            case GLES20.GL_BLEND_COLOR :
+            case GLES20.GL_COLOR_CLEAR_VALUE :
+            case GLES20.GL_COLOR_WRITEMASK :
+            case GLES20.GL_SCISSOR_BOX :
+            case GLES20.GL_VIEWPORT :
+                result = new float[4];
+                break;
+            //Dynamic
+            case GLES20.GL_COMPRESSED_TEXTURE_FORMATS :
+                final int[]tmp1 = new int[1];
+                GLES20.glGetIntegerv(GLES20.GL_NUM_COMPRESSED_TEXTURE_FORMATS, tmp1, 0);
+                result = new float[tmp1[0]];
+                break;
+            case GLES20.GL_SHADER_BINARY_FORMATS :
+                final int[]tmp2 = new int[1];
+                GLES20.glGetIntegerv(GLES20.GL_NUM_SHADER_BINARY_FORMATS, tmp2, 0);
+                result = new float[tmp2[0]];
+                break;
+            //1
+            default :
+                result = new float[1];
+        }
+        GLES20.glGetFloatv(key, result, 0);
+        return result;
+    }
 }

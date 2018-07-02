@@ -27,7 +27,7 @@ public class GlProgram {
 	 * TAG log
 	 */
 	@SuppressWarnings("unused")
-	private final static String TAG = GlProgram.class.getName();
+	private static final String TAG = "A_GO/GlProgram";
 	
 	/**
 	 * Handle to use to unbind current program
@@ -43,12 +43,7 @@ public class GlProgram {
 	 * Uniform pattern for parsing
 	 */
 	private static final Pattern UNIFORM_PATTERN = Pattern.compile("uniform\\s*[^\\s]*\\s*([^\\s;]*)\\s*;",Pattern.MULTILINE|Pattern.DOTALL);
-				
-	/**
-	 * Indicates if current program is enabled on pipeline
-	 */
-	private boolean isEnabled;
-	
+
 	/**
 	 * Handle on current program
 	 */
@@ -82,9 +77,8 @@ public class GlProgram {
 	/**
 	 * Constructor, creates and link program based on specified shaders
 	 * 
-	 * @param vertexShaderLocation The vertex shader inputstream
-	 * @param fragmentShaderLocation The fragment shader inputstream
-	 * @param varList The list of variable names to bind (null for no binding)
+	 * @param vertexShaderInputStream The vertex shader inputstream
+	 * @param fragmentShaderInputStream The fragment shader inputstream
 	 * @throws GLException
 	 */
 	public GlProgram(final InputStream vertexShaderInputStream, final InputStream fragmentShaderInputStream){
@@ -118,7 +112,7 @@ public class GlProgram {
 	/**
 	 * Enables shader attribute by its handle
 	 * 
-	 * @param attrList The handle of attribute to enable
+	 * @param attributeId The handle of attribute to enable
 	 */
 	public void enableAttribute(final int attributeId){
 		//android.util.Log.d(TAG,"enableAttribute("+attributeId+")");
@@ -160,26 +154,9 @@ public class GlProgram {
 	 * <br/>
 	 * Caution : only calls to start/stop are taken into account for current state
 	 */
-	public void start(){
+	public void use(){
 		//android.util.Log.d(TAG,"start()");
-		if(!this.isEnabled){
-			GLES20.glUseProgram(this.programHandle);
-			this.isEnabled = true;
-		}
-	}
-	
-	/**
-	 * Disable the program on pipeline.<br/>
-	 * <br/>
-	 * <br/>
-	 * Caution : only calls to start/stop are taken into account for current state
-	 */
-	public void stop(){
-		//android.util.Log.d(TAG,"stop()");
-		if(this.isEnabled){
-			GLES20.glUseProgram(UNBIND_HANDLE);
-			this.isEnabled = false;
-		}
+        GLES20.glUseProgram(this.programHandle);
 	}
 	
 	/*

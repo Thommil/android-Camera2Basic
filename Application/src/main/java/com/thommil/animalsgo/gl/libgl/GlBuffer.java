@@ -67,7 +67,7 @@ public class GlBuffer<E>{
 	 * TAG log
 	 */
 	@SuppressWarnings("unused")
-	private final static String TAG = GlBuffer.class.getName();
+	private static final String TAG = "A_GO/GlBuffer";
 	
 	/**
 	 * Alias for BYTE in OpenGL for inner data type

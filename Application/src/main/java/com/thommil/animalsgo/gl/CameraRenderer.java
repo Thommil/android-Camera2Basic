@@ -5,7 +5,6 @@ import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
-import android.opengl.GLUtils;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -22,11 +21,12 @@ import com.thommil.animalsgo.fragments.CameraFragment;
 import com.thommil.animalsgo.capture.CaptureBuilder;
 import com.thommil.animalsgo.gl.libgl.EglCore;
 import com.thommil.animalsgo.gl.libgl.GlOperation;
-import com.thommil.animalsgo.gl.libgl.ShaderUtils;
+import com.thommil.animalsgo.gl.libgl.GlProgram;
 import com.thommil.animalsgo.gl.libgl.WindowSurface;
 import com.thommil.animalsgo.utils.ByteBufferPool;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.ByteOrder;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
@@ -40,8 +40,8 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     private static final String TAG = "A_GO/CameraRenderer";
     private static final String THREAD_NAME = "CameraRendererThread";
 
-    private final String DEFAULT_FRAGMENT_SHADER = "camera.frag.glsl";
-    private final String DEFAULT_VERTEX_SHADER = "camera.vert.glsl";
+    private final String CAMERA_FRAGMENT_SHADER = "camera.frag.glsl";
+    private final String CAMERA_VERTEX_SHADER = "camera.vert.glsl";
 
     // Machine states
     private final static int STATE_ERROR = 0x00;
@@ -72,8 +72,8 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     // Texture created for GLES rendering of camera data
     private SurfaceTexture mPreviewTexture;
 
-    // shaders identifier
-    private int mCameraShaderProgram;
+    // Cmaera program
+    private GlProgram mCameraProgram;
 
     private final float mVertexCoords[] = {
             -1.0f,  -1.0f,
@@ -136,7 +136,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     private PluginManager mPluginManager;
 
     // Current plugin
-    private RendererPlugin mPlugin;
+    private Plugin mPlugin;
 
     // Current preview size
     private Size mPreviewSize;
@@ -190,7 +190,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
         GLES20.glClearColor(0,0,0, 1);
 
-        mPluginManager.initialize(RendererPlugin.TYPE_PREVIEW | RendererPlugin.TYPE_CAPTURE | RendererPlugin.TYPE_UI);
+        mPluginManager.initialize(Plugin.TYPE_PREVIEW | Plugin.TYPE_CAPTURE | Plugin.TYPE_UI);
         mPlugin = mPluginManager.getPlugin(Settings.getInstance().getString(Settings.PLUGINS_DEFAULT));
 
         onSetupComplete();
@@ -209,7 +209,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         Log.d(TAG, "deinitGLComponents()");
         deleteFBO();
         GLES20.glDeleteTextures(1, new int[]{mCamTextureId}, 0);
-        GLES20.glDeleteProgram(mCameraShaderProgram);
+        mCameraProgram.free();
         ByteBufferPool.getInstance().returnDirectBuffer(mVertexBuffer);
         ByteBufferPool.getInstance().returnDirectBuffer(mTextureBuffer);
         ByteBufferPool.getInstance().returnDirectBuffer(mCaptureBuffer);
@@ -322,43 +322,36 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
     protected void setupShaders() {
         Log.d(TAG, "setupShaders()");
+        InputStream vertexInputStream = null, fragmentInputStream = null;
         try {
-            final int vertexShaderHandle = GLES20.glCreateShader(GLES20.GL_VERTEX_SHADER);
-            final String vertexShaderCode = ShaderUtils.getStringFromFileInAssets(mContext, DEFAULT_VERTEX_SHADER);
-            GLES20.glShaderSource(vertexShaderHandle, vertexShaderCode);
-            GLES20.glCompileShader(vertexShaderHandle);
-            GlOperation.checkGlError("Vertex shader compile");
+            vertexInputStream = mContext.getAssets().open(CAMERA_VERTEX_SHADER);
+            fragmentInputStream = mContext.getAssets().open(CAMERA_FRAGMENT_SHADER);
 
-            Log.d(TAG, "vertexShader info log:\n " + GLES20.glGetShaderInfoLog(vertexShaderHandle));
+            mCameraProgram = new GlProgram(vertexInputStream, fragmentInputStream);
 
-            final int fragmentShaderHandle = GLES20.glCreateShader(GLES20.GL_FRAGMENT_SHADER);
-            final String fragmentShaderCode = ShaderUtils.getStringFromFileInAssets(mContext, DEFAULT_FRAGMENT_SHADER);
-            GLES20.glShaderSource(fragmentShaderHandle, fragmentShaderCode);
-            GLES20.glCompileShader(fragmentShaderHandle);
-            GlOperation.checkGlError("Pixel shader compile");
+            mCameraProgram.use();
+            mTextureParamHandle = mCameraProgram.getUniformHandle("camTexture");
+            mTextureTranformHandle = mCameraProgram.getUniformHandle("camTextureTransform");
+            textureCoordinateHandle = mCameraProgram.getAttributeHandle("camTexCoordinate");
+            mPositionHandle = mCameraProgram.getAttributeHandle("position");
 
-            Log.d(TAG, "fragmentShader info log:\n " + GLES20.glGetShaderInfoLog(fragmentShaderHandle));
-
-            mCameraShaderProgram = GLES20.glCreateProgram();
-            GLES20.glAttachShader(mCameraShaderProgram, vertexShaderHandle);
-            GLES20.glAttachShader(mCameraShaderProgram, fragmentShaderHandle);
-            GLES20.glLinkProgram(mCameraShaderProgram);
-            GlOperation.checkGlError("Shader program compile");
-
-            final int[] status = new int[1];
-            GLES20.glGetProgramiv(mCameraShaderProgram, GLES20.GL_LINK_STATUS, status, 0);
-            if (status[0] != GLES20.GL_TRUE) {
-                String error = GLES20.glGetProgramInfoLog(mCameraShaderProgram);
-                GlOperation.checkGlError("Error while linking program:\n" + error);
-            }
-
-            GLES20.glUseProgram(mCameraShaderProgram);
-            mTextureParamHandle = GLES20.glGetUniformLocation(mCameraShaderProgram, "camTexture");
-            mTextureTranformHandle = GLES20.glGetUniformLocation(mCameraShaderProgram, "camTextureTransform");
-            textureCoordinateHandle = GLES20.glGetAttribLocation(mCameraShaderProgram, "camTexCoordinate");
-            mPositionHandle = GLES20.glGetAttribLocation(mCameraShaderProgram, "position");
         }catch(IOException ioe){
             throw new RuntimeException("Failed to find shaders source.");
+        }finally {
+            if(vertexInputStream != null) {
+                try {
+                    vertexInputStream.close();
+                }catch(IOException ioe){
+                    Log.e(TAG,"Failed to close vertex source : " + ioe);
+                }
+            }
+            if(fragmentInputStream!= null) {
+                try {
+                    fragmentInputStream.close();
+                }catch(IOException ioe){
+                    Log.e(TAG,"Failed to close fragment source : " + ioe);
+                }
+            }
         }
     }
 
@@ -471,16 +464,15 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
         //Camera shader -> FBO
-        GLES20.glUseProgram(mCameraShaderProgram);
+        mCameraProgram.use();
+        mCameraProgram.enableAttributes();
 
-        GLES20.glEnableVertexAttribArray(mPositionHandle);
         GLES20.glVertexAttribPointer(mPositionHandle, 2, GLES20.GL_FLOAT, false, 8, mVertexBuffer);
 
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mCamTextureId);
         GLES20.glUniform1i(mTextureParamHandle, 0);
 
-        GLES20.glEnableVertexAttribArray(textureCoordinateHandle);
         GLES20.glVertexAttribPointer(textureCoordinateHandle, 2, GLES20.GL_FLOAT, false, 8, mTextureBuffer);
 
         //TODO Transform matrix when android < 6 (using accelerometer)
@@ -489,8 +481,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 
-        GLES20.glDisableVertexAttribArray(mPositionHandle);
-        GLES20.glDisableVertexAttribArray(textureCoordinateHandle);
+        mCameraProgram.disableAttributes();
 
         if(mState == STATE_CAPTURE_NEXT_FRAME){
             mCaptureBuffer.rewind();

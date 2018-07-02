@@ -20,10 +20,15 @@ import com.thommil.animalsgo.data.Orientation;
 import com.thommil.animalsgo.data.Settings;
 import com.thommil.animalsgo.fragments.CameraFragment;
 import com.thommil.animalsgo.capture.CaptureBuilder;
+import com.thommil.animalsgo.gl.libgl.EglCore;
+import com.thommil.animalsgo.gl.libgl.GlOperation;
+import com.thommil.animalsgo.gl.libgl.ShaderUtils;
+import com.thommil.animalsgo.gl.libgl.WindowSurface;
+import com.thommil.animalsgo.utils.ByteBufferPool;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.Arrays;
 
@@ -165,7 +170,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
     public void initGL() {
         Log.d(TAG, "initGL()");
-        mEglCore = new EglCore(null, EglCore.FLAG_TRY_GLES3);
+        mEglCore = new EglCore();
 
         //create preview surface
         mWindowSurface = new WindowSurface(mEglCore, mSurface, true);
@@ -205,6 +210,9 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         deleteFBO();
         GLES20.glDeleteTextures(1, new int[]{mCamTextureId}, 0);
         GLES20.glDeleteProgram(mCameraShaderProgram);
+        ByteBufferPool.getInstance().returnDirectBuffer(mVertexBuffer);
+        ByteBufferPool.getInstance().returnDirectBuffer(mTextureBuffer);
+        ByteBufferPool.getInstance().returnDirectBuffer(mCaptureBuffer);
         mPluginManager.destroy();
         mPreviewTexture.release();
         mPreviewTexture.setOnFrameAvailableListener(null);
@@ -239,10 +247,10 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     private void updateCaptureZone(){
         if(mCaptureBuffer == null) {
             if (mSurfaceHeight > mSurfaceWidth) {
-                mCaptureBuffer = ByteBuffer.allocateDirect((int) (mSurfaceWidth / Settings.CAPTURE_RATIO) * mSurfaceWidth * Integer.BYTES);
+                mCaptureBuffer = ByteBufferPool.getInstance().getDirectByteBuffer((int) (mSurfaceWidth / Settings.CAPTURE_RATIO) * mSurfaceWidth * Integer.BYTES);
 
             } else {
-                mCaptureBuffer = ByteBuffer.allocateDirect((int) (mSurfaceHeight / Settings.CAPTURE_RATIO) * mSurfaceHeight * Integer.BYTES);
+                mCaptureBuffer = ByteBufferPool.getInstance().getDirectByteBuffer((int) (mSurfaceHeight / Settings.CAPTURE_RATIO) * mSurfaceHeight * Integer.BYTES);
             }
             mCaptureBuffer.order(ByteOrder.LITTLE_ENDIAN);
             mCaptureBuffer.rewind();
@@ -270,9 +278,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         Log.d(TAG, "setupVertexBuffer()");
         // Initialize the texture holder
         if(mVertexBuffer == null) {
-            final ByteBuffer bb = ByteBuffer.allocateDirect(mVertexCoords.length * Float.BYTES);
-            bb.order(ByteOrder.nativeOrder());
-            mVertexBuffer = bb.asFloatBuffer();
+            mVertexBuffer = ByteBufferPool.getInstance().getDirectFloatBuffer(mVertexCoords.length);
         }
         else{
             mVertexBuffer.position(0);
@@ -284,9 +290,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     protected void setupCameraTextureCoords(){
         Log.d(TAG, "setupCameraTextureCoord()");
         if(mTextureBuffer == null) {
-            final ByteBuffer texturebb = ByteBuffer.allocateDirect(mTextureCoords.length * Float.BYTES);
-            texturebb.order(ByteOrder.nativeOrder());
-            mTextureBuffer = texturebb.asFloatBuffer();
+            mTextureBuffer = ByteBufferPool.getInstance().getDirectFloatBuffer(mTextureCoords.length);
         }
         else{
             mTextureBuffer.position(0);
@@ -300,7 +304,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
         final int[] texturesId = new int[1];
         GLES20.glGenTextures(1, texturesId , 0);
-        checkGlError("Texture generate");
+        GlOperation.checkGlError("Texture generate");
         mCamTextureId = texturesId[0];
 
         //set texture[0] to camera texture
@@ -310,7 +314,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
-        checkGlError("Texture bind");
+        GlOperation.checkGlError("Texture bind");
 
         mPreviewTexture = new SurfaceTexture(mCamTextureId);
         mPreviewTexture.setOnFrameAvailableListener(this);
@@ -323,7 +327,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
             final String vertexShaderCode = ShaderUtils.getStringFromFileInAssets(mContext, DEFAULT_VERTEX_SHADER);
             GLES20.glShaderSource(vertexShaderHandle, vertexShaderCode);
             GLES20.glCompileShader(vertexShaderHandle);
-            checkGlError("Vertex shader compile");
+            GlOperation.checkGlError("Vertex shader compile");
 
             Log.d(TAG, "vertexShader info log:\n " + GLES20.glGetShaderInfoLog(vertexShaderHandle));
 
@@ -331,7 +335,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
             final String fragmentShaderCode = ShaderUtils.getStringFromFileInAssets(mContext, DEFAULT_FRAGMENT_SHADER);
             GLES20.glShaderSource(fragmentShaderHandle, fragmentShaderCode);
             GLES20.glCompileShader(fragmentShaderHandle);
-            checkGlError("Pixel shader compile");
+            GlOperation.checkGlError("Pixel shader compile");
 
             Log.d(TAG, "fragmentShader info log:\n " + GLES20.glGetShaderInfoLog(fragmentShaderHandle));
 
@@ -339,13 +343,13 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
             GLES20.glAttachShader(mCameraShaderProgram, vertexShaderHandle);
             GLES20.glAttachShader(mCameraShaderProgram, fragmentShaderHandle);
             GLES20.glLinkProgram(mCameraShaderProgram);
-            checkGlError("Shader program compile");
+            GlOperation.checkGlError("Shader program compile");
 
             final int[] status = new int[1];
             GLES20.glGetProgramiv(mCameraShaderProgram, GLES20.GL_LINK_STATUS, status, 0);
             if (status[0] != GLES20.GL_TRUE) {
                 String error = GLES20.glGetProgramInfoLog(mCameraShaderProgram);
-                checkGlError("Error while linking program:\n" + error);
+                GlOperation.checkGlError("Error while linking program:\n" + error);
             }
 
             GLES20.glUseProgram(mCameraShaderProgram);
@@ -387,11 +391,11 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         mFBOId = ids[0];
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFBOId);
         GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0, GLES20.GL_TEXTURE_2D, mFBOTextureId, 0);
-        checkGlError("initFBO error");
+        GlOperation.checkGlError("initFBO error");
 
         final int FBOstatus = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER);
         if (FBOstatus != GLES20.GL_FRAMEBUFFER_COMPLETE)
-            checkGlError("initFBO failed, status : " + FBOstatus);
+            GlOperation.checkGlError("initFBO failed, status : " + FBOstatus);
 
         GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, GLES20.GL_NONE);
     }
@@ -599,13 +603,6 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     protected void shutdown() {
         Log.d(TAG, "shutdown");
         mHandler.getLooper().quit();
-    }
-
-    protected void checkGlError(String op) {
-        int error;
-        while ((error = GLES20.glGetError()) != GLES20.GL_NO_ERROR) {
-            Log.e("SurfaceTest", op + ": glError " + GLUtils.getEGLErrorString(error));
-        }
     }
 
     public SurfaceTexture getPreviewTexture() {

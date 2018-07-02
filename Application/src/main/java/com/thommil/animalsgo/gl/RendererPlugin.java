@@ -5,6 +5,8 @@ import android.opengl.GLES20;
 import android.opengl.GLUtils;
 import android.util.Log;
 
+import com.thommil.animalsgo.gl.libgl.ShaderUtils;
+
 import java.io.IOException;
 
 /**

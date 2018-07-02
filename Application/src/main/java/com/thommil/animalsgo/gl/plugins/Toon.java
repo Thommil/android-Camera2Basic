@@ -4,6 +4,7 @@ import android.opengl.GLES20;
 
 import com.thommil.animalsgo.R;
 import com.thommil.animalsgo.gl.RendererPlugin;
+import com.thommil.animalsgo.utils.ByteBufferPool;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -55,15 +56,11 @@ public class Toon extends RendererPlugin {
         mTextureParamHandle = GLES20.glGetUniformLocation(mPluginShaderProgram, "sTexture");
         mviewSizeParamHandle = GLES20.glGetUniformLocation(mPluginShaderProgram, "viewSize");
 
-        final ByteBuffer bb = ByteBuffer.allocateDirect(8 * Float.BYTES);
-        bb.order(ByteOrder.nativeOrder());
-        mVertexBuffer = bb.asFloatBuffer();
+        mVertexBuffer = ByteBufferPool.getInstance().getDirectFloatBuffer(VERTEX_COORDS.length);
         mVertexBuffer.put(VERTEX_COORDS);
         mVertexBuffer.position(0);
 
-        final ByteBuffer texturebb = ByteBuffer.allocateDirect(8 * Float.BYTES);
-        texturebb.order(ByteOrder.nativeOrder());
-        mTextureBuffer = texturebb.asFloatBuffer();
+        mTextureBuffer = ByteBufferPool.getInstance().getDirectFloatBuffer(TEXTURE_COORDS.length);
         mTextureBuffer.put(TEXTURE_COORDS);
         mTextureBuffer.position(0);
     }
@@ -88,5 +85,12 @@ public class Toon extends RendererPlugin {
 
         GLES20.glDisableVertexAttribArray(mPositionParamHandle);
         GLES20.glDisableVertexAttribArray(mTextureCoordinateParamHandle);
+    }
+
+    @Override
+    public void delete() {
+        super.delete();
+        ByteBufferPool.getInstance().returnDirectBuffer(mTextureBuffer);
+        ByteBufferPool.getInstance().returnDirectBuffer(mTextureBuffer);
     }
 }

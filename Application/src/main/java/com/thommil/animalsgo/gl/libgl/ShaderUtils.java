@@ -1,4 +1,4 @@
-package com.thommil.animalsgo.gl;
+package com.thommil.animalsgo.gl.libgl;
 
 import android.content.Context;
 

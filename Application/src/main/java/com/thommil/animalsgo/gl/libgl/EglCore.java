@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.thommil.animalsgo.gl;
+package com.thommil.animalsgo.gl.libgl;
 
 import android.graphics.SurfaceTexture;
 import android.opengl.EGL14;
@@ -35,19 +35,6 @@ public final class EglCore {
 
 
     private static final String TAG = "A_GO/EglCore";
-
-    /**
-     * Constructor flag: surface must be recordable.  This discourages EGL from using a
-     * pixel format that cannot be converted efficiently to something usable by the video
-     * encoder.
-     */
-    //public static final int FLAG_RECORDABLE = 0x01;
-
-    /**
-     * Constructor flag: ask for GLES3, fall back to GLES2 if not available.  Without this
-     * flag, GLES2 is used.
-     */
-    public static final int FLAG_TRY_GLES3 = 0x02;
 
     // Android-specific extension.
     //private static final int EGL_RECORDABLE_ANDROID = 0x3142;
@@ -93,28 +80,28 @@ public final class EglCore {
         }
 
         // Try to get a GLES3 context, if requested.
-        if ((flags & FLAG_TRY_GLES3) != 0) {
-            //Log.d(TAG, "Trying GLES 3");
-            EGLConfig config = getConfig(flags, 3);
-            if (config != null) {
-                int[] attrib3_list = {
-                        EGL14.EGL_CONTEXT_CLIENT_VERSION, 3,
-                        EGL14.EGL_NONE
-                };
-                EGLContext context = EGL14.eglCreateContext(mEGLDisplay, config, sharedContext,
-                        attrib3_list, 0);
 
-                if (EGL14.eglGetError() == EGL14.EGL_SUCCESS) {
-                    //Log.d(TAG, "Got GLES 3 config");
-                    mEGLConfig = config;
-                    mEGLContext = context;
-                    mGlVersion = 3;
-                }
+        //Log.d(TAG, "Trying GLES 3");
+        EGLConfig config = getConfig(flags, 3);
+        if (config != null) {
+            int[] attrib3_list = {
+                    EGL14.EGL_CONTEXT_CLIENT_VERSION, 3,
+                    EGL14.EGL_NONE
+            };
+            EGLContext context = EGL14.eglCreateContext(mEGLDisplay, config, sharedContext,
+                    attrib3_list, 0);
+
+            if (EGL14.eglGetError() == EGL14.EGL_SUCCESS) {
+                //Log.d(TAG, "Got GLES 3 config");
+                mEGLConfig = config;
+                mEGLContext = context;
+                mGlVersion = 3;
             }
         }
+
         if (mEGLContext == EGL14.EGL_NO_CONTEXT) {  // GLES 2 only, or GLES 3 attempt failed
             //Log.d(TAG, "Trying GLES 2");
-            EGLConfig config = getConfig(flags, 2);
+            config = getConfig(flags, 2);
             if (config == null) {
                 throw new RuntimeException("Unable to find a suitable EGLConfig");
             }
@@ -307,13 +294,6 @@ public final class EglCore {
      */
     public boolean swapBuffers(EGLSurface eglSurface) {
         return EGL14.eglSwapBuffers(mEGLDisplay, eglSurface);
-    }
-
-    /**
-     * Sends the presentation time stamp to EGL.  Time is expressed in nanoseconds.
-     */
-    public void setPresentationTime(EGLSurface eglSurface, long nsecs) {
-        EGLExt.eglPresentationTimeANDROID(mEGLDisplay, eglSurface, nsecs);
     }
 
     /**

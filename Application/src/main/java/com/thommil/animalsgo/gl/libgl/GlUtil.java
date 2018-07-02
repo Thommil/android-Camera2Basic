@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.thommil.animalsgo.gl;
+package com.thommil.animalsgo.gl.libgl;
 
 import android.opengl.GLES20;
 import android.opengl.GLES30;

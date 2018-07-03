@@ -462,12 +462,12 @@ public class GlBuffer<E>{
 	}
 
 	/**
-	 * @param newChunk
+	 * @param chunk
 	 * @return
 	 * @see Buffer#position(int)
 	 */
-	public final Buffer position(final Chunk<E> newChunk) {
-		return this.data.position(newChunk.position);
+	public final Buffer position(final Chunk<E> chunk) {
+		return this.data.position(chunk.position);
 	}
 	
 	/**

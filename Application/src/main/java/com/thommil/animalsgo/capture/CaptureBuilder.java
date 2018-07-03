@@ -2,7 +2,11 @@ package com.thommil.animalsgo.capture;
 
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
+import android.hardware.camera2.params.Face;
 import android.support.v4.util.Pools;
+
+import com.thommil.animalsgo.Settings;
+import com.thommil.animalsgo.utils.ByteBufferPool;
 
 /**
  * Decicated CameraCaptureSession.CaptureCallback used for QoS and event dispatch to Renderer
@@ -98,11 +102,42 @@ public class CaptureBuilder {
             capture.cameraState = Capture.STATE_NOT_AVAILABLE;
         }
 
+        //Faces
+        final Face[] faces = result.get(CaptureResult.STATISTICS_FACES);
+        if(faces != null){
+            capture.faceState = Capture.STATE_READY;
+            for(Face face : faces){
+                if(face.getScore() > Settings.FACE_DETECTION_THRESHOLD){
+                    capture.faceState = Capture.STATE_NOT_READY;
+                    break;
+                }
+                if(face.getScore() == 1){
+                    capture.faceState = Capture.STATE_NOT_AVAILABLE;
+                    break;
+                }
+            }
+        }
+        else{
+            capture.faceState = Capture.STATE_NOT_AVAILABLE;
+        }
+
         return capture;
     }
 
     public void releaseCapture(final Capture capture){
+        capture.cameraState = Capture.STATE_NOT_AVAILABLE;
+        capture.lightState = Capture.STATE_NOT_AVAILABLE;
+        capture.faceState = Capture.STATE_NOT_AVAILABLE;
         capture.validationState = Capture.VALIDATION_IN_PROGRESS;
+        if(capture.mOriginalBuffer != null) {
+            ByteBufferPool.getInstance().returnDirectBuffer(capture.mOriginalBuffer);
+            capture.mOriginalBuffer = null;
+        }
+        if(capture.mShadedBuffer != null) {
+            ByteBufferPool.getInstance().returnDirectBuffer(capture.mShadedBuffer);
+            capture.mShadedBuffer = null;
+        }
+
         sCapturePreviewPool.release(capture);
     }
 }

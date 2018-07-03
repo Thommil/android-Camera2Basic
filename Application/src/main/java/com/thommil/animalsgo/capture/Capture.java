@@ -18,6 +18,7 @@ public class Capture {
 
     public int cameraState = STATE_NOT_AVAILABLE;
     public int lightState = STATE_NOT_AVAILABLE;
+    public int faceState = STATE_NOT_AVAILABLE;
     public float[] gravity = new float[3];
 
     public int width;
@@ -28,6 +29,6 @@ public class Capture {
     public int validationState = VALIDATION_IN_PROGRESS;
 
     public String toString(){
-        return "[Size: "+width+"x"+height+"][CAM:" +cameraState+", LGT:"+lightState+", GRV :"+ Arrays.toString(gravity)+"][Validation : "+validationState+"]";
+        return "[Validation : "+validationState+"][Size: "+width+"x"+height+"][CAM:" +cameraState+", LGT:"+lightState+", FCE:"+faceState+", GRV :"+ Arrays.toString(gravity)+"]";
     }
 }

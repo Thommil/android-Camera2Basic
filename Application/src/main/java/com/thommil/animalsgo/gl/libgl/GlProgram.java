@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 
 import android.opengl.GLES20;
 import android.opengl.GLException;
+import android.util.Log;
 
 /**
  * Helper class to get shaders source code and link program
@@ -82,7 +83,6 @@ public class GlProgram {
 	 * @throws GLException
 	 */
 	public GlProgram(final InputStream vertexShaderInputStream, final InputStream fragmentShaderInputStream){
-		//android.util.Log.d(TAG,"NEW");
 		this.attributeHandles = new HashMap<String, Integer>();
 		this.uniformHandles = new HashMap<String, Integer>();
 		this.vertexShaderHandle = this.loadShader(GLES20.GL_VERTEX_SHADER, vertexShaderInputStream);
@@ -93,10 +93,11 @@ public class GlProgram {
 	/**
 	 * Enables all attributes of vertex shader
 	 */
-	public void enableAttributes(){
+	public GlProgram enableAttributes(){
 		for(int handle : this.attributeHandlesArray){
 			this.enableAttribute(handle);
 		}
+		return this;
 	}
 		
 	/**
@@ -104,9 +105,10 @@ public class GlProgram {
 	 * 
 	 * @param attributeName The name of the attribute to enable
 	 */
-	public void enableAttribute(final String attributeName){
-		//android.util.Log.d(TAG,"enableAttribute("+attributeName+")");
+	public GlProgram enableAttribute(final String attributeName){
+		//Log.d(TAG,"enableAttribute("+attributeName+")");
 		GLES20.glEnableVertexAttribArray(this.getAttributeHandle(attributeName));
+		return this;
 	}
 	
 	/**
@@ -114,18 +116,20 @@ public class GlProgram {
 	 * 
 	 * @param attributeId The handle of attribute to enable
 	 */
-	public void enableAttribute(final int attributeId){
-		//android.util.Log.d(TAG,"enableAttribute("+attributeId+")");
+	public GlProgram enableAttribute(final int attributeId){
+		//Log.d(TAG,"enableAttribute("+attributeId+")");
 		GLES20.glEnableVertexAttribArray(attributeId);
+		return this;
 	}
 	
 	/**
 	 * Disables all attributes of vertex shader
 	 */
-	public void disableAttributes(){
+	public GlProgram disableAttributes(){
 		for(int handle : this.attributeHandlesArray){
 			this.disableAttribute(handle);
 		}
+		return this;
 	}
 	
 	/**
@@ -133,9 +137,10 @@ public class GlProgram {
 	 * 
 	 * @param attributeName The name of attribute to disable
 	 */
-	public void disableAttribute(final String attributeName){
-		//android.util.Log.d(TAG,"enableAttribute("+attributeName+")");
+	public GlProgram disableAttribute(final String attributeName){
+		//Log.d(TAG,"enableAttribute("+attributeName+")");
 		GLES20.glDisableVertexAttribArray(this.getAttributeHandle(attributeName));
+		return this;
 	}
 	
 	/**
@@ -143,9 +148,10 @@ public class GlProgram {
 	 * 
 	 * @param attributeId The handle of attribute to disable
 	 */
-	public void disableAttribute(final int attributeId){
-		//android.util.Log.d(TAG,"enableAttribute("+attributeId+")");
+	public GlProgram disableAttribute(final int attributeId){
+		//Log.d(TAG,"enableAttribute("+attributeId+")");
 		GLES20.glDisableVertexAttribArray(attributeId);
+		return this;
 	}
 	
 	/**
@@ -154,9 +160,10 @@ public class GlProgram {
 	 * <br/>
 	 * Caution : only calls to start/stop are taken into account for current state
 	 */
-	public void use(){
-		//android.util.Log.d(TAG,"start()");
+	public GlProgram use(){
+		//Log.d(TAG,"start()");
         GLES20.glUseProgram(this.programHandle);
+        return this;
 	}
 	
 	/*
@@ -167,7 +174,7 @@ public class GlProgram {
      * @return return a compiled shader OpenGL ID
      */
 	protected int loadShader(final int type, final InputStream inputStream){
-		//android.util.Log.d(TAG,"loadShader("+type+", "+location+")");
+		//Log.d(TAG,"loadShader("+type+")");
 		
 		final int shader = GLES20.glCreateShader(type);
 		
@@ -228,7 +235,7 @@ public class GlProgram {
 	 * @return An OpenGL handle to the program.
 	 */
 	protected int createAndLinkProgram(final int vertexShaderHandle, final int fragmentShaderHandle){
-		//android.util.Log.d(TAG,"createAndLinkProgram("+vertexShaderHandle+", "+fragmentShaderHandle+")");
+		//Log.d(TAG,"createAndLinkProgram("+vertexShaderHandle+", "+fragmentShaderHandle+")");
 		final int programHandle = GLES20.glCreateProgram();
 		
 		if (programHandle != UNBIND_HANDLE) {
@@ -274,7 +281,7 @@ public class GlProgram {
 	 * Free resources
 	 */
 	public void free(){
-		//android.util.Log.d(TAG,"free()");
+		//Log.d(TAG,"free()");
 		if(this.programHandle != UNBIND_HANDLE) {
 			GLES20.glDeleteProgram(this.programHandle);
 		}
@@ -293,7 +300,7 @@ public class GlProgram {
 	 * @return The handle ID, 0 if not found
 	 */
 	public int getAttributeHandle(final String name){
-		//android.util.Log.d(TAG,"getAttributeHandle("+name+")");
+		//Log.d(TAG,"getAttributeHandle("+name+")");
 		Integer handle = this.attributeHandles.get(name); 
 		return (handle == null) ? UNBIND_HANDLE : handle;
 	}
@@ -305,7 +312,7 @@ public class GlProgram {
 	 * @return The handle ID, 0 if not found
 	 */
 	public int getUniformHandle(final String name){
-		//android.util.Log.d(TAG,"getUniformHandle("+name+")");
+		//Log.d(TAG,"getUniformHandle("+name+")");
 		Integer handle = this.uniformHandles.get(name); 
 		return (handle == null) ? UNBIND_HANDLE : handle;
 	}

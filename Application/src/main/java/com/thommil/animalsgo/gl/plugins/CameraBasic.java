@@ -86,8 +86,7 @@ public class CameraBasic extends CameraPlugin {
     @Override
     public void draw(final GlIntRect viewport, final int orientation) {
         //Camera shader -> FBO
-        mProgram.use();
-        mProgram.enableAttributes();
+        mProgram.use().enableAttributes();
 
         GLES20.glVertexAttribPointer(mPositionHandle, 2, GLES20.GL_FLOAT, false, 8, mVertexBuffer);
 

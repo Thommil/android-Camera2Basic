@@ -18,6 +18,8 @@ import com.thommil.animalsgo.Settings;
 import com.thommil.animalsgo.fragments.CameraFragment;
 import com.thommil.animalsgo.capture.CaptureBuilder;
 import com.thommil.animalsgo.gl.libgl.EglCore;
+import com.thommil.animalsgo.gl.libgl.GlFrameBufferObject;
+import com.thommil.animalsgo.gl.libgl.GlGPUTexture;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
 import com.thommil.animalsgo.gl.libgl.GlOperation;
 import com.thommil.animalsgo.gl.libgl.WindowSurface;
@@ -62,11 +64,11 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     // Texture created for GLES rendering of camera data
     private SurfaceTexture mPreviewTexture;
 
-    // FBO ID
-    private int mFBOId;
+    // Camera target texture for FBO
+    private GlGPUTexture mCameraPreviewTexture;
 
-    // FBO texture ID
-    private int mFBOTextureId;
+    // Camera preview FBO
+    private GlFrameBufferObject mCameraPreviewFBO;
 
     // matrix for transforming our camera texture, available immediately after PreviewTexture.updateTexImage()
     private final float[] mCameraTransformMatrix = new float[16];
@@ -140,6 +142,8 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
         mPreviewTexture = new SurfaceTexture(mCameraPlugin.getCameraTextureId());
         mPreviewTexture.setOnFrameAvailableListener(this);
+
+        GlOperation.setViewport(0, 0, mSurfaceWidth, mSurfaceHeight);
 
         onSetupComplete();
     }
@@ -224,9 +228,12 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
     private void deleteFBO() {
         Log.d(TAG, "deleteFBO()");
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, GLES20.GL_NONE);
-        GLES20.glDeleteFramebuffers(1, new int[]{mFBOId}, 0);
-        GLES20.glDeleteTextures(1, new int[]{mFBOTextureId}, 0);
+        if(mCameraPreviewFBO != null){
+            mCameraPreviewFBO.free();
+        }
+        if(mCameraPreviewTexture != null){
+            mCameraPreviewTexture.free();
+        }
     }
 
     private void setupFBO()
@@ -235,29 +242,19 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
         deleteFBO();
 
-        final int[] ids = new int[1];
+        mCameraPreviewTexture = new GlGPUTexture();
+        mCameraPreviewTexture.setWidth(mViewport.width());
+        mCameraPreviewTexture.setHeight(mViewport.height());
+        mCameraPreviewTexture.bind().allocate();
 
-        GLES20.glGenTextures(1, ids, 0);
-        mFBOTextureId = ids[0];
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mFBOTextureId);
-        GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_RGBA, mViewport.width(), mViewport.height(), 0, GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, null);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
-        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
+        mCameraPreviewFBO = new GlFrameBufferObject();
+        mCameraPreviewFBO.attach(mCameraPreviewTexture, GlFrameBufferObject.Attachment.TYPE_COLOR);
 
-        //int hFBO;
-        GLES20.glGenFramebuffers(1, ids, 0);
-        mFBOId = ids[0];
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFBOId);
-        GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, GLES20.GL_COLOR_ATTACHMENT0, GLES20.GL_TEXTURE_2D, mFBOTextureId, 0);
-        GlOperation.checkGlError("initFBO error");
+        if (mCameraPreviewFBO.getStatus() != GlFrameBufferObject.STATUS_COMPLETE) {
+            GlOperation.checkGlError("initFBO failed");
+        }
 
-        final int FBOstatus = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER);
-        if (FBOstatus != GLES20.GL_FRAMEBUFFER_COMPLETE)
-            GlOperation.checkGlError("initFBO failed, status : " + FBOstatus);
-
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, GLES20.GL_NONE);
+        mCameraPreviewFBO.unbind();
     }
 
     protected void onSetupComplete() {
@@ -327,13 +324,14 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     private void draw(){
         GlOperation.clearBuffers(GlOperation.BUFFER_COLOR);
 
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, mFBOId);
+        mCameraPreviewFBO.bind();
 
         //Camera draw
         GlOperation.setViewport(0, 0, mViewport.width(), mViewport.height());
         mCameraPlugin.setCameraTransformMatrix(mCameraTransformMatrix);
         mCameraPlugin.draw(mViewport, mOrientation);
 
+        //TODO test read FBO
         if(mState == STATE_CAPTURE_NEXT_FRAME){
             mCaptureBuffer.rewind();
             GLES20.glReadPixels(mCaptureZone.left, mCaptureZone.bottom, mCaptureZone.width(), mCaptureZone.height(), GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, mCaptureBuffer);
@@ -343,11 +341,11 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
             mState = STATE_VALIDATION_IN_PROGRESS;
         }
 
-        GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, GLES20.GL_NONE);
+        mCameraPreviewFBO.unbind();
 
         //Plugin draw
         GlOperation.setViewport(mViewport.left, mViewport.bottom, mViewport.width(), mViewport.height());
-        mPreviewPlugin.setCameraTextureId(mFBOTextureId);
+        mPreviewPlugin.setCameraTextureId(mCameraPreviewTexture.handle);
         mPreviewPlugin.draw(mViewport, mOrientation);
 
         switch(mState){

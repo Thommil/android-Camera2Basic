@@ -1,5 +1,6 @@
 package com.thommil.animalsgo.gl.libgl;
 
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -15,7 +16,7 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	/**
 	 * Handle for unbound texture
 	 */
-	public static final int UNBIND_HANDLE = GLES20.GL_ZERO;
+	public static final int UNBIND_HANDLE = GLES20.GL_NONE;
 	
 	/**
 	 * Texture is a standard 2D texture
@@ -282,12 +283,34 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	 */
 	public int handle = UNBIND_HANDLE;
 
-	
+	/**
+	 * Default constructor
+	 */
+	public GlTexture(){
+		//android.util.Log.d(TAG,"NEW");
+		final int[]handles = new int[1];
+		GLES20.glGenTextures(1, handles, 0);
+		this.handle = handles[0];
+	}
+
+	/**
+	 * Create texture on GPU based on current format, type, data ...
+	 */
+	public GlTexture allocate(){
+		GLES20.glTexImage2D(TARGET_TEXTURE_2D, 0, getFormat(), getWidth(), getHeight(), 0, getFormat(), getType(), getBytes());
+		GLES20.glTexParameteri(TARGET_TEXTURE_2D, WRAP_MODE_S, getWrapMode(WRAP_MODE_S));
+		GLES20.glTexParameteri(TARGET_TEXTURE_2D, WRAP_MODE_T, getWrapMode(WRAP_MODE_T));
+		GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
+		GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
+		return this;
+	}
+
 	/**
 	 * Bind the current texture to default GPU active texture GL_TEXTURE0
 	 */
-	public void bind(){
+	public GlTexture bind(){
 		this.bind(GLES20.GL_TEXTURE0);
+		return this;
 	}
 	
 	/**
@@ -295,44 +318,40 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	 * 
 	 * @param activeTexture The GPU active texture to use
 	 */
-	public void bind(final int activeTexture){
+	public GlTexture bind(final int activeTexture){
 		//android.util.Log.d(TAG,"bind("+activeTexture+")");
 		GLES20.glActiveTexture(activeTexture);
-		GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, this.handle);	
+		GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, this.handle);
+		return this;
 	}
 	
 	/**
 	 * Unbind the current texture to default GPU active texture GL_TEXTURE0
 	 */
-	public void unbind(){
+	public GlTexture unbind(){
 		this.unbind(GLES20.GL_TEXTURE0);
+		return this;
 	}
-	
+
 	/**
-	 * Unbind the current texture  
-	 * 
+	 * Unbind the current texture
+	 *
 	 * @param activeTexture The GPU active texture to use
 	 */
-	public void unbind(final int activeTexture){
+	public GlTexture unbind(final int activeTexture){
 		//android.util.Log.d(TAG,"bind("+activeTexture+")");
 		GLES20.glActiveTexture(activeTexture);
-		GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, UNBIND_HANDLE);	
+		GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, UNBIND_HANDLE);
+		return this;
 	}
-	
+
 	/**
 	 * Get the bytes for this Texture
 	 * 
 	 * @return The bytes of texture in a ByteBuffer 
 	 */
 	public abstract ByteBuffer getBytes();
-	
-	/**
-	 * Get the id linked to this provider for indexing
-	 * 
-	 * @return The id of the provider
-	 */
-	public abstract int getId();
-	
+
 	/**
 	 * Get the source image height
 	 * 
@@ -354,6 +373,7 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	 * 
 	 * @return TARGET_TEXTURE_2D or TARGET_TEXTURE_CUBE
 	 */
+	@Override
 	public int getTarget(){
 		return TARGET_TEXTURE_2D;
 	}
@@ -424,7 +444,7 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	 * 		   or MIN_FILTER_MIPMAP_TRILINEAR
 	 */
 	public int getMinificationFilter(){
-		return MIN_FILTER_MIPMAP_MEDIUM;
+		return MIN_FILTER_LOW;
 	}
 	
 	/**
@@ -433,14 +453,7 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	 * @return The texture buffer size in bytes
 	 */
 	public abstract int getSize();
-	
-	/**
-	 * Implements this method to add specific parameter before uploading to GPU
-	 */
-	public void onUpload(){
-		//NOP
-	}
-	
+
 	/**
 	 * Removes texture from GPU 
 	 */
@@ -472,29 +485,20 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	}
 
 	/* (non-Javadoc)
-	 * @see fr.kesk.libgl.buffer.FrameBufferObject.Attachment#getAttachmentHandle()
+	 * @see fr.kesk.libgl.buffer.FrameBufferObject.Attachment#getHandle()
 	 */
 	@Override
-	public int getAttachmentHandle() {
-		//android.util.Log.d(TAG,"getAttachmentHandle()");
+	public int getHandle() {
+		//android.util.Log.d(TAG,"getHandle()");
 		return this.handle;
 	}
-	
+
 	/* (non-Javadoc)
-	 * @see fr.kesk.libgl.buffer.FrameBufferObject.Attachment#getAttachmentTarget()
+	 * @see fr.kesk.libgl.buffer.FrameBufferObject.Attachment#getLevel()
 	 */
 	@Override
-	public int getAttachmentTarget() {
-		//android.util.Log.d(TAG,"getAttachmentTarget()");
-		return TARGET_TEXTURE_2D;
-	}	
-	
-	/* (non-Javadoc)
-	 * @see fr.kesk.libgl.buffer.FrameBufferObject.Attachment#getAttachmentLevel()
-	 */
-	@Override
-	public int getAttachmentLevel() {
-		//android.util.Log.d(TAG,"getAttachmentLevel()");
+	public int getLevel() {
+		//android.util.Log.d(TAG,"getLevel()");
 		
 		//Default level set to 0, can be overridden
 		return 0;

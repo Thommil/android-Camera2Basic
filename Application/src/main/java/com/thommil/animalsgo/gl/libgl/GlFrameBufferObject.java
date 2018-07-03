@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import android.opengl.GLES20;
+import android.util.Log;
 
 /**
  * Abstraction class for FBO use 
@@ -23,7 +24,7 @@ public class GlFrameBufferObject {
 	/**
 	 * Handle to use unbind current buffer
 	 */
-	public static final int UNBIND_HANDLE = GLES20.GL_ZERO;
+	public static final int UNBIND_HANDLE = GLES20.GL_NONE;
 	
 	/**
 	 * Status -> FrameBuffer is complete
@@ -79,7 +80,6 @@ public class GlFrameBufferObject {
 	 * Default constructor
 	 */
 	public GlFrameBufferObject(){
-		//android.util.Log.d(TAG,"NEW");
 		final int[]handles = new int[1];
 		GLES20.glGenFramebuffers(1, handles, 0);
 		this.handle = handles[0];
@@ -91,21 +91,21 @@ public class GlFrameBufferObject {
 	 * @param attachment The attachment to set
 	 * @param type The attachment type of Attachement.TYPE_*
 	 */
-	public void attach(final Attachment attachment, final int type){
-		//android.util.Log.d(TAG,"attach("+type+")");
-		switch(attachment.getAttachmentTarget()){
+	public GlFrameBufferObject attach(final Attachment attachment, final int type){
+		//Log.d(TAG,"attach("+type+")");
+		switch(attachment.getTarget()){
 			case GLES20.GL_RENDERBUFFER:
 				GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, this.handle);
-				GLES20.glFramebufferRenderbuffer(GLES20.GL_FRAMEBUFFER, type, GLES20.GL_RENDERBUFFER, attachment.getAttachmentHandle());
+				GLES20.glFramebufferRenderbuffer(GLES20.GL_FRAMEBUFFER, type, GLES20.GL_RENDERBUFFER, attachment.getHandle());
 				GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, UNBIND_HANDLE);
 				break;
 			case GLES20.GL_TEXTURE_2D:
 				GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, this.handle);
-				GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, type, attachment.getAttachmentTarget(), attachment.getAttachmentHandle(), attachment.getAttachmentLevel());
+				GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, type, attachment.getTarget(), attachment.getHandle(), attachment.getLevel());
 				GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, UNBIND_HANDLE);
 				break;
 			default:
-				throw new RuntimeException("No supported FBO target : "+attachment.getAttachmentTarget());
+				throw new RuntimeException("No supported FBO target : "+attachment.getTarget());
 		}
 		
 		switch(type){
@@ -119,6 +119,7 @@ public class GlFrameBufferObject {
 				this.stencilAttachment = attachment;
 				break;
 		}
+		return this;
 	}
 	
 	/**
@@ -126,8 +127,8 @@ public class GlFrameBufferObject {
 	 * 
 	 * @param type The attachment type of Attachement.TYPE_* to remove
 	 */
-	public void detach(final int type){
-		//android.util.Log.d(TAG,"detach("+type+")");
+	public GlFrameBufferObject detach(final int type){
+		//Log.d(TAG,"detach("+type+")");
 		switch(type){
 			case Attachment.TYPE_COLOR:
 				this.colorAttachment = null;
@@ -143,22 +144,25 @@ public class GlFrameBufferObject {
 		GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, this.handle);
 		GLES20.glFramebufferRenderbuffer(GLES20.GL_FRAMEBUFFER, type, GLES20.GL_RENDERBUFFER, UNBIND_HANDLE);
 		GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, UNBIND_HANDLE);
+		return this;
 	}
 	
 	/**
 	 * Bind the current FrameBufferObject
 	 */
-	public void bind(){
-		//android.util.Log.d(TAG,"bind()");
+	public GlFrameBufferObject bind(){
+		//Log.d(TAG,"bind()");
 		GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, this.handle);
+		return this;
 	}
 	
 	/**
 	 * Unbind the current FrameBufferObject
 	 */
-	public void unbind(){
-		//android.util.Log.d(TAG,"unbind()");
+	public GlFrameBufferObject unbind(){
+		//Log.d(TAG,"unbind()");
 		GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, UNBIND_HANDLE);
+		return this;
 	}
 	
 	/**
@@ -172,7 +176,7 @@ public class GlFrameBufferObject {
 	 * @return A Buffer containing the pixels
 	 */
 	public Buffer read(final int x, final int y, final int width, final int height){
-		//android.util.Log.d(TAG,"read()");
+		//Log.d(TAG,"read()");
 		Buffer pixels;
 
 		GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, this.handle);
@@ -225,7 +229,7 @@ public class GlFrameBufferObject {
 	 * @return A status in a int of STATUS_*
 	 */
 	public int getStatus(){
-		//android.util.Log.d(TAG,"getStatus()");
+		//Log.d(TAG,"getStatus()");
 		GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, this.handle);
 		final int status = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER);
 		GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, UNBIND_HANDLE);
@@ -236,7 +240,7 @@ public class GlFrameBufferObject {
 	 * Free resources associated with current FrameBuffer
 	 */
 	public void free(){
-		//android.util.Log.d(TAG,"free()");
+		//Log.d(TAG,"free()");
 		GLES20.glDeleteFramebuffers(1, new int[]{this.handle}, 0);
 	}
 	
@@ -271,37 +275,37 @@ public class GlFrameBufferObject {
 		/**
 		 * Attachment type for COLOR buffer
 		 */
-		public static final int TYPE_COLOR = GLES20.GL_COLOR_ATTACHMENT0;
+		int TYPE_COLOR = GLES20.GL_COLOR_ATTACHMENT0;
 		
 		/**
 		 * Attachment type for DEPTH buffer
 		 */
-		public static final int TYPE_DEPTH = GLES20.GL_DEPTH_ATTACHMENT;
+		int TYPE_DEPTH = GLES20.GL_DEPTH_ATTACHMENT;
 		
 		/**
 		 * Attachment type for STENCIL buffer
 		 */
-		public static final int TYPE_STENCIL = GLES20.GL_STENCIL_ATTACHMENT;
+		int TYPE_STENCIL = GLES20.GL_STENCIL_ATTACHMENT;
 		
 		/**
 		 * Gets the handle
 		 * 
 		 * @return The handle of the attachment for binding
 		 */
-		public int getAttachmentHandle();
+		int getHandle();
 		
 		/**
 		 * Gets the target identifier of the attachment (renderbuffer and textures)
 		 * 
 		 * @return The target identifier of the attachment (renderbuffer and textures)
 		 */
-		public int getAttachmentTarget();
+		int getTarget();
 		
 		/**
 		 * Gets the attachment mipmap level for texture
 		 * 
 		 * @return The the attachment mipmap level for texture
 		 */
-		public int getAttachmentLevel();
+		int getLevel();
 	}
 }

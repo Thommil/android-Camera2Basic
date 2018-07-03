@@ -26,6 +26,9 @@ public class Settings {
     // Mvt detection sensibility threshold for orientation change trigger
     public static final float MOVEMENT_ORIENTATION_CHANGE_THRESHOLD = 2f;
 
+    // Face detection threshold for validation
+    public static final int FACE_DETECTION_THRESHOLD = 70;
+
     // Landscape mode threshold on orientation
     public static final float[] LANSCAPE_MODE_VERTICAL_TRESHOLDS = new float[]{9f, 6f};
 

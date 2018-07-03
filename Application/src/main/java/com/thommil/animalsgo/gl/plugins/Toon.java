@@ -63,8 +63,7 @@ public class Toon extends PreviewPlugin {
 
     @Override
     public void draw(final GlIntRect viewport, final int orientation) {
-        mProgram.use();
-        mProgram.enableAttributes();
+        mProgram.use().enableAttributes();
 
         GLES20.glVertexAttribPointer(mPositionParamHandle, 2, GLES20.GL_FLOAT, false, 8, mVertexBuffer);
         GLES20.glVertexAttribPointer(mTextureCoordinateParamHandle, 2, GLES20.GL_FLOAT, false, 8, mTextureBuffer);

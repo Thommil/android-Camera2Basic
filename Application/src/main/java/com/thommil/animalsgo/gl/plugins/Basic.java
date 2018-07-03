@@ -4,8 +4,8 @@ import android.opengl.GLES20;
 
 import com.thommil.animalsgo.R;
 import com.thommil.animalsgo.gl.PreviewPlugin;
+import com.thommil.animalsgo.gl.libgl.GlBuffer;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
-import com.thommil.animalsgo.gl.libgl.GlOperation;
 import com.thommil.animalsgo.utils.ByteBufferPool;
 
 import java.nio.FloatBuffer;
@@ -21,7 +21,7 @@ public class Basic extends PreviewPlugin {
     private int mTextureParamHandle;
 
     private static final float[]VERTEX_COORDS = new float[]{ -1.0f,-1.0f,-1.0f,1.0f, 1.0f,-1.0f, 1.0f,1.0f};
-    private static final float[]TEXTURE_COORDS = new float[]{0.0f,0.0f,0.0f,1.0f,1.0f,0.0f,1.0f,  1.0f};
+    private static final float[]TEXTURE_COORDS = new float[]{0.0f,0.0f,0.0f,1.0f,1.0f,0.0f,1.0f, 1.0f};
 
     private FloatBuffer mTextureBuffer;
     private FloatBuffer mVertexBuffer;
@@ -61,11 +61,10 @@ public class Basic extends PreviewPlugin {
 
     @Override
     public void draw(final GlIntRect viewport, final int orientation) {
-        mProgram.use();
-        mProgram.enableAttributes();
+        mProgram.use().enableAttributes();
 
-        GLES20.glVertexAttribPointer(mPositionParamHandle, 2, GLES20.GL_FLOAT, false, 8, mVertexBuffer);
-        GLES20.glVertexAttribPointer(mTextureCoordinateParamHandle, 2, GLES20.GL_FLOAT, false, 8, mTextureBuffer);
+        GLES20.glVertexAttribPointer(mPositionParamHandle, 2, GLES20.GL_FLOAT, false, 0, mVertexBuffer);
+        GLES20.glVertexAttribPointer(mTextureCoordinateParamHandle, 2, GLES20.GL_FLOAT, false, 0, mTextureBuffer);
 
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mCameraTextureId);

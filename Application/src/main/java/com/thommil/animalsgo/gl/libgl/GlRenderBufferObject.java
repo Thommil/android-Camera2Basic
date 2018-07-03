@@ -70,7 +70,6 @@ public class GlRenderBufferObject implements GlFrameBufferObject.Attachment{
 	 * Default constructor
 	 */
 	public GlRenderBufferObject(final int format, final int width, final int height){
-		//android.util.Log.d(TAG,"NEW");
 		final int[]handles = new int[1];
 		GLES20.glGenRenderbuffers(1, handles, 0);
 		this.handle = handles[0];
@@ -87,17 +86,19 @@ public class GlRenderBufferObject implements GlFrameBufferObject.Attachment{
 	/**
 	 * Bind the current RenderBufferObject
 	 */
-	public void bind(){
+	public GlRenderBufferObject bind(){
 		//android.util.Log.d(TAG,"bind()");
 		GLES20.glBindRenderbuffer(GLES20.GL_RENDERBUFFER, this.handle);
+		return this;
 	}
 	
 	/**
 	 * Unbind the current RenderBufferObject
 	 */
-	public void unbind(){
+	public GlRenderBufferObject unbind(){
 		//android.util.Log.d(TAG,"unbind()");
 		GLES20.glBindRenderbuffer(GLES20.GL_RENDERBUFFER, UNBIND_HANDLE);
+		return this;
 	}
 	/**
 	 * Free resources associated with current RenderBuffer
@@ -108,29 +109,29 @@ public class GlRenderBufferObject implements GlFrameBufferObject.Attachment{
 	}
 	
 	/* (non-Javadoc)
-	 * @see fr.kesk.libgl.buffer.FrameBufferObject.Attachment#getAttachmentHandle()
+	 * @see fr.kesk.libgl.buffer.FrameBufferObject.Attachment#getHandle()
 	 */
 	@Override
-	public int getAttachmentHandle() {
-		//android.util.Log.d(TAG,"getAttachmentHandle()");
+	public int getHandle() {
+		//android.util.Log.d(TAG,"getHandle()");
 		return this.handle;
 	}
 
 	/* (non-Javadoc)
-	 * @see fr.kesk.libgl.buffer.FrameBufferObject.Attachment#getAttachmentTarget()
+	 * @see fr.kesk.libgl.buffer.FrameBufferObject.Attachment#getTarget()
 	 */
 	@Override
-	public int getAttachmentTarget() {
-		//android.util.Log.d(TAG,"getAttachmentTarget()");
+	public int getTarget() {
+		//android.util.Log.d(TAG,"getTarget()");
 		return GLES20.GL_RENDERBUFFER;
 	}
 
 	/* (non-Javadoc)
-	 * @see fr.kesk.libgl.buffer.FrameBufferObject.Attachment#getAttachmentLevel()
+	 * @see fr.kesk.libgl.buffer.FrameBufferObject.Attachment#getLevel()
 	 */
 	@Override
-	public int getAttachmentLevel() {
-		//android.util.Log.d(TAG,"getAttachmentLevel()");
+	public int getLevel() {
+		//android.util.Log.d(TAG,"getLevel()");
 		return 0;
 	}	
 }

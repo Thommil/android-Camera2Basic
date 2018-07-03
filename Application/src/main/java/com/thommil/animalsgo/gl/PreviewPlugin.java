@@ -1,6 +1,7 @@
 package com.thommil.animalsgo.gl;
 
 
+import com.thommil.animalsgo.gl.libgl.GlBuffer;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
 
 public abstract class PreviewPlugin extends Plugin {

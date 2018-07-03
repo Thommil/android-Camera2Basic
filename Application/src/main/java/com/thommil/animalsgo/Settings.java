@@ -1,18 +1,10 @@
-package com.thommil.animalsgo.data;
+package com.thommil.animalsgo;
 
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.preference.Preference;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
-import android.support.annotation.Nullable;
-import android.util.Log;
-import android.view.View;
-
-import com.thommil.animalsgo.R;
-
-import java.util.Set;
 
 /**
  * tooling class used to get/set preferences
@@ -40,7 +32,9 @@ public class Settings {
     // Settings keys & values
     public static final String CAMERA_PREVIEW_QUALITY_AUTO = "prefs_camera_preview_quality_auto";
     public static final String CAMERA_PREVIEW_QUALITY = "prefs_camera_preview_quality";
-    public static final String PLUGINS_DEFAULT = "prefs_plugins_default";
+    // TODO in Prefs ?
+    public static final String PLUGINS_CAMERA_DEFAULT = "camera_basic";
+    public static final String PLUGINS_PREVIEW_DEFAULT = "prefs_plugins_default";
 
     private final SharedPreferences mSharedPreferences;
 

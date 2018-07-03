@@ -3,12 +3,12 @@ package com.thommil.animalsgo.gl.plugins;
 import android.opengl.GLES20;
 
 import com.thommil.animalsgo.R;
-import com.thommil.animalsgo.gl.Plugin;
+import com.thommil.animalsgo.gl.PreviewPlugin;
 import com.thommil.animalsgo.utils.ByteBufferPool;
 
 import java.nio.FloatBuffer;
 
-public class Basic extends Plugin {
+public class Basic extends PreviewPlugin {
 
     private static final String TAG = "A_GO/Plugin/Basic";
 
@@ -40,11 +40,6 @@ public class Basic extends Plugin {
     }
 
     @Override
-    public int getType() {
-        return TYPE_PREVIEW;
-    }
-
-    @Override
     public void create() {
         super.create();
 
@@ -70,12 +65,11 @@ public class Basic extends Plugin {
         mProgram.enableAttributes();
 
         GLES20.glVertexAttribPointer(mPositionParamHandle, 2, GLES20.GL_FLOAT, false, 8, mVertexBuffer);
+        GLES20.glVertexAttribPointer(mTextureCoordinateParamHandle, 2, GLES20.GL_FLOAT, false, 8, mTextureBuffer);
 
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texId);
         GLES20.glUniform1i(mTextureParamHandle, 0);
-
-        GLES20.glVertexAttribPointer(mTextureCoordinateParamHandle, 2, GLES20.GL_FLOAT, false, 8, mTextureBuffer);
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 

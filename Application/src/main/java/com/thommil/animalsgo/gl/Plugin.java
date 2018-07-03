@@ -17,11 +17,11 @@ public abstract class Plugin {
 
     private static final String TAG = "A_GO/Plugin";
 
-    // Type for rendering effects on preview
-    public static final int TYPE_PREVIEW = 0x01;
+    // Type for rendering camera on FBO
+    public static final int TYPE_CAMERA = 0x01;
 
-    // Type for rendering effects on live captures
-    public static final int TYPE_CAPTURE = 0x02;
+    // Type for rendering effects on preview
+    public static final int TYPE_PREVIEW = 0x02;
 
     // Type for handling UI
     public static final int TYPE_UI = 0x04;
@@ -70,8 +70,6 @@ public abstract class Plugin {
         }
     }
 
-    public abstract void draw(final int texId, final int width, final int height, final int orientation);
-
     public void delete(){
         Log.d(TAG, "delete()");
         if(mProgram != null){
@@ -83,4 +81,5 @@ public abstract class Plugin {
     public static class Settings {
         // TODO implements settings definition
     }
+
 }

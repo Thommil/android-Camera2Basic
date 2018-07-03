@@ -6,10 +6,18 @@
         PLUGINS
      -->
     <string-array name="plugins_list">
+        <!-- CAMERA -->
+        <item>com.thommil.animalsgo.gl.plugins.CameraBasic</item>
+        <!-- PREVIEW -->
         <item>com.thommil.animalsgo.gl.plugins.Basic</item>
         <item>com.thommil.animalsgo.gl.plugins.Toon</item>
     </string-array>
 
+    <!-- CAMERA -->
+    <string name="plugins_camera_basic_name">Camera Basic</string>
+    <string name="plugins_camera_basic_summary">...</string>
+
+    <!-- PREVIEW -->
     <string name="plugins_basic_name">Basic</string>
     <string name="plugins_basic_summary">...</string>
     <string name="plugins_toon_name">Toon</string>

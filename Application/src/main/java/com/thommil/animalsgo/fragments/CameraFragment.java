@@ -33,7 +33,7 @@ import com.thommil.animalsgo.capture.CaptureBuilder;
 import com.thommil.animalsgo.capture.Capture;
 import com.thommil.animalsgo.data.Messaging;
 import com.thommil.animalsgo.data.Orientation;
-import com.thommil.animalsgo.data.Settings;
+import com.thommil.animalsgo.Settings;
 
 import java.util.ArrayList;
 import java.util.Arrays;

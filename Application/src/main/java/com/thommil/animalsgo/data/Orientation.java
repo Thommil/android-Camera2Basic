@@ -1,5 +1,7 @@
 package com.thommil.animalsgo.data;
 
+import com.thommil.animalsgo.Settings;
+
 /**
  * Orientation tooling (based on portrait mode only)
  */

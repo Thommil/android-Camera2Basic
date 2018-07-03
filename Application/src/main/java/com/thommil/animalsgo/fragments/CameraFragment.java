@@ -86,9 +86,6 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Se
     // Main handler
     private Handler mMainHandler;
 
-    // Listener for when openCamera is called and a proper video size is created
-    private OnViewportSizeUpdatedListener mOnViewportSizeUpdatedListener;
-
     // Current aspect ratio of preview
     private float mPreviewSurfaceAspectRatio;
 
@@ -180,8 +177,8 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Se
 
             mPreviewSize = choosePreviewSize(streamConfigurationMap.getOutputSizes(SurfaceHolder.class));
 
-            if(mOnViewportSizeUpdatedListener != null) {
-                mOnViewportSizeUpdatedListener.onViewportSizeUpdated(new Size(mSurfaceView.getWidth(), mSurfaceView.getHeight()),mPreviewSize);
+            if(mRendererHandler != null) {
+                mRendererHandler.sendMessage(mRendererHandler.obtainMessage(Messaging.CHANGE_PREVIEW_SIZE, mPreviewSize));
             }
 
             manager.openCamera(cameraId, mStateCallback, mMainHandler);
@@ -510,15 +507,6 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Se
     public void setPreviewTexture(SurfaceTexture previewSurface) {
         Log.d(TAG, "setPreviewTexture()");
         this.mPreviewSurface = previewSurface;
-    }
-
-    public void setOnViewportSizeUpdatedListener(OnViewportSizeUpdatedListener listener) {
-        Log.d(TAG, "setOnViewportSizeUpdatedListener()");
-        this.mOnViewportSizeUpdatedListener = listener;
-    }
-
-    public interface OnViewportSizeUpdatedListener {
-        void onViewportSizeUpdated(Size surfaceSize, Size previewSize);
     }
 
     @Override

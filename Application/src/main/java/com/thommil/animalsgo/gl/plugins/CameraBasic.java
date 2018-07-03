@@ -6,6 +6,7 @@ import android.util.Size;
 
 import com.thommil.animalsgo.R;
 import com.thommil.animalsgo.gl.CameraPlugin;
+import com.thommil.animalsgo.gl.libgl.GlIntRect;
 import com.thommil.animalsgo.gl.libgl.GlOperation;
 import com.thommil.animalsgo.utils.ByteBufferPool;
 
@@ -51,28 +52,6 @@ public class CameraBasic extends CameraPlugin {
     }
 
     @Override
-    public void onViewportSizeUpdated(Size surfaceSize, Size previewSize) {
-        final float surfaceRatio = (float)surfaceSize.getWidth()/(float)surfaceSize.getHeight();
-        final float drawRatio = (float)previewSize.getWidth()/(float)previewSize.getHeight();
-
-        if(surfaceRatio > drawRatio){
-            VERTEX_COORDS[1] = VERTEX_COORDS[5] = -(1.0f + (surfaceRatio - drawRatio));
-            VERTEX_COORDS[3] = VERTEX_COORDS[7] = (1.0f + (surfaceRatio - drawRatio));
-
-        }
-        else if(surfaceRatio < drawRatio){
-            VERTEX_COORDS[1] = VERTEX_COORDS[5] = -(1.0f - (drawRatio - surfaceRatio));
-            VERTEX_COORDS[3] = VERTEX_COORDS[7] = (1.0f - (drawRatio - surfaceRatio));
-        }
-
-        if(mVertexBuffer != null) {
-            mVertexBuffer.position(0);
-            mVertexBuffer.put(VERTEX_COORDS);
-            mVertexBuffer.position(0);
-        }
-    }
-
-    @Override
     public void create() {
         super.create();
 
@@ -95,7 +74,6 @@ public class CameraBasic extends CameraPlugin {
         GlOperation.checkGlError("Texture generate");
         mCamTextureId = texturesId[0];
 
-        //set texture[0] to camera texture
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mCamTextureId);
         GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
@@ -106,17 +84,7 @@ public class CameraBasic extends CameraPlugin {
     }
 
     @Override
-    public void delete() {
-        super.delete();
-        GLES20.glDeleteTextures(1, new int[]{mCamTextureId}, 0);
-        ByteBufferPool.getInstance().returnDirectBuffer(mTextureBuffer);
-        ByteBufferPool.getInstance().returnDirectBuffer(mTextureBuffer);
-    }
-
-    @Override
-    public void draw(final float[] cameraTransformMatrix) {
-        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-
+    public void draw(final GlIntRect viewport, final int orientation) {
         //Camera shader -> FBO
         mProgram.use();
         mProgram.enableAttributes();
@@ -131,10 +99,18 @@ public class CameraBasic extends CameraPlugin {
 
         //TODO Transform matrix when android < 6 (using accelerometer)
         //TODO Transform matrix on zoom
-        GLES20.glUniformMatrix4fv(mTextureTranformHandle, 1, false, cameraTransformMatrix, 0);
+        GLES20.glUniformMatrix4fv(mTextureTranformHandle, 1, false, mCameraTransformMatrix, 0);
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 
         mProgram.disableAttributes();
+    }
+
+    @Override
+    public void delete() {
+        super.delete();
+        GLES20.glDeleteTextures(1, new int[]{mCamTextureId}, 0);
+        ByteBufferPool.getInstance().returnDirectBuffer(mTextureBuffer);
+        ByteBufferPool.getInstance().returnDirectBuffer(mTextureBuffer);
     }
 }

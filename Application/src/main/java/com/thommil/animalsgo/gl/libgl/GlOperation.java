@@ -29,7 +29,7 @@ public final class GlOperation {
 	 * TAG log
 	 */
 	@SuppressWarnings("unused")
-	private final static String TAG = GlOperation.class.getName();
+	private final static String TAG = "A_GO/GlOperation";
 	
 	/**
 	 * Flag for Color buffer
@@ -500,4 +500,9 @@ public final class GlOperation {
         GLES20.glGetFloatv(key, result, 0);
         return result;
     }
+
+    public static void setViewport(final int left, final int bottom, final int width, final int height){
+    	GLES20.glViewport(left, bottom, width, height);
+	}
 }
+

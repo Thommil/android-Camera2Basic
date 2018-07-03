@@ -5,6 +5,7 @@ import android.opengl.GLES20;
 import android.opengl.GLUtils;
 import android.util.Log;
 
+import com.thommil.animalsgo.gl.libgl.GlIntRect;
 import com.thommil.animalsgo.gl.libgl.GlProgram;
 
 import java.io.IOException;
@@ -69,6 +70,8 @@ public abstract class Plugin {
             }
         }
     }
+
+    public abstract void draw(final GlIntRect viewport, final int orientation);
 
     public void delete(){
         Log.d(TAG, "delete()");

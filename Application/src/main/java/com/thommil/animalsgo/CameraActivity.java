@@ -103,7 +103,6 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
     protected void setReady(final Surface surface, final int width, final int height) {
         Log.d(TAG, "setReady("+width+", "+height+")");
         mRenderer = new CameraRenderer(this, surface, width, height);
-        mCameraFragment.setOnViewportSizeUpdatedListener(mRenderer);
         mRenderer.setCameraFragment(mCameraFragment);
         mRenderer.setOnRendererReadyListener(this);
         mRenderer.setMainHandler(mMainHandler);
@@ -161,7 +160,7 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
                 mValidatorHandler.sendMessage(mValidatorHandler.obtainMessage(Messaging.VALIDATION_REQUEST, message.obj));
                 break;
             case Messaging.VALIDATION_RESULT:
-                mRendererHandler.sendMessage(mRendererHandler.obtainMessage(Messaging.VALIDATION_DONE, message.obj));
+                mRendererHandler.sendMessage(mRendererHandler.obtainMessage(Messaging.VALIDATION_RESULT, message.obj));
                 break;
         }
         return true;

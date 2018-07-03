@@ -1,13 +1,12 @@
 package com.thommil.animalsgo.gl;
 
+import com.thommil.animalsgo.gl.libgl.GlIntRect;
 
-import android.util.Size;
-
-import com.thommil.animalsgo.fragments.CameraFragment;
-
-public abstract class CameraPlugin extends Plugin implements CameraFragment.OnViewportSizeUpdatedListener{
+public abstract class CameraPlugin extends Plugin{
 
     private static final String TAG = "A_GO/CameraPlugin";
+
+    protected float[] mCameraTransformMatrix;
 
     @Override
     public int getType() {
@@ -16,7 +15,9 @@ public abstract class CameraPlugin extends Plugin implements CameraFragment.OnVi
 
     public abstract int getCameraTextureId();
 
-    public abstract void draw(final float[] cameraTransformMatrix);
+    public void setCameraTransformMatrix(final float[] cameraTransformMatrix){
+        mCameraTransformMatrix = cameraTransformMatrix;
+    }
 
 }
 

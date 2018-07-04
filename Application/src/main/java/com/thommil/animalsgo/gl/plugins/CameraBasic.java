@@ -18,13 +18,6 @@ public class CameraBasic extends CameraPlugin {
 
     private static final String ID = "camera_basic";
 
-    private static final float[]VERTEX_COORDS = new float[]{ -1.0f,-1.0f,-1.0f,1.0f, 1.0f,-1.0f, 1.0f,1.0f};
-    private static final float[]TEXTURE_COORDS = new float[]{0.0f,0.0f,0.0f,1.0f,1.0f,0.0f,1.0f,  1.0f};
-
-
-    private FloatBuffer mTextureBuffer;
-    private FloatBuffer mVertexBuffer;
-
     private int textureCoordinateHandle;
     private int mTextureParamHandle;
     private int mTextureTranformHandle;
@@ -61,14 +54,6 @@ public class CameraBasic extends CameraPlugin {
         mTextureParamHandle = mProgram.getUniformHandle("camTexture");
         mTextureTranformHandle = mProgram.getUniformHandle("camTextureTransform");
 
-        mVertexBuffer = ByteBufferPool.getInstance().getDirectFloatBuffer(VERTEX_COORDS.length);
-        mVertexBuffer.put(VERTEX_COORDS);
-        mVertexBuffer.position(0);
-
-        mTextureBuffer = ByteBufferPool.getInstance().getDirectFloatBuffer(TEXTURE_COORDS.length);
-        mTextureBuffer.put(TEXTURE_COORDS);
-        mTextureBuffer.position(0);
-
         final int[] texturesId = new int[1];
         GLES20.glGenTextures(1, texturesId , 0);
         GlOperation.checkGlError("Texture generate");
@@ -87,21 +72,21 @@ public class CameraBasic extends CameraPlugin {
     public void draw(final GlIntRect viewport, final int orientation) {
         //Camera shader -> FBO
         mProgram.use().enableAttributes();
+        sSquareImageBuffer.bind();
 
-        GLES20.glVertexAttribPointer(mPositionHandle, 2, GLES20.GL_FLOAT, false, 8, mVertexBuffer);
+        GLES20.glVertexAttribPointer(mPositionHandle, 2, GLES20.GL_FLOAT, false, sSquareImageBuffer.datasize * 4, 0);
+        GLES20.glVertexAttribPointer(textureCoordinateHandle, 2, GLES20.GL_FLOAT, false, sSquareImageBuffer.datasize * 4, sSquareImageBuffer.datasize * 2);
 
         GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
         GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mCamTextureId);
         GLES20.glUniform1i(mTextureParamHandle, 0);
-
-        GLES20.glVertexAttribPointer(textureCoordinateHandle, 2, GLES20.GL_FLOAT, false, 8, mTextureBuffer);
-
         //TODO Transform matrix when android < 6 (using accelerometer)
         //TODO Transform matrix on zoom
         GLES20.glUniformMatrix4fv(mTextureTranformHandle, 1, false, mCameraTransformMatrix, 0);
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 
+        sSquareImageBuffer.unbind();
         mProgram.disableAttributes();
     }
 
@@ -109,7 +94,5 @@ public class CameraBasic extends CameraPlugin {
     public void delete() {
         super.delete();
         GLES20.glDeleteTextures(1, new int[]{mCamTextureId}, 0);
-        ByteBufferPool.getInstance().returnDirectBuffer(mTextureBuffer);
-        ByteBufferPool.getInstance().returnDirectBuffer(mTextureBuffer);
     }
 }

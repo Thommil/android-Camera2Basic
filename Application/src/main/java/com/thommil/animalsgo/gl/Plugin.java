@@ -5,7 +5,9 @@ import android.opengl.GLES20;
 import android.opengl.GLUtils;
 import android.util.Log;
 
+import com.thommil.animalsgo.gl.libgl.GlBuffer;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
+import com.thommil.animalsgo.gl.libgl.GlOperation;
 import com.thommil.animalsgo.gl.libgl.GlProgram;
 
 import java.io.IOException;
@@ -26,6 +28,20 @@ public abstract class Plugin {
 
     // Type for handling UI
     public static final int TYPE_UI = 0x04;
+
+    // Use for static VBO IMAGE
+    private static final float[]SQUARE_IMAGE_DATA = new float[]{
+            -1.0f,-1.0f,
+            0.0f,0.0f,
+            -1.0f,1.0f,
+            0.0f,1.0f,
+            1.0f,-1.0f,
+            1.0f,0.0f,
+            1.0f,1.0f,
+            1.0f, 1.0f
+    };
+
+    protected static GlBuffer<float[]> sSquareImageBuffer = null;
 
     protected Context mContext;
 
@@ -69,6 +85,13 @@ public abstract class Plugin {
                 }
             }
         }
+
+        if(sSquareImageBuffer == null){
+            sSquareImageBuffer = new GlBuffer<>();
+            sSquareImageBuffer.bind().setData(SQUARE_IMAGE_DATA);
+            sSquareImageBuffer.allocate(GlBuffer.USAGE_STATIC_DRAW, GlBuffer.TARGET_ARRAY_BUFFER, true);
+            sSquareImageBuffer.unbind();
+        }
     }
 
     public abstract void draw(final GlIntRect viewport, final int orientation);
@@ -78,6 +101,10 @@ public abstract class Plugin {
         if(mProgram != null){
             mProgram.free();;
             mProgram = null;
+        }
+        if(sSquareImageBuffer != null){
+            sSquareImageBuffer.free();
+            sSquareImageBuffer = null;
         }
     }
 

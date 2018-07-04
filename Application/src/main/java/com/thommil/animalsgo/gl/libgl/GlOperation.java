@@ -449,10 +449,10 @@ public final class GlOperation {
 	 *
 	 * @param op The opefation to check for message
 	 */
-	public static int checkGlError(String op) {
+	public static int checkGlError(String tag, String op) {
 		int error = GLES20.GL_NO_ERROR;
 		while ((error = GLES20.glGetError()) != GLES20.GL_NO_ERROR) {
-			Log.e(TAG, op + ": glError " + GLUtils.getEGLErrorString(error));
+			Log.e(tag, op + ": glError " + GLUtils.getEGLErrorString(error));
 		}
 		return error;
 	}

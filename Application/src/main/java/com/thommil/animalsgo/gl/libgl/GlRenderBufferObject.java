@@ -81,6 +81,7 @@ public class GlRenderBufferObject implements GlFrameBufferObject.Attachment{
 		GLES20.glBindRenderbuffer(GLES20.GL_RENDERBUFFER, this.handle);
 		GLES20.glRenderbufferStorage(GLES20.GL_RENDERBUFFER, this.format, this.width, this.height);
 		GLES20.glBindRenderbuffer(GLES20.GL_RENDERBUFFER, UNBIND_HANDLE);
+		GlOperation.checkGlError(TAG, "glRenderbufferStorage");
 	}
 	
 	/**
@@ -106,6 +107,7 @@ public class GlRenderBufferObject implements GlFrameBufferObject.Attachment{
 	public GlRenderBufferObject free(){
 		//android.util.//Log.d(TAG,"free()");
 		GLES20.glDeleteRenderbuffers(1, new int[]{this.handle}, 0);
+        GlOperation.checkGlError(TAG, "glDeleteTextures");
 		return this;
 	}
 	

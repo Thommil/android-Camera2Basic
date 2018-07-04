@@ -3,10 +3,7 @@ package com.thommil.animalsgo.capture;
 import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.Face;
-import android.support.v4.util.Pools;
-import android.util.Log;
 
-import com.thommil.animalsgo.Settings;
 import com.thommil.animalsgo.utils.ByteBufferPool;
 
 /**
@@ -17,14 +14,9 @@ public class CaptureBuilder {
 
     private static final String TAG = "A_GO/CaptureBuilder";
 
-    private static final int POOL_SIZE = 10;
-    private static final Pools.SimplePool<Capture> sCapturePreviewPool = new Pools.SimplePool<>(POOL_SIZE );
-
-    static{
-        for(int i =0; i < POOL_SIZE; i++){
-            sCapturePreviewPool.release(new Capture());
-        }
-    }
+    private final Capture mCaptureBuilder = new Capture();
+    private final Capture mCapture = new Capture();
+    private boolean mIsdirty = false;
 
     private final static CaptureBuilder sCapturePreviewBuilder = new CaptureBuilder();
 
@@ -32,9 +24,11 @@ public class CaptureBuilder {
         return sCapturePreviewBuilder;
     }
 
-    public Capture buildCapture(final TotalCaptureResult result) {
-        //Listener
-        final Capture capture = sCapturePreviewPool.acquire();
+    public CaptureBuilder buildCapture(final TotalCaptureResult result) {
+        if (mCaptureBuilder.mCameraBuffer != null) {
+            ByteBufferPool.getInstance().returnDirectBuffer(mCaptureBuilder.mCameraBuffer);
+            mCaptureBuilder.mCameraBuffer = null;
+        }
 
         //Camera state
         final Integer afValue = result.get(CaptureResult.CONTROL_AF_STATE);
@@ -49,95 +43,92 @@ public class CaptureBuilder {
                             case CaptureResult.CONTROL_AE_STATE_INACTIVE:
                             case CaptureResult.CONTROL_AE_STATE_LOCKED:
                             case CaptureResult.CONTROL_AE_STATE_CONVERGED:
-                                capture.cameraState = Capture.STATE_READY;
-                                capture.lightState = Capture.STATE_READY;
+                                mCaptureBuilder.cameraState = Capture.STATE_READY;
+                                mCaptureBuilder.lightState = Capture.STATE_READY;
                                 break;
                             case CaptureResult.CONTROL_AE_STATE_FLASH_REQUIRED:
-                                capture.cameraState = Capture.STATE_NOT_READY;
-                                capture.lightState = Capture.STATE_NOT_READY;
+                                mCaptureBuilder.cameraState = Capture.STATE_NOT_READY;
+                                mCaptureBuilder.lightState = Capture.STATE_NOT_READY;
                                 break;
                             default:
-                                capture.cameraState = Capture.STATE_READY;
-                                capture.lightState = Capture.STATE_NOT_AVAILABLE;
+                                mCaptureBuilder.cameraState = Capture.STATE_READY;
+                                mCaptureBuilder.lightState = Capture.STATE_NOT_AVAILABLE;
                         }
                     } else {
-                        capture.cameraState = Capture.STATE_READY;
-                        capture.lightState = Capture.STATE_NOT_AVAILABLE;
+                        mCaptureBuilder.cameraState = Capture.STATE_READY;
+                        mCaptureBuilder.lightState = Capture.STATE_NOT_AVAILABLE;
                     }
 
-                    if (capture.cameraState == Capture.STATE_READY) {
+                    if (mCaptureBuilder.cameraState == Capture.STATE_READY) {
                         final Integer awbValue = result.get(CaptureResult.CONTROL_AWB_STATE);
                         if (awbValue != null) {
                             switch (awbValue) {
                                 case CaptureResult.CONTROL_AWB_STATE_INACTIVE:
                                 case CaptureResult.CONTROL_AWB_STATE_LOCKED:
                                 case CaptureResult.CONTROL_AWB_STATE_CONVERGED:
-                                    capture.cameraState = Capture.STATE_READY;
+                                    mCaptureBuilder.cameraState = Capture.STATE_READY;
                                     break;
                                 default:
-                                    capture.cameraState = Capture.STATE_NOT_READY;
+                                    mCaptureBuilder.cameraState = Capture.STATE_NOT_READY;
                             }
                         } else {
-                            capture.cameraState = Capture.STATE_READY;
+                            mCaptureBuilder.cameraState = Capture.STATE_READY;
                         }
                     }
 
-                    if (capture.cameraState == Capture.STATE_READY) {
+                    if (mCaptureBuilder.cameraState == Capture.STATE_READY) {
                         final Integer lensValue = result.get(CaptureResult.LENS_STATE);
                         if (lensValue != null) {
                             switch (lensValue) {
                                 case CaptureResult.LENS_STATE_STATIONARY:
-                                    capture.cameraState = Capture.STATE_READY;
+                                    mCaptureBuilder.cameraState = Capture.STATE_READY;
                                     break;
                                 default:
-                                    capture.cameraState = Capture.STATE_NOT_READY;
+                                    mCaptureBuilder.cameraState = Capture.STATE_NOT_READY;
                             }
                         } else {
-                            capture.cameraState = Capture.STATE_READY;
+                            mCaptureBuilder.cameraState = Capture.STATE_READY;
                         }
                     }
 
                     break;
                 default:
-                    capture.cameraState = Capture.STATE_NOT_READY;
+                    mCaptureBuilder.cameraState = Capture.STATE_NOT_READY;
             }
         } else {
-            capture.cameraState = Capture.STATE_NOT_AVAILABLE;
+            mCaptureBuilder.cameraState = Capture.STATE_NOT_AVAILABLE;
         }
 
         //Faces
         final Face[] faces = result.get(CaptureResult.STATISTICS_FACES);
         if(faces != null){
             if(faces.length > 1){
-                capture.faceState = Capture.STATE_NOT_READY;
+                mCaptureBuilder.faceState = Capture.STATE_NOT_READY;
             }
             else{
-                capture.faceState = Capture.STATE_READY;
+                mCaptureBuilder.faceState = Capture.STATE_READY;
             }
         }
         else{
-            capture.faceState = Capture.STATE_NOT_AVAILABLE;
+            mCaptureBuilder.faceState = Capture.STATE_NOT_AVAILABLE;
         }
 
-        return capture;
+        mIsdirty = true;
+
+        return this;
     }
 
-    public void releaseCapture(final Capture capture){
-        if(capture != null) {
-            capture.cameraState = Capture.STATE_NOT_AVAILABLE;
-            capture.lightState = Capture.STATE_NOT_AVAILABLE;
-            capture.faceState = Capture.STATE_NOT_AVAILABLE;
-            capture.validationState = Capture.VALIDATION_IN_PROGRESS;
-            capture.pluginId = null;
-            if (capture.mCameraBuffer != null) {
-                ByteBufferPool.getInstance().returnDirectBuffer(capture.mCameraBuffer);
-                capture.mCameraBuffer = null;
+    public synchronized Capture getCapture(){
+        if(mIsdirty){
+            mCapture.cameraState = mCaptureBuilder.cameraState;
+            mCapture.lightState = mCaptureBuilder.lightState;
+            mCapture.faceState = mCaptureBuilder.faceState;
+            if (mCapture.mCameraBuffer != null) {
+                ByteBufferPool.getInstance().returnDirectBuffer(mCapture.mCameraBuffer);
+                mCapture.mCameraBuffer = null;
             }
-            try {
-                sCapturePreviewPool.release(capture);
-            }catch(IllegalStateException ise){
-                Log.e(TAG, "Release : " + ise);
-            }
+            mIsdirty = false;
         }
+        return mCapture;
     }
 }

@@ -1,13 +1,10 @@
 package com.thommil.animalsgo.gl;
 
 import android.content.Context;
-import android.opengl.GLES20;
-import android.opengl.GLUtils;
 import android.util.Log;
 
 import com.thommil.animalsgo.gl.libgl.GlBuffer;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
-import com.thommil.animalsgo.gl.libgl.GlOperation;
 import com.thommil.animalsgo.gl.libgl.GlProgram;
 
 import java.io.IOException;

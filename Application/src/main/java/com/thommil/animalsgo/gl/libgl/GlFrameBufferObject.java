@@ -100,15 +100,21 @@ public class GlFrameBufferObject {
 				GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, this.handle);
 				GLES20.glFramebufferRenderbuffer(GLES20.GL_FRAMEBUFFER, type, GLES20.GL_RENDERBUFFER, attachment.getHandle());
 				GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, UNBIND_HANDLE);
+                GlOperation.checkGlError(TAG, "glFramebufferRenderbuffer");
 				break;
 			case GLES20.GL_TEXTURE_2D:
 				GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, this.handle);
 				GLES20.glFramebufferTexture2D(GLES20.GL_FRAMEBUFFER, type, attachment.getTarget(), attachment.getHandle(), attachment.getLevel());
 				GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, UNBIND_HANDLE);
+                GlOperation.checkGlError(TAG, "glFramebufferTexture2D");
 				break;
 			default:
 				throw new RuntimeException("No supported FBO target : "+attachment.getTarget());
 		}
+
+        if (getStatus() != GlFrameBufferObject.STATUS_COMPLETE) {
+            GlOperation.checkGlError(TAG,"FBO status");
+        }
 		
 		switch(type){
 			case Attachment.TYPE_COLOR:
@@ -146,6 +152,7 @@ public class GlFrameBufferObject {
 		GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, this.handle);
 		GLES20.glFramebufferRenderbuffer(GLES20.GL_FRAMEBUFFER, type, GLES20.GL_RENDERBUFFER, UNBIND_HANDLE);
 		GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, UNBIND_HANDLE);
+        GlOperation.checkGlError(TAG, "glFramebufferRenderbuffer");
 		return this;
 	}
 	
@@ -245,6 +252,7 @@ public class GlFrameBufferObject {
 	public GlFrameBufferObject free(){
 		////Log.d(TAG,"free()");
 		GLES20.glDeleteFramebuffers(1, new int[]{this.handle}, 0);
+        GlOperation.checkGlError(TAG, "glDeleteTextures");
 		return this;
 	}
 	

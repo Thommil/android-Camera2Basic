@@ -55,9 +55,14 @@ public class CameraBasic extends CameraPlugin {
             public int getTarget() {
                 return GLES11Ext.GL_TEXTURE_EXTERNAL_OES;
             }
+
+            @Override
+            public int getWrapMode(int axeId) {
+                return GlTexture.WRAP_CLAMP_TO_EDGE;
+            }
         };
 
-        mCameraTexture.bind().allocate();
+        mCameraTexture.bind().configure();
     }
 
     @Override

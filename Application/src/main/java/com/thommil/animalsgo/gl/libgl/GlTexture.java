@@ -14,6 +14,8 @@ import android.util.Log;
  */
 public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 
+	private static final String TAG = "A_GO/GlTexture";
+
 	/**
 	 * Handle for unbound texture
 	 */
@@ -291,17 +293,27 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 		final int[]handles = new int[1];
 		GLES20.glGenTextures(1, handles, 0);
 		this.handle = handles[0];
+		GlOperation.checkGlError(TAG, "glGenTextures");
 	}
 
+    /**
+     * Set texture settings based on class getters
+     */
+    public GlTexture configure(){
+        GLES20.glTexParameteri(getTarget(), WRAP_MODE_S, getWrapMode(WRAP_MODE_S));
+        GLES20.glTexParameteri(getTarget(), WRAP_MODE_T, getWrapMode(WRAP_MODE_T));
+        GLES20.glTexParameteri(getTarget(), GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
+        GLES20.glTexParameteri(getTarget(), GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
+        GlOperation.checkGlError(TAG, "glTexParameteri");
+        return this;
+    }
+
 	/**
-	 * Create texture on GPU based on current format, type, data ...
+	 * Create texture on GPU
 	 */
 	public GlTexture allocate(){
 		GLES20.glTexImage2D(getTarget(), 0, getFormat(), getWidth(), getHeight(), 0, getFormat(), getType(), getBytes());
-		GLES20.glTexParameteri(getTarget(), WRAP_MODE_S, getWrapMode(WRAP_MODE_S));
-		GLES20.glTexParameteri(getTarget(), WRAP_MODE_T, getWrapMode(WRAP_MODE_T));
-		GLES20.glTexParameteri(getTarget(), GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
-		GLES20.glTexParameteri(getTarget(), GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
+		GlOperation.checkGlError(TAG, "glTexImage2D");
 		return this;
 	}
 
@@ -475,6 +487,7 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	public GlTexture free(){
 		final int textureHandle[] = new int[]{this.handle};
 		GLES20.glDeleteTextures(1, textureHandle, 0);
+		GlOperation.checkGlError(TAG, "glDeleteTextures");
 		return this;
 	}
 	

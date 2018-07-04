@@ -372,10 +372,12 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Se
             switch(mState){
                 case STATE_PREVIEW :
                     if(mFrameCount > Settings.CAPTURE_UPDATE_FREQUENCY){
-                        final Capture capture = mCaptureBuilder.buildCapture(result);
+                        final Capture capture = mCaptureBuilder.buildCapture(result).getCapture();
                         System.arraycopy(mGravity, 0, capture.gravity, 0, 3);
+                        capture.movement = mAccel;
                         //TODO setting touch
                         if(!mIsTouched && !mIsmoving &&
+                                capture.validationState == Capture.VALIDATION_WAIT &&
                                 capture.cameraState != Capture.STATE_NOT_READY &&
                                 capture.lightState != Capture.STATE_NOT_READY &&
                                 capture.faceState!= Capture.STATE_NOT_READY){

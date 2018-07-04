@@ -373,6 +373,8 @@ public class GlBuffer<E>{
 			this.handle = handles[0];
 			this.target = target;
 
+			GlOperation.checkGlError(TAG, "glGenBuffers");
+
 			//Bind it
 			GLES20.glBindBuffer(target, this.handle);
 			//Push data into it
@@ -382,7 +384,7 @@ public class GlBuffer<E>{
 			GLES20.glBindBuffer(target, UNBIND_HANDLE);
 
 			//Check error on bind only
-			GlOperation.checkGlError("create VBO");
+			GlOperation.checkGlError(TAG, "glBufferData");
 
 			//Free local buffer is queried
 			if(freeLocal){
@@ -414,6 +416,7 @@ public class GlBuffer<E>{
             final int[] handles = new int[]{this.handle};
             this.handle = UNBIND_HANDLE;
             GLES20.glDeleteBuffers(1, handles, 0);
+            GlOperation.checkGlError(TAG, "glDeleteBuffers");
         }
 
 		if(this.buffer != null){

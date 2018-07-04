@@ -291,6 +291,7 @@ public class GlProgram {
 		if(this.fragmentShaderHandle != UNBIND_HANDLE) {
 			GLES20.glDeleteShader(this.fragmentShaderHandle);
 		}
+        GlOperation.checkGlError(TAG, "glDeleteTextures");
 		return this;
 	}
 	 

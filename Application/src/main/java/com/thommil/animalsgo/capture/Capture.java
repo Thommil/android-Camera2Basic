@@ -12,23 +12,32 @@ public class Capture {
     public static final int STATE_NOT_READY = 0x01;
     public static final int STATE_READY = 0x02;
 
-    public static final int VALIDATION_FAILED = 0x00;
+    public static final int VALIDATION_WAIT = 0x00;
     public static final int VALIDATION_IN_PROGRESS = 0x01;
     public static final int VALIDATION_SUCCEED = 0x02;
+    public static final int VALIDATION_FAILED = 0x04;
 
+    //Camera
     public int cameraState = STATE_NOT_AVAILABLE;
     public int lightState = STATE_NOT_AVAILABLE;
     public int faceState = STATE_NOT_AVAILABLE;
-    public float[] gravity = new float[3];
 
+    //Sensors
+    public float[] gravity = new float[3];
+    public float movement = 1f;
+
+    //Data
     public String pluginId;
     public int width;
     public int height;
     public ByteBuffer mCameraBuffer;
 
-    public int validationState = VALIDATION_IN_PROGRESS;
+    //State
+    public int validationState = VALIDATION_WAIT;
 
     public String toString(){
-        return "[Validation : "+validationState+"][Plugin: "+pluginId+"][Size: "+width+"x"+height+"][CAM:" +cameraState+", LGT:"+lightState+", FCE:"+faceState+", GRV :"+ Arrays.toString(gravity)+"]";
+        return "[State : "+validationState+"][Camera - CAM:" +cameraState+", LGT:"+lightState+", FCE:"+faceState+"]"
+                    + "[Sensors - GRAV : "+Arrays.toString(gravity)+", MVT: "+movement+"]"
+                    + "[Data - PLUG: "+pluginId+", SIZE: "+width+"x"+height+", MEM : "+mCameraBuffer+"]";
     }
 }

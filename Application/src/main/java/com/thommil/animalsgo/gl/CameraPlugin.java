@@ -1,6 +1,7 @@
 package com.thommil.animalsgo.gl;
 
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
+import com.thommil.animalsgo.gl.libgl.GlTexture;
 
 public abstract class CameraPlugin extends Plugin{
 
@@ -13,7 +14,7 @@ public abstract class CameraPlugin extends Plugin{
         return TYPE_CAMERA;
     }
 
-    public abstract int getCameraTextureId();
+    public abstract GlTexture getCameraTexture();
 
     public void setCameraTransformMatrix(final float[] cameraTransformMatrix){
         mCameraTransformMatrix = cameraTransformMatrix;

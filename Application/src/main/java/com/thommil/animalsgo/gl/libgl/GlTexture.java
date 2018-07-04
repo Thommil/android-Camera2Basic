@@ -297,11 +297,11 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	 * Create texture on GPU based on current format, type, data ...
 	 */
 	public GlTexture allocate(){
-		GLES20.glTexImage2D(TARGET_TEXTURE_2D, 0, getFormat(), getWidth(), getHeight(), 0, getFormat(), getType(), getBytes());
-		GLES20.glTexParameteri(TARGET_TEXTURE_2D, WRAP_MODE_S, getWrapMode(WRAP_MODE_S));
-		GLES20.glTexParameteri(TARGET_TEXTURE_2D, WRAP_MODE_T, getWrapMode(WRAP_MODE_T));
-		GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
-		GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
+		GLES20.glTexImage2D(getTarget(), 0, getFormat(), getWidth(), getHeight(), 0, getFormat(), getType(), getBytes());
+		GLES20.glTexParameteri(getTarget(), WRAP_MODE_S, getWrapMode(WRAP_MODE_S));
+		GLES20.glTexParameteri(getTarget(), WRAP_MODE_T, getWrapMode(WRAP_MODE_T));
+		GLES20.glTexParameteri(getTarget(), GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
+		GLES20.glTexParameteri(getTarget(), GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
 		return this;
 	}
 
@@ -321,7 +321,7 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	public GlTexture bind(final int activeTexture){
 		//android.util.Log.d(TAG,"bind("+activeTexture+")");
 		GLES20.glActiveTexture(activeTexture);
-		GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, this.handle);
+		GLES20.glBindTexture(getTarget(), this.handle);
 		return this;
 	}
 	
@@ -350,21 +350,27 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	 * 
 	 * @return The bytes of texture in a ByteBuffer 
 	 */
-	public abstract ByteBuffer getBytes();
+	public ByteBuffer getBytes(){
+		return null;
+	}
 
 	/**
 	 * Get the source image height
 	 * 
 	 * @return The source image height
 	 */
-	public abstract int getHeight();
+	public int getHeight(){
+		return 0;
+	}
 	
 	/**
 	 * Get the source image width
 	 * 
 	 * @return The source image width
 	 */
-	public abstract int getWidth();
+	public int getWidth(){
+		return 0;
+	}
 	
 	/**
 	 * Get the GL target of texture
@@ -452,7 +458,18 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	 * 
 	 * @return The texture buffer size in bytes
 	 */
-	public abstract int getSize();
+	public int getSize() {
+		switch (this.getType()) {
+			case TYPE_UNSIGNED_SHORT_4_4_4_4:
+				return getWidth() * getHeight() * Short.BYTES;
+			case TYPE_UNSIGNED_SHORT_5_5_5_1:
+				return getWidth() * getHeight() * Short.BYTES;
+			case TYPE_UNSIGNED_SHORT_5_6_5:
+				return getWidth() * getHeight() * Short.BYTES;
+			default:
+				return getWidth() * getHeight() * Integer.BYTES;
+		}
+	}
 
 	/**
 	 * Removes texture from GPU 

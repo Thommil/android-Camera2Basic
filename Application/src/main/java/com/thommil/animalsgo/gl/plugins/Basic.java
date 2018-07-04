@@ -45,16 +45,14 @@ public class Basic extends PreviewPlugin {
     public void draw(final GlIntRect viewport, final int orientation) {
         mProgram.use().enableAttributes();
         sSquareImageBuffer.bind();
+        mCameraTexture.bind();
 
         GLES20.glVertexAttribPointer(mPositionParamHandle, 2, GLES20.GL_FLOAT, false, sSquareImageBuffer.datasize * 4, 0);
         GLES20.glVertexAttribPointer(mTextureCoordinateParamHandle, 2, GLES20.GL_FLOAT, false, sSquareImageBuffer.datasize * 4, sSquareImageBuffer.datasize * 2);
-
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mCameraTextureId);
         GLES20.glUniform1i(mTextureParamHandle, 0);
-
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 
+        mCameraTexture.unbind();
         sSquareImageBuffer.unbind();
         mProgram.disableAttributes();
     }

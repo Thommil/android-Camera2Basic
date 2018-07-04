@@ -1,7 +1,6 @@
 package com.thommil.animalsgo.gl;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.graphics.SurfaceTexture;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -19,7 +18,6 @@ import com.thommil.animalsgo.fragments.CameraFragment;
 import com.thommil.animalsgo.capture.CaptureBuilder;
 import com.thommil.animalsgo.gl.libgl.EglCore;
 import com.thommil.animalsgo.gl.libgl.GlFrameBufferObject;
-import com.thommil.animalsgo.gl.libgl.GlGPUTexture;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
 import com.thommil.animalsgo.gl.libgl.GlOperation;
 import com.thommil.animalsgo.gl.libgl.GlTexture;
@@ -62,7 +60,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     private SurfaceTexture mPreviewTexture;
 
     // Camera target texture for FBO
-    private GlGPUTexture mCameraPreviewTexture;
+    private GlTexture mCameraPreviewTexture;
 
     // Camera preview FBO
     private GlFrameBufferObject mCameraPreviewFBO;
@@ -134,7 +132,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         mPreviewPlugin = (PreviewPlugin) mPluginManager.getPlugin(Settings.getInstance().getString(Settings.PLUGINS_PREVIEW_DEFAULT));
 
 
-        mPreviewTexture = new SurfaceTexture(mCameraPlugin.getCameraTextureId());
+        mPreviewTexture = new SurfaceTexture(mCameraPlugin.getCameraTexture().handle);
         mPreviewTexture.setOnFrameAvailableListener(this);
 
         GlOperation.setViewport(0, 0, mSurfaceWidth, mSurfaceHeight);
@@ -225,13 +223,30 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
         deleteFBOs();
 
-        mCameraPreviewTexture = new GlGPUTexture();
         //TODO depending on quality -> change type/format
-        mCameraPreviewTexture.setType(GlTexture.TYPE_UNSIGNED_SHORT_5_6_5);
-        mCameraPreviewTexture.setFormat(GlTexture.FORMAT_RGB);
+        mCameraPreviewTexture = new GlTexture(){
+            @Override
+            public int getType() {
+                return GlTexture.TYPE_UNSIGNED_SHORT_5_6_5;
+            }
 
-        mCameraPreviewTexture.setWidth(mViewport.width());
-        mCameraPreviewTexture.setHeight(mViewport.height());
+            @Override
+            public int getFormat() {
+                return GlTexture.FORMAT_RGB;
+            }
+
+            @Override
+            public int getWidth() {
+                return mViewport.width();
+            }
+
+            @Override
+            public int getHeight() {
+                return mViewport.height();
+            }
+        };
+
+
         mCameraPreviewFBO = new GlFrameBufferObject();
 
         mCameraPreviewTexture.bind().allocate();
@@ -329,7 +344,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
         //Plugin draw
         GlOperation.setViewport(mViewport.left, mViewport.bottom, mViewport.width(), mViewport.height());
-        mPreviewPlugin.setCameraTextureId(mCameraPreviewTexture.handle);
+        mPreviewPlugin.setCameraTexture(mCameraPreviewTexture);
         mPreviewPlugin.draw(mViewport, mOrientation);
 
         switch(mState){

@@ -2,15 +2,11 @@ package com.thommil.animalsgo.gl.plugins;
 
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
-import android.util.Size;
 
 import com.thommil.animalsgo.R;
 import com.thommil.animalsgo.gl.CameraPlugin;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
-import com.thommil.animalsgo.gl.libgl.GlOperation;
-import com.thommil.animalsgo.utils.ByteBufferPool;
-
-import java.nio.FloatBuffer;
+import com.thommil.animalsgo.gl.libgl.GlTexture;
 
 public class CameraBasic extends CameraPlugin {
 
@@ -22,7 +18,7 @@ public class CameraBasic extends CameraPlugin {
     private int mTextureParamHandle;
     private int mTextureTranformHandle;
     private int mPositionHandle;
-    private int mCamTextureId;
+    private GlTexture mCameraTexture;
 
     @Override
     public String getId() {
@@ -40,8 +36,8 @@ public class CameraBasic extends CameraPlugin {
     }
 
     @Override
-    public int getCameraTextureId() {
-        return mCamTextureId;
+    public GlTexture getCameraTexture() {
+        return mCameraTexture;
     }
 
     @Override
@@ -54,18 +50,14 @@ public class CameraBasic extends CameraPlugin {
         mTextureParamHandle = mProgram.getUniformHandle("camTexture");
         mTextureTranformHandle = mProgram.getUniformHandle("camTextureTransform");
 
-        final int[] texturesId = new int[1];
-        GLES20.glGenTextures(1, texturesId , 0);
-        GlOperation.checkGlError("Texture generate");
-        mCamTextureId = texturesId[0];
+        mCameraTexture = new GlTexture() {
+            @Override
+            public int getTarget() {
+                return GLES11Ext.GL_TEXTURE_EXTERNAL_OES;
+            }
+        };
 
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mCamTextureId);
-        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_S, GLES20.GL_CLAMP_TO_EDGE);
-        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_WRAP_T, GLES20.GL_CLAMP_TO_EDGE);
-        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
-        GLES20.glTexParameteri(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
-        GlOperation.checkGlError("Texture bind");
+        mCameraTexture.bind().allocate();
     }
 
     @Override
@@ -73,12 +65,10 @@ public class CameraBasic extends CameraPlugin {
         //Camera shader -> FBO
         mProgram.use().enableAttributes();
         sSquareImageBuffer.bind();
+        mCameraTexture.bind();
 
         GLES20.glVertexAttribPointer(mPositionHandle, 2, GLES20.GL_FLOAT, false, sSquareImageBuffer.datasize * 4, 0);
         GLES20.glVertexAttribPointer(textureCoordinateHandle, 2, GLES20.GL_FLOAT, false, sSquareImageBuffer.datasize * 4, sSquareImageBuffer.datasize * 2);
-
-        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
-        GLES20.glBindTexture(GLES11Ext.GL_TEXTURE_EXTERNAL_OES, mCamTextureId);
         GLES20.glUniform1i(mTextureParamHandle, 0);
         //TODO Transform matrix when android < 6 (using accelerometer)
         //TODO Transform matrix on zoom
@@ -86,6 +76,7 @@ public class CameraBasic extends CameraPlugin {
 
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 
+        mCameraTexture.unbind();
         sSquareImageBuffer.unbind();
         mProgram.disableAttributes();
     }
@@ -93,6 +84,6 @@ public class CameraBasic extends CameraPlugin {
     @Override
     public void delete() {
         super.delete();
-        GLES20.glDeleteTextures(1, new int[]{mCamTextureId}, 0);
+        mCameraTexture.free();
     }
 }

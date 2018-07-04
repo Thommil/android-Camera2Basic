@@ -192,11 +192,12 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         switch (mOrientation) {
             case Orientation.ORIENTATION_90:
             case Orientation.ORIENTATION_270:
-                captureHeight = (int) (mSurfaceWidth / Settings.CAPTURE_RATIO);
+                captureHeight = Math.min((int) (mSurfaceWidth / Settings.CAPTURE_RATIO), mPreviewSize.getHeight());
                 break;
             default:
-                captureHeight = (int) (mSurfaceWidth * Settings.CAPTURE_RATIO);
+                captureHeight = Math.min((int) (mSurfaceWidth * Settings.CAPTURE_RATIO), mPreviewSize.getHeight());
         }
+
         mCaptureZone.left = 0;
         mCaptureZone.right = mViewport.width();
         mCaptureZone.bottom = (mViewport.height() - captureHeight) / 2;

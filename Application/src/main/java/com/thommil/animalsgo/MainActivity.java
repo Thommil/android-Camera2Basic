@@ -25,7 +25,8 @@ public class MainActivity extends AppCompatActivity implements PermissionsHelper
         //Log.d(TAG, "setupPermissions");
         mPermissionsHelper = PermissionsHelper.attach(this);
         mPermissionsHelper.setRequestedPermissions(
-                Manifest.permission.CAMERA
+                Manifest.permission.CAMERA,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
         );
     }
 

@@ -7,6 +7,8 @@ import java.nio.ByteOrder;
 import android.opengl.GLES20;
 import android.util.Log;
 
+import com.thommil.animalsgo.utils.ByteBufferPool;
+
 /**
  * Abstraction class for FBO use 
  * 
@@ -175,9 +177,9 @@ public class GlFrameBufferObject {
 	 * 
 	 * @return A Buffer containing the pixels
 	 */
-	public Buffer read(final int x, final int y, final int width, final int height){
+	public ByteBuffer read(final int x, final int y, final int width, final int height){
 		//Log.d(TAG,"read()");
-		Buffer pixels;
+		ByteBuffer pixels;
 
 		GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, this.handle);
 		
@@ -214,13 +216,14 @@ public class GlFrameBufferObject {
 			}
 			if(GlFrameBufferObject.readSettings[2] == 0) throw new RuntimeException("Failed to get pixel format for current implementation");
 		}
-		
-		pixels = ByteBuffer.allocateDirect(width * height * GlFrameBufferObject.readSettings[2]).order(ByteOrder.nativeOrder()).position(0);
+
+		pixels = ByteBufferPool.getInstance().getDirectByteBuffer(width * height * GlFrameBufferObject.readSettings[2]);
+		pixels.order(ByteOrder.nativeOrder());
 		GLES20.glReadPixels(x, y, width, height, GlFrameBufferObject.readSettings[1], GlFrameBufferObject.readSettings[0], pixels);
 		
 		GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, UNBIND_HANDLE);
 		
-		return pixels.position(0);
+		return pixels;
 	}
 	
 	/**

@@ -21,14 +21,14 @@ public class Capture {
     public int faceState = STATE_NOT_AVAILABLE;
     public float[] gravity = new float[3];
 
+    public String pluginId;
     public int width;
     public int height;
-    public ByteBuffer mOriginalBuffer;
-    public ByteBuffer mShadedBuffer;
+    public ByteBuffer mCameraBuffer;
 
     public int validationState = VALIDATION_IN_PROGRESS;
 
     public String toString(){
-        return "[Validation : "+validationState+"][Size: "+width+"x"+height+"][CAM:" +cameraState+", LGT:"+lightState+", FCE:"+faceState+", GRV :"+ Arrays.toString(gravity)+"]";
+        return "[Validation : "+validationState+"][Plugin: "+pluginId+"][Size: "+width+"x"+height+"][CAM:" +cameraState+", LGT:"+lightState+", FCE:"+faceState+", GRV :"+ Arrays.toString(gravity)+"]";
     }
 }

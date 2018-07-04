@@ -4,6 +4,7 @@ import android.hardware.camera2.CaptureResult;
 import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.Face;
 import android.support.v4.util.Pools;
+import android.util.Log;
 
 import com.thommil.animalsgo.Settings;
 import com.thommil.animalsgo.utils.ByteBufferPool;
@@ -13,6 +14,8 @@ import com.thommil.animalsgo.utils.ByteBufferPool;
  *
  */
 public class CaptureBuilder {
+
+    private static final String TAG = "A_GO/CaptureBuilder";
 
     private static final int POOL_SIZE = 10;
     private static final Pools.SimplePool<Capture> sCapturePreviewPool = new Pools.SimplePool<>(POOL_SIZE );
@@ -105,16 +108,11 @@ public class CaptureBuilder {
         //Faces
         final Face[] faces = result.get(CaptureResult.STATISTICS_FACES);
         if(faces != null){
-            capture.faceState = Capture.STATE_READY;
-            for(Face face : faces){
-                if(face.getScore() > Settings.FACE_DETECTION_THRESHOLD){
-                    capture.faceState = Capture.STATE_NOT_READY;
-                    break;
-                }
-                if(face.getScore() == 1){
-                    capture.faceState = Capture.STATE_NOT_AVAILABLE;
-                    break;
-                }
+            if(faces.length > 1){
+                capture.faceState = Capture.STATE_NOT_READY;
+            }
+            else{
+                capture.faceState = Capture.STATE_READY;
             }
         }
         else{
@@ -125,19 +123,21 @@ public class CaptureBuilder {
     }
 
     public void releaseCapture(final Capture capture){
-        capture.cameraState = Capture.STATE_NOT_AVAILABLE;
-        capture.lightState = Capture.STATE_NOT_AVAILABLE;
-        capture.faceState = Capture.STATE_NOT_AVAILABLE;
-        capture.validationState = Capture.VALIDATION_IN_PROGRESS;
-        if(capture.mOriginalBuffer != null) {
-            ByteBufferPool.getInstance().returnDirectBuffer(capture.mOriginalBuffer);
-            capture.mOriginalBuffer = null;
+        if(capture != null) {
+            capture.cameraState = Capture.STATE_NOT_AVAILABLE;
+            capture.lightState = Capture.STATE_NOT_AVAILABLE;
+            capture.faceState = Capture.STATE_NOT_AVAILABLE;
+            capture.validationState = Capture.VALIDATION_IN_PROGRESS;
+            capture.pluginId = null;
+            if (capture.mCameraBuffer != null) {
+                ByteBufferPool.getInstance().returnDirectBuffer(capture.mCameraBuffer);
+                capture.mCameraBuffer = null;
+            }
+            try {
+                sCapturePreviewPool.release(capture);
+            }catch(IllegalStateException ise){
+                Log.e(TAG, "Release : " + ise);
+            }
         }
-        if(capture.mShadedBuffer != null) {
-            ByteBufferPool.getInstance().returnDirectBuffer(capture.mShadedBuffer);
-            capture.mShadedBuffer = null;
-        }
-
-        sCapturePreviewPool.release(capture);
     }
 }

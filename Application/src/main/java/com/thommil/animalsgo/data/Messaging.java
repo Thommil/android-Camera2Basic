@@ -16,7 +16,8 @@ public class Messaging {
     // RENDERER
     public static final int CHANGE_PREVIEW_SIZE = 0x010;
     public static final int CHANGE_PREVIEW_PLUGIN = 0x020;
-    public static final int CAPTURE_NEXT_FRAME = 0x040;
+    public static final int CHANGE_CAPTURE = 0x040;
+    public static final int CAPTURE_NEXT_FRAME = 0x080;
 
     // Validator
     public static final int VALIDATION_REQUEST = 0x100;

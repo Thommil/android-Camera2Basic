@@ -1,8 +1,8 @@
 package com.thommil.animalsgo.gl;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.SurfaceTexture;
-import android.opengl.GLES20;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -22,11 +22,8 @@ import com.thommil.animalsgo.gl.libgl.GlFrameBufferObject;
 import com.thommil.animalsgo.gl.libgl.GlGPUTexture;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
 import com.thommil.animalsgo.gl.libgl.GlOperation;
+import com.thommil.animalsgo.gl.libgl.GlTexture;
 import com.thommil.animalsgo.gl.libgl.WindowSurface;
-import com.thommil.animalsgo.utils.ByteBufferPool;
-
-import java.nio.ByteOrder;
-import java.nio.ByteBuffer;
 
 
 // TODO GLRect Class to hide gl textcoords
@@ -106,9 +103,6 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     // Current capture zone
     private final GlIntRect mCaptureZone = new GlIntRect();
 
-    // Buffer for storing capture data
-    private ByteBuffer mCaptureBuffer;
-
     // Capture currently built
     private Capture mCurrentCapture;
 
@@ -150,8 +144,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
     public void deinitGL() {
         Log.d(TAG, "deinitGL()");
-        deleteFBO();
-        ByteBufferPool.getInstance().returnDirectBuffer(mCaptureBuffer);
+        deleteFBOs();
         mPluginManager.destroy();
         mPreviewTexture.release();
         mPreviewTexture.setOnFrameAvailableListener(null);
@@ -191,23 +184,12 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
         Log.d(TAG, "Viewport : " + mViewport);
 
-        setupFBO();
+        setupFBOs();
         updateCaptureZone();
 
     }
 
     private void updateCaptureZone(){
-        if(mCaptureBuffer == null) {
-            if (mSurfaceHeight > mSurfaceWidth) {
-                mCaptureBuffer = ByteBufferPool.getInstance().getDirectByteBuffer((int) (mSurfaceWidth / Settings.CAPTURE_RATIO) * mSurfaceWidth * Integer.BYTES);
-
-            } else {
-                mCaptureBuffer = ByteBufferPool.getInstance().getDirectByteBuffer((int) (mSurfaceHeight / Settings.CAPTURE_RATIO) * mSurfaceHeight * Integer.BYTES);
-            }
-            mCaptureBuffer.order(ByteOrder.LITTLE_ENDIAN);
-            mCaptureBuffer.rewind();
-        }
-
         final int captureHeight;
         switch (mOrientation) {
             case Orientation.ORIENTATION_90:
@@ -226,7 +208,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     }
 
 
-    private void deleteFBO() {
+    private void deleteFBOs() {
         Log.d(TAG, "deleteFBO()");
         if(mCameraPreviewFBO != null){
             mCameraPreviewFBO.free();
@@ -234,24 +216,30 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         if(mCameraPreviewTexture != null){
             mCameraPreviewTexture.free();
         }
+        CaptureBuilder.getInstance().releaseCapture(mCurrentCapture);
     }
 
-    private void setupFBO()
+    private void setupFBOs()
     {
         Log.d(TAG, "setupFBO()");
 
-        deleteFBO();
+        deleteFBOs();
 
         mCameraPreviewTexture = new GlGPUTexture();
+        //TODO depending on quality -> change type/format
+        mCameraPreviewTexture.setType(GlTexture.TYPE_UNSIGNED_SHORT_5_6_5);
+        mCameraPreviewTexture.setFormat(GlTexture.FORMAT_RGB);
+
         mCameraPreviewTexture.setWidth(mViewport.width());
         mCameraPreviewTexture.setHeight(mViewport.height());
-        mCameraPreviewTexture.bind().allocate();
-
         mCameraPreviewFBO = new GlFrameBufferObject();
+
+        mCameraPreviewTexture.bind().allocate();
         mCameraPreviewFBO.attach(mCameraPreviewTexture, GlFrameBufferObject.Attachment.TYPE_COLOR);
+        mCameraPreviewTexture.unbind();
 
         if (mCameraPreviewFBO.getStatus() != GlFrameBufferObject.STATUS_COMPLETE) {
-            GlOperation.checkGlError("initFBO failed");
+            GlOperation.checkGlError("init Camera preview FBO failed");
         }
 
         mCameraPreviewFBO.unbind();
@@ -331,12 +319,8 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         mCameraPlugin.setCameraTransformMatrix(mCameraTransformMatrix);
         mCameraPlugin.draw(mViewport, mOrientation);
 
-        //TODO test read FBO
         if(mState == STATE_CAPTURE_NEXT_FRAME){
-            mCaptureBuffer.rewind();
-            GLES20.glReadPixels(mCaptureZone.left, mCaptureZone.bottom, mCaptureZone.width(), mCaptureZone.height(), GLES20.GL_RGBA, GLES20.GL_UNSIGNED_BYTE, mCaptureBuffer);
-            mCaptureBuffer.rewind();
-            mCurrentCapture.mOriginalBuffer = mCaptureBuffer.asReadOnlyBuffer();
+            mCurrentCapture.mCameraBuffer = mCameraPreviewFBO.read(mCaptureZone.left, mCaptureZone.bottom, mCaptureZone.width(), mCaptureZone.height());
             mMainHandler.sendMessage(mMainHandler.obtainMessage(Messaging.VALIDATION_REQUEST, mCurrentCapture));
             mState = STATE_VALIDATION_IN_PROGRESS;
         }
@@ -350,16 +334,13 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
         switch(mState){
             case STATE_VALIDATION_IN_PROGRESS:
-                // TODO write RBO
-                // TODO possible scan effects
+                // TODO UI effects ?
                 break;
             case STATE_VALIDATION_DONE:
-                // TODO read RBO
-                // TODO STATE -> Choose/confirm
                 Log.d(TAG, "Capture done : " + mCurrentCapture);
+                // TODO STATE -> Choose/confirm
                 mState = STATE_PREVIEW;
                 CaptureBuilder.getInstance().releaseCapture(mCurrentCapture);
-                mCurrentCapture = null;
                 break;
         }
 
@@ -370,7 +351,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
     @Override
     public boolean handleMessage(Message message) {
-        Log.d(TAG, "handleMessage(" + message);
+        Log.d(TAG, "handleMessage(" + message+ ")");
         switch(message.what){
             case Messaging.SYSTEM_SHUTDOWN:
                 shutdown();
@@ -391,10 +372,18 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
                     mPreviewPlugin = (PreviewPlugin) mPluginManager.getPlugin((String)message.obj);
                 }
                 break;
+            case Messaging.CHANGE_CAPTURE:
+                CaptureBuilder.getInstance().releaseCapture(mCurrentCapture);
+                mCurrentCapture = (Capture)message.obj;
+                mCurrentCapture.pluginId = mPreviewPlugin.getId();
+                mCurrentCapture.width = mCaptureZone.width();
+                mCurrentCapture.height = mCaptureZone.height();
+                break;
             case Messaging.CAPTURE_NEXT_FRAME:
                 if(mState == STATE_PREVIEW){
                     mState = STATE_CAPTURE_NEXT_FRAME;
                     mCurrentCapture = (Capture)message.obj;
+                    mCurrentCapture.pluginId = mPreviewPlugin.getId();
                     mCurrentCapture.validationState = Capture.VALIDATION_IN_PROGRESS;
                     mCurrentCapture.width = mCaptureZone.width();
                     mCurrentCapture.height = mCaptureZone.height();
@@ -440,13 +429,6 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
     public void setMainHandler(final Handler mainHandler) {
         this.mMainHandler = mainHandler;
-    }
-
-    private void showError(final int messageResourceId){
-        mState = STATE_ERROR;
-        if(mMainHandler != null){
-            mMainHandler.sendMessage(mMainHandler.obtainMessage(Messaging.SYSTEM_ERROR, messageResourceId));
-        }
     }
 
     /**

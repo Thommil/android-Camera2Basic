@@ -60,7 +60,7 @@ public class ByteBufferPool {
 	 * The private singleton constructor
 	 */
 	private ByteBufferPool(){
-		//android.util.Log.d(TAG,"NEW");
+
 	}
 	
 	/**

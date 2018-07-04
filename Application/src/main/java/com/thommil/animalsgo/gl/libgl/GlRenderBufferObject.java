@@ -20,7 +20,7 @@ public class GlRenderBufferObject implements GlFrameBufferObject.Attachment{
 	 * Handle to use to unbind current buffer
 	 */
 	public static final int UNBIND_HANDLE = GLES20.GL_ZERO;
-	
+
 	/**
 	 * RenderBuffer format for color buffer based on RGB565
 	 */

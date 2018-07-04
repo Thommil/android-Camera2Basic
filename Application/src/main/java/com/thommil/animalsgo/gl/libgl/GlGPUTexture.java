@@ -6,6 +6,8 @@ public class GlGPUTexture extends GlTexture {
 
     private int mWidth = 0;
     private int mHeight = 0;
+    private int mFormat = FORMAT_RGBA;
+    private int mType = TYPE_UNSIGNED_BYTE;
 
     @Override
     public ByteBuffer getBytes() {
@@ -26,14 +28,24 @@ public class GlGPUTexture extends GlTexture {
     public int getSize() {
         switch (this.getType()) {
             case TYPE_UNSIGNED_SHORT_4_4_4_4:
-                return mHeight * mWidth * 4 * Short.BYTES;
+                return mHeight * mWidth * Short.BYTES;
             case TYPE_UNSIGNED_SHORT_5_5_5_1:
-                return mHeight * mWidth * 4 * Short.BYTES;
+                return mHeight * mWidth * Short.BYTES;
             case TYPE_UNSIGNED_SHORT_5_6_5:
-                return mHeight * mWidth * 3 * Short.BYTES;
+                return mHeight * mWidth * Short.BYTES;
             default:
-                return mHeight * mWidth * 4 * Integer.BYTES;
+                return mHeight * mWidth * Integer.BYTES;
         }
+    }
+
+    @Override
+    public int getType() {
+        return mType;
+    }
+
+    @Override
+    public int getFormat() {
+        return mFormat;
     }
 
     @Override
@@ -47,5 +59,13 @@ public class GlGPUTexture extends GlTexture {
 
     public void setHeight(final int height) {
         mHeight = height;
+    }
+
+    public void setType(final int type){
+        mType = type;
+    }
+
+    public void setFormat(final int format){
+        mFormat = format;
     }
 }

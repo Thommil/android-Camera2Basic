@@ -10,5 +10,5 @@ public abstract class UIPlugin extends Plugin {
         return TYPE_UI;
     }
 
-    //public abstract void draw(final int texId, final int width, final int height, final int orientation);
+
 }

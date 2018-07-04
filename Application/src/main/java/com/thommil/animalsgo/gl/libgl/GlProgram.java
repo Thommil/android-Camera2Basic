@@ -280,7 +280,7 @@ public class GlProgram {
 	/**
 	 * Free resources
 	 */
-	public void free(){
+	public GlProgram free(){
 		////Log.d(TAG,"free()");
 		if(this.programHandle != UNBIND_HANDLE) {
 			GLES20.glDeleteProgram(this.programHandle);
@@ -291,6 +291,7 @@ public class GlProgram {
 		if(this.fragmentShaderHandle != UNBIND_HANDLE) {
 			GLES20.glDeleteShader(this.fragmentShaderHandle);
 		}
+		return this;
 	}
 	 
 	/**

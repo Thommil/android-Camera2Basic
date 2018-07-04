@@ -29,19 +29,23 @@ public abstract class Plugin {
     // Type for handling UI
     public static final int TYPE_UI = 0x04;
 
-    // Use for static VBO IMAGE
-    private static final float[]SQUARE_IMAGE_DATA = new float[]{
-            -1.0f,-1.0f,
-            0.0f,0.0f,
-            -1.0f,1.0f,
-            0.0f,1.0f,
-            1.0f,-1.0f,
-            1.0f,0.0f,
-            1.0f,1.0f,
-            1.0f, 1.0f
-    };
+    private static final GlBuffer.Chunk<float[]> SQUARE_IMAGE_VERT_CHUNK =
+            new GlBuffer.Chunk<>(new float[]{
+                    -1.0f,-1.0f,
+                    -1.0f,1.0f,
+                    1.0f,-1.0f,
+                    1.0f,1.0f
+            },2);
 
-    protected static GlBuffer<float[]> sSquareImageBuffer = null;
+    private static final GlBuffer.Chunk<float[]> SQUARE_IMAGE_TEXT_CHUNK =
+            new GlBuffer.Chunk<>(new float[]{
+                    0.0f,0.0f,
+                    0.0f,1.0f,
+                    1.0f,0.0f,
+                    1.0f, 1.0f
+            },2);
+
+    protected static GlBuffer<float[]> sSquareImageBuffer;
 
     protected Context mContext;
 
@@ -87,14 +91,11 @@ public abstract class Plugin {
         }
 
         if(sSquareImageBuffer == null){
-            sSquareImageBuffer = new GlBuffer<>();
-            sSquareImageBuffer.bind().setData(SQUARE_IMAGE_DATA);
+            sSquareImageBuffer = new GlBuffer<>(new GlBuffer.Chunk[]{SQUARE_IMAGE_VERT_CHUNK, SQUARE_IMAGE_TEXT_CHUNK});
             sSquareImageBuffer.allocate(GlBuffer.USAGE_STATIC_DRAW, GlBuffer.TARGET_ARRAY_BUFFER, true);
-            sSquareImageBuffer.unbind();
         }
-    }
 
-    public abstract void draw(final GlIntRect viewport, final int orientation);
+    }
 
     public void delete(){
         //Log.d(TAG, "delete()");
@@ -107,6 +108,8 @@ public abstract class Plugin {
             sSquareImageBuffer = null;
         }
     }
+
+    public abstract void draw(final GlIntRect viewport, final int orientation);
 
     public static class Settings {
         // TODO implements settings definition

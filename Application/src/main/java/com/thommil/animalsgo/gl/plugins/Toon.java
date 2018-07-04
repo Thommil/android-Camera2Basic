@@ -38,7 +38,6 @@ public class Toon extends PreviewPlugin {
         super.create();
 
         mProgram.use();
-
         mPositionParamHandle = mProgram.getAttributeHandle("position");
         mTextureCoordinateParamHandle = mProgram.getAttributeHandle("texCoord");
         mTextureParamHandle = mProgram.getUniformHandle("sTexture");
@@ -51,12 +50,12 @@ public class Toon extends PreviewPlugin {
         sSquareImageBuffer.bind();
         mCameraTexture.bind();
 
-        GLES20.glVertexAttribPointer(mPositionParamHandle, 2, GLES20.GL_FLOAT, false, sSquareImageBuffer.datasize * 4, 0);
-        GLES20.glVertexAttribPointer(mTextureCoordinateParamHandle, 2, GLES20.GL_FLOAT, false, sSquareImageBuffer.datasize * 4, sSquareImageBuffer.datasize * 2);
+        GLES20.glVertexAttribPointer(mPositionParamHandle, sSquareImageBuffer.chunks[0].components,
+                sSquareImageBuffer.datatype, false, sSquareImageBuffer.stride, 0);
+        GLES20.glVertexAttribPointer(mTextureCoordinateParamHandle, sSquareImageBuffer.chunks[1].components,
+                sSquareImageBuffer.datatype, false, sSquareImageBuffer.stride, sSquareImageBuffer.chunks[1].offset);
         GLES20.glUniform1i(mTextureParamHandle, 0);
-        GLES20.glUniform2f(mviewSizeParamHandle, viewport.width(), viewport.height());
-
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, sSquareImageBuffer.count);
 
         mCameraTexture.unbind();
         sSquareImageBuffer.unbind();

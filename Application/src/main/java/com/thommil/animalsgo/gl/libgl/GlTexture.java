@@ -472,9 +472,10 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	/**
 	 * Removes texture from GPU 
 	 */
-	public void free(){
+	public GlTexture free(){
 		final int textureHandle[] = new int[]{this.handle};
 		GLES20.glDeleteTextures(1, textureHandle, 0);
+		return this;
 	}
 	
 	/**

@@ -103,9 +103,10 @@ public class GlRenderBufferObject implements GlFrameBufferObject.Attachment{
 	/**
 	 * Free resources associated with current RenderBuffer
 	 */
-	public void free(){
+	public GlRenderBufferObject free(){
 		//android.util.//Log.d(TAG,"free()");
 		GLES20.glDeleteRenderbuffers(1, new int[]{this.handle}, 0);
+		return this;
 	}
 	
 	/* (non-Javadoc)

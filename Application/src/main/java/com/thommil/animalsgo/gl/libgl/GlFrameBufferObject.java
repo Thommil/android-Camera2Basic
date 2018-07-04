@@ -242,9 +242,10 @@ public class GlFrameBufferObject {
 	/**
 	 * Free resources associated with current FrameBuffer
 	 */
-	public void free(){
+	public GlFrameBufferObject free(){
 		////Log.d(TAG,"free()");
 		GLES20.glDeleteFramebuffers(1, new int[]{this.handle}, 0);
+		return this;
 	}
 	
 	/**

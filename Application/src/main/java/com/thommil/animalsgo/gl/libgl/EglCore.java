@@ -81,7 +81,7 @@ public final class EglCore {
 
         // Try to get a GLES3 context, if requested.
 
-        //Log.d(TAG, "Trying GLES 3");
+        ////Log.d(TAG, "Trying GLES 3");
         EGLConfig config = getConfig(flags, 3);
         if (config != null) {
             int[] attrib3_list = {
@@ -92,7 +92,7 @@ public final class EglCore {
                     attrib3_list, 0);
 
             if (EGL14.eglGetError() == EGL14.EGL_SUCCESS) {
-                //Log.d(TAG, "Got GLES 3 config");
+                ////Log.d(TAG, "Got GLES 3 config");
                 mEGLConfig = config;
                 mEGLContext = context;
                 mGlVersion = 3;
@@ -100,7 +100,7 @@ public final class EglCore {
         }
 
         if (mEGLContext == EGL14.EGL_NO_CONTEXT) {  // GLES 2 only, or GLES 3 attempt failed
-            //Log.d(TAG, "Trying GLES 2");
+            ////Log.d(TAG, "Trying GLES 2");
             config = getConfig(flags, 2);
             if (config == null) {
                 throw new RuntimeException("Unable to find a suitable EGLConfig");
@@ -121,7 +121,7 @@ public final class EglCore {
         int[] values = new int[1];
         EGL14.eglQueryContext(mEGLDisplay, mEGLContext, EGL14.EGL_CONTEXT_CLIENT_VERSION,
                 values, 0);
-        Log.d(TAG, "EGLContext created, client version " + values[0]);
+        //Log.d(TAG, "EGLContext created, client version " + values[0]);
     }
 
     /**
@@ -257,7 +257,7 @@ public final class EglCore {
     public void makeCurrent(EGLSurface eglSurface) {
         if (mEGLDisplay == EGL14.EGL_NO_DISPLAY) {
             // called makeCurrent() before create?
-            Log.d(TAG, "NOTE: makeCurrent w/o display");
+            //Log.d(TAG, "NOTE: makeCurrent w/o display");
         }
         if (!EGL14.eglMakeCurrent(mEGLDisplay, eglSurface, eglSurface, mEGLContext)) {
             throw new RuntimeException("eglMakeCurrent failed");
@@ -270,7 +270,7 @@ public final class EglCore {
     public void makeCurrent(EGLSurface drawSurface, EGLSurface readSurface) {
         if (mEGLDisplay == EGL14.EGL_NO_DISPLAY) {
             // called makeCurrent() before create?
-            Log.d(TAG, "NOTE: makeCurrent w/o display");
+            //Log.d(TAG, "NOTE: makeCurrent w/o display");
         }
         if (!EGL14.eglMakeCurrent(mEGLDisplay, drawSurface, readSurface, mEGLContext)) {
             throw new RuntimeException("eglMakeCurrent(draw,read) failed");

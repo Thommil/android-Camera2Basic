@@ -43,7 +43,7 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.d(TAG, "onCreate()");
+        //Log.d(TAG, "onCreate()");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_camera);
 
@@ -53,7 +53,7 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
 
 
     private void setupCameraFragment(){
-        Log.d(TAG, "setupCameraFragment()");
+        //Log.d(TAG, "setupCameraFragment()");
         if(mCameraFragment != null && mCameraFragment.isAdded())
             return;
 
@@ -70,7 +70,7 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
 
     @Override
     protected void onResume() {
-        Log.d(TAG, "onResume()");
+        //Log.d(TAG, "onResume()");
         super.onResume();
         getWindow().getDecorView()
                 .setSystemUiVisibility(
@@ -93,7 +93,7 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
 
     @Override
     protected void onPause() {
-        Log.d(TAG, "onPause()");
+        //Log.d(TAG, "onPause()");
         super.onPause();
         mSurfaceView.getHolder().removeCallback(mSurfaceHolderCallback);
         shutdownCamera();
@@ -101,7 +101,7 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
     }
 
     protected void setReady(final Surface surface, final int width, final int height) {
-        Log.d(TAG, "setReady("+width+", "+height+")");
+        //Log.d(TAG, "setReady("+width+", "+height+")");
         mRenderer = new CameraRenderer(this, surface, width, height);
         mRenderer.setCameraFragment(mCameraFragment);
         mRenderer.setOnRendererReadyListener(this);
@@ -111,7 +111,7 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
 
 
     private void shutdownCamera() {
-        Log.d(TAG, "shutdownCamera()");
+        //Log.d(TAG, "shutdownCamera()");
 
         if(mCameraFragment == null || mRenderer == null) return;
         if(mCameraFragment != null){
@@ -127,7 +127,7 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
 
     @Override
     public void onRendererReady() {
-        Log.d(TAG, "onRendererReady()");
+        //Log.d(TAG, "onRendererReady()");
         mMainHandler.post(new Runnable() {
             @Override
             public void run() {
@@ -139,12 +139,12 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
 
     @Override
     public void onRendererFinished() {
-        Log.d(TAG, "onRendererFinished()");
+        //Log.d(TAG, "onRendererFinished()");
     }
 
     @Override
     public boolean handleMessage(final Message message) {
-        Log.d(TAG, "handleMessage(" + message+ ")");
+        //Log.d(TAG, "handleMessage(" + message+ ")");
         switch (message.what){
             case Messaging.SYSTEM_ERROR :
                 ErrorDialog.newInstance(getString((int)message.obj))
@@ -169,18 +169,18 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
     private SurfaceHolder.Callback mSurfaceHolderCallback = new SurfaceHolder.Callback() {
         @Override
         public void surfaceCreated(SurfaceHolder surfaceHolder) {
-            Log.d(TAG, "surfaceCreated("+surfaceHolder+")");
+            //Log.d(TAG, "surfaceCreated("+surfaceHolder+")");
         }
 
         @Override
         public void surfaceChanged(SurfaceHolder surfaceHolder, int format, int width, int height) {
-            Log.d(TAG, "surfaceChanged("+format+", "+width+", "+height+")");
+            //Log.d(TAG, "surfaceChanged("+format+", "+width+", "+height+")");
             setReady(surfaceHolder.getSurface(), width, height);
         }
 
         @Override
         public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
-            Log.d(TAG, "surfaceDestroyed("+surfaceHolder+")");
+            //Log.d(TAG, "surfaceDestroyed("+surfaceHolder+")");
         }
     };
 

@@ -94,7 +94,7 @@ public class GlFrameBufferObject {
 	 * @param type The attachment type of Attachement.TYPE_*
 	 */
 	public GlFrameBufferObject attach(final Attachment attachment, final int type){
-		//Log.d(TAG,"attach("+type+")");
+		////Log.d(TAG,"attach("+type+")");
 		switch(attachment.getTarget()){
 			case GLES20.GL_RENDERBUFFER:
 				GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, this.handle);
@@ -130,7 +130,7 @@ public class GlFrameBufferObject {
 	 * @param type The attachment type of Attachement.TYPE_* to remove
 	 */
 	public GlFrameBufferObject detach(final int type){
-		//Log.d(TAG,"detach("+type+")");
+		////Log.d(TAG,"detach("+type+")");
 		switch(type){
 			case Attachment.TYPE_COLOR:
 				this.colorAttachment = null;
@@ -153,7 +153,7 @@ public class GlFrameBufferObject {
 	 * Bind the current FrameBufferObject
 	 */
 	public GlFrameBufferObject bind(){
-		//Log.d(TAG,"bind()");
+		////Log.d(TAG,"bind()");
 		GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, this.handle);
 		return this;
 	}
@@ -162,7 +162,7 @@ public class GlFrameBufferObject {
 	 * Unbind the current FrameBufferObject
 	 */
 	public GlFrameBufferObject unbind(){
-		//Log.d(TAG,"unbind()");
+		////Log.d(TAG,"unbind()");
 		GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, UNBIND_HANDLE);
 		return this;
 	}
@@ -178,7 +178,7 @@ public class GlFrameBufferObject {
 	 * @return A Buffer containing the pixels
 	 */
 	public ByteBuffer read(final int x, final int y, final int width, final int height){
-		//Log.d(TAG,"read()");
+		////Log.d(TAG,"read()");
 		ByteBuffer pixels;
 
 		GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, this.handle);
@@ -232,7 +232,7 @@ public class GlFrameBufferObject {
 	 * @return A status in a int of STATUS_*
 	 */
 	public int getStatus(){
-		//Log.d(TAG,"getStatus()");
+		////Log.d(TAG,"getStatus()");
 		GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, this.handle);
 		final int status = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER);
 		GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, UNBIND_HANDLE);
@@ -243,7 +243,7 @@ public class GlFrameBufferObject {
 	 * Free resources associated with current FrameBuffer
 	 */
 	public void free(){
-		//Log.d(TAG,"free()");
+		////Log.d(TAG,"free()");
 		GLES20.glDeleteFramebuffers(1, new int[]{this.handle}, 0);
 	}
 	

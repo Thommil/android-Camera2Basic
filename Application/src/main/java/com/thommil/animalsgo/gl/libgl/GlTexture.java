@@ -5,6 +5,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import android.opengl.GLES20;
+import android.util.Log;
 
 /**
  * Abstraction class to define a texture source data 
@@ -287,7 +288,6 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	 * Default constructor
 	 */
 	public GlTexture(){
-		//android.util.Log.d(TAG,"NEW");
 		final int[]handles = new int[1];
 		GLES20.glGenTextures(1, handles, 0);
 		this.handle = handles[0];
@@ -319,7 +319,6 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	 * @param activeTexture The GPU active texture to use
 	 */
 	public GlTexture bind(final int activeTexture){
-		//android.util.Log.d(TAG,"bind("+activeTexture+")");
 		GLES20.glActiveTexture(activeTexture);
 		GLES20.glBindTexture(getTarget(), this.handle);
 		return this;
@@ -339,7 +338,6 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	 * @param activeTexture The GPU active texture to use
 	 */
 	public GlTexture unbind(final int activeTexture){
-		//android.util.Log.d(TAG,"bind("+activeTexture+")");
 		GLES20.glActiveTexture(activeTexture);
 		GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, UNBIND_HANDLE);
 		return this;
@@ -475,7 +473,6 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	 * Removes texture from GPU 
 	 */
 	public void free(){
-		//android.util.Log.d(TAG,"free()");
 		final int textureHandle[] = new int[]{this.handle};
 		GLES20.glDeleteTextures(1, textureHandle, 0);
 	}
@@ -490,8 +487,6 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	 * @return true if format is supported, false otherwise
 	 */
 	public static boolean isCompressionFormatSupported(final int format){
-		//android.util.Log.d(TAG,"isCompressionFormatSupported("+format+")");
-		
 		//Initialize if not done
 		if(textureSupportFlags == null){
 			textureSupportFlags = GlOperation.glGetState(GLES20.GL_COMPRESSED_TEXTURE_FORMATS);
@@ -506,7 +501,6 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	 */
 	@Override
 	public int getHandle() {
-		//android.util.Log.d(TAG,"getHandle()");
 		return this.handle;
 	}
 
@@ -515,8 +509,6 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	 */
 	@Override
 	public int getLevel() {
-		//android.util.Log.d(TAG,"getLevel()");
-		
 		//Default level set to 0, can be overridden
 		return 0;
 	}	

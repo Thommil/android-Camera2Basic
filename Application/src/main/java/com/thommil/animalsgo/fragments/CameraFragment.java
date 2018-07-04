@@ -136,7 +136,7 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Se
 
     public void openCamera()
     {
-        Log.d(TAG, "openCamera()");
+        //Log.d(TAG, "openCamera()");
         final Activity activity = getActivity();
         if (null == activity || activity.isFinishing()) {
             return;
@@ -201,7 +201,7 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Se
 
         @Override
         public void onOpened(CameraDevice cameraDevice) {
-            Log.d(TAG, "onOpened("+cameraDevice+")");
+            //Log.d(TAG, "onOpened("+cameraDevice+")");
             mCameraOpenCloseLock.release();
             mCameraDevice = cameraDevice;
             mCameraIsOpen = true;
@@ -210,7 +210,7 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Se
 
         @Override
         public void onDisconnected(CameraDevice cameraDevice) {
-            Log.d(TAG, "onDisconnected("+cameraDevice+")");
+            //Log.d(TAG, "onDisconnected("+cameraDevice+")");
             mCameraOpenCloseLock.release();
             cameraDevice.close();
             mCameraDevice = null;
@@ -219,7 +219,7 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Se
 
         @Override
         public void onError(CameraDevice cameraDevice, int error) {
-            Log.d(TAG, "onError("+cameraDevice+", "+error+")");
+            //Log.d(TAG, "onError("+cameraDevice+", "+error+")");
             mCameraOpenCloseLock.release();
             cameraDevice.close();
             mCameraDevice = null;
@@ -230,22 +230,22 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Se
 
     private Size choosePreviewSize(Size[] choices)
     {
-        Log.d(TAG, "chooseVideoSize("+Arrays.toString(choices)+")");
+        //Log.d(TAG, "chooseVideoSize("+Arrays.toString(choices)+")");
         final int sw = mSurfaceView.getWidth(); //surface width
         final int sh = mSurfaceView.getHeight(); //surface height
 
-        Log.d(TAG, "Surface size : "+sw+"x"+sh);
+        //Log.d(TAG, "Surface size : "+sw+"x"+sh);
 
         mPreviewSurfaceAspectRatio = (float)sw / sh;
 
-        Log.d(TAG, "chooseVideoSize() for landscape:" + (mPreviewSurfaceAspectRatio > 1.f) + " aspect: " + mPreviewSurfaceAspectRatio);
+        //Log.d(TAG, "chooseVideoSize() for landscape:" + (mPreviewSurfaceAspectRatio > 1.f) + " aspect: " + mPreviewSurfaceAspectRatio);
 
         Size sizeToReturn = null;
 
         final String qualitySettings = Settings.getInstance().getString(Settings.CAMERA_PREVIEW_QUALITY);
         final String[] qualityValues = getResources().getStringArray(R.array.prefs_camera_preview_quality_entries_values);
         final List<Size> choicesList = new LinkedList<>(Arrays.asList(choices));
-        Log.d(TAG, "All valid choices :" + choicesList);
+        //Log.d(TAG, "All valid choices :" + choicesList);
 
         final List<Size> bestChoicesList = new ArrayList<>();
         for (int i = 0; i < choicesList.size(); i++) {
@@ -262,7 +262,7 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Se
                 }
             }
         }
-        Log.d(TAG, "Best available choices :" + bestChoicesList);
+        //Log.d(TAG, "Best available choices :" + bestChoicesList);
 
         //Auto
         if(Settings.getInstance().getBoolean(Settings.CAMERA_PREVIEW_QUALITY_AUTO)){
@@ -312,7 +312,7 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Se
                         }
                     }
 
-                    Log.d(TAG, "No best choice found, use fallback : " + choicesList);
+                    //Log.d(TAG, "No best choice found, use fallback : " + choicesList);
 
                     if (choicesList.size() < qualityValues.length) {
                         qualityIndex = Math.min(choicesList.size() - 1, qualityIndex);
@@ -343,7 +343,7 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Se
     }
 
     public void closeCamera() {
-        Log.d(TAG, "closeCamera()");
+        //Log.d(TAG, "closeCamera()");
         try {
             mCameraOpenCloseLock.acquire();
             if (null != mCameraDevice) {
@@ -395,7 +395,7 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Se
     };
 
     protected void startPreview(){
-        Log.d(TAG, "startPreview()");
+        //Log.d(TAG, "startPreview()");
         if (null == mCameraDevice || null == mPreviewSize || !mSurfaceView.getHolder().getSurface().isValid() || mRendererHandler == null) {
             return;
         }
@@ -447,7 +447,7 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Se
     }
 
     protected void updatePreview() {
-        Log.d(TAG, "updatePreview()");
+        //Log.d(TAG, "updatePreview()");
         if (null == mCameraDevice) {
             return;
         }
@@ -470,7 +470,7 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Se
     }
 
     public void setPaused(boolean isPaused){
-        Log.d(TAG, "setPaused("+isPaused+")");
+        //Log.d(TAG, "setPaused("+isPaused+")");
         mIsPaused = isPaused;
         updatePreview();
     }
@@ -480,12 +480,12 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Se
     }
 
     public void setRendererHandler(final Handler rendererHandler) {
-        Log.d(TAG, "setRendererHandler("+rendererHandler+")");
+        //Log.d(TAG, "setRendererHandler("+rendererHandler+")");
         mRendererHandler = rendererHandler;
     }
 
     public void setSurfaceView(SurfaceView surfaceView) {
-        Log.d(TAG, "setSurfaceView("+surfaceView+")");
+        //Log.d(TAG, "setSurfaceView("+surfaceView+")");
         mSurfaceView = surfaceView;
     }
 
@@ -494,7 +494,7 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Se
     }
 
     public void setMainHandler(final Handler mainHandler){
-        Log.d(TAG, "setMainHandler("+mainHandler+")");
+        //Log.d(TAG, "setMainHandler("+mainHandler+")");
         mMainHandler = mainHandler;
     }
 
@@ -506,7 +506,7 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Se
     }
 
     public void setPreviewTexture(SurfaceTexture previewSurface) {
-        Log.d(TAG, "setPreviewTexture()");
+        //Log.d(TAG, "setPreviewTexture()");
         this.mPreviewSurface = previewSurface;
     }
 

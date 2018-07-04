@@ -48,7 +48,7 @@ public class CaptureValidator extends HandlerThread implements Handler.Callback 
 
     @Override
     protected void onLooperPrepared() {
-        Log.d(TAG, "onLooperPrepared()");
+        //Log.d(TAG, "onLooperPrepared()");
 
         mHandler = new Handler(getLooper(), this);
         if (mMainHandler != null) {
@@ -62,7 +62,7 @@ public class CaptureValidator extends HandlerThread implements Handler.Callback 
 
     @Override
     public boolean handleMessage(Message message) {
-        Log.d(TAG, "handleMessage(" + message+ ")");
+        //Log.d(TAG, "handleMessage(" + message+ ")");
         switch (message.what){
             case Messaging.VALIDATION_REQUEST :
                 final Capture capture = (Capture) message.obj;
@@ -87,7 +87,7 @@ public class CaptureValidator extends HandlerThread implements Handler.Callback 
     }
 
     protected void shutdown(){
-        Log.d(TAG, "shutdown()");
+        //Log.d(TAG, "shutdown()");
         quitSafely();
         sSnapshotValidatorInstance = null;
     }

@@ -22,7 +22,7 @@ public class MainActivity extends AppCompatActivity implements PermissionsHelper
     private boolean mPermissionsSatisfied = false;
 
     private void setupPermissions() {
-        Log.d(TAG, "setupPermissions");
+        //Log.d(TAG, "setupPermissions");
         mPermissionsHelper = PermissionsHelper.attach(this);
         mPermissionsHelper.setRequestedPermissions(
                 Manifest.permission.CAMERA
@@ -31,7 +31,7 @@ public class MainActivity extends AppCompatActivity implements PermissionsHelper
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        Log.d(TAG, "onCreate()");
+        //Log.d(TAG, "onCreate()");
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -64,7 +64,7 @@ public class MainActivity extends AppCompatActivity implements PermissionsHelper
 
     @Override
     protected void onResume() {
-        Log.d(TAG, "onResume()");
+        //Log.d(TAG, "onResume()");
         super.onResume();
         if(PermissionsHelper.isMorHigher() && !mPermissionsSatisfied) {
             if (!mPermissionsHelper.checkPermissions())
@@ -80,7 +80,7 @@ public class MainActivity extends AppCompatActivity implements PermissionsHelper
      */
     @Override
     public void onPermissionsSatisfied() {
-        Log.d(TAG, "onPermissionsSatisfied()");
+        //Log.d(TAG, "onPermissionsSatisfied()");
         mPermissionsSatisfied = true;
     }
 
@@ -91,7 +91,7 @@ public class MainActivity extends AppCompatActivity implements PermissionsHelper
      */
     @Override
     public void onPermissionsFailed(String[] failedPermissions) {
-        Log.d(TAG, "onPermissionsFailed("+ Arrays.toString(failedPermissions)+")");
+        //Log.d(TAG, "onPermissionsFailed("+ Arrays.toString(failedPermissions)+")");
         mPermissionsSatisfied = false;
         Toast.makeText(this, "Animal-GO needs all permissions to function, please try again.", Toast.LENGTH_LONG).show();
         this.finish();

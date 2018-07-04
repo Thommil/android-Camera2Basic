@@ -60,7 +60,7 @@ public abstract class Plugin {
     public abstract int getType();
 
     public void create(){
-        Log.d(TAG, "create()");
+        //Log.d(TAG, "create()");
         InputStream vertexInputStream = null, fragmentInputStream = null;
         try {
             vertexInputStream = mContext.getAssets().open(this.getId() + ".vert.glsl");
@@ -97,7 +97,7 @@ public abstract class Plugin {
     public abstract void draw(final GlIntRect viewport, final int orientation);
 
     public void delete(){
-        Log.d(TAG, "delete()");
+        //Log.d(TAG, "delete()");
         if(mProgram != null){
             mProgram.free();;
             mProgram = null;

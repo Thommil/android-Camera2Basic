@@ -52,7 +52,7 @@ public class GlBuffer<T>{
 	/**
 	 * Handle to use to unbind current buffer
 	 */
-	public static final int UNBIND_HANDLE = GLES20.GL_ZERO;
+	public static final int UNBIND_HANDLE = GLES20.GL_NONE;
 	
 	/**
 	 * Buffer type for client drawing
@@ -138,7 +138,7 @@ public class GlBuffer<T>{
 	 * Bind current buffer to active buffer if GPU 
 	 */
 	public GlBuffer bind(){
-		//Log.d(TAG,"bind()");
+		////Log.d(TAG,"bind()");
 		GLES20.glBindBuffer(this.target, this.handle);
 		return this;
 	}
@@ -147,7 +147,7 @@ public class GlBuffer<T>{
 	 * Unbind current buffer from active buffer if GPU 
 	 */
 	public GlBuffer unbind(){
-		//Log.d(TAG,"unbind()");
+		////Log.d(TAG,"unbind()");
 		GLES20.glBindBuffer(this.target, UNBIND_HANDLE);
 		return this;
 	}
@@ -156,7 +156,7 @@ public class GlBuffer<T>{
 	 * Update buffer and associated VBO
 	 */
 	public void setData(final T data){
-        //Log.d(TAG,"setData("+data+")");
+        ////Log.d(TAG,"setData("+data+")");
 		if(buffer == null){
 			if(data instanceof byte[]) {
 				datatype = TYPE_BYTE;
@@ -227,7 +227,7 @@ public class GlBuffer<T>{
 	}
 
 	protected void freeBuffer(){
-        //Log.d(TAG,"freeBuffer()");
+        ////Log.d(TAG,"freeBuffer()");
 		if(this.buffer != null){
 			switch (datatype){
 				case TYPE_BYTE:
@@ -259,7 +259,7 @@ public class GlBuffer<T>{
 	 * @return The buffer handle on server (available in handle attribute too)
 	 */
 	public GlBuffer allocate(final int usage, final int target, final boolean freeLocal){
-        Log.d(TAG,"allocate("+usage+", "+target+", "+freeLocal+")");
+        //Log.d(TAG,"allocate("+usage+", "+target+", "+freeLocal+")");
 
         //Create buffer on server
         this.target = target;
@@ -269,9 +269,6 @@ public class GlBuffer<T>{
         GLES20.glBufferData(target, this.size, this.buffer, usage);
         //Unbind it
         GLES20.glBindBuffer(target, UNBIND_HANDLE);
-
-        //Check error on bind only
-        GlOperation.checkGlError("create VBO");
 
         //Free local buffer is queried
         if(freeLocal){
@@ -299,7 +296,7 @@ public class GlBuffer<T>{
 	 * Free local and server buffers
 	 */
 	public void free(){
-		//Log.d(TAG,"free()");
+		////Log.d(TAG,"free()");
 		if(this.handle != UNBIND_HANDLE){
 			final int[] handles = new int[]{this.handle};
 			this.handle = UNBIND_HANDLE;

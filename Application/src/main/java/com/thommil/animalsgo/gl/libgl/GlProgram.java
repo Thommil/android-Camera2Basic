@@ -33,7 +33,7 @@ public class GlProgram {
 	/**
 	 * Handle to use to unbind current program
 	 */
-	public static final int UNBIND_HANDLE = GLES20.GL_ZERO;
+	public static final int UNBIND_HANDLE = GLES20.GL_NONE;
 	
 	/**
 	 * Attribute pattern for parsing
@@ -106,7 +106,7 @@ public class GlProgram {
 	 * @param attributeName The name of the attribute to enable
 	 */
 	public GlProgram enableAttribute(final String attributeName){
-		//Log.d(TAG,"enableAttribute("+attributeName+")");
+		////Log.d(TAG,"enableAttribute("+attributeName+")");
 		GLES20.glEnableVertexAttribArray(this.getAttributeHandle(attributeName));
 		return this;
 	}
@@ -117,7 +117,7 @@ public class GlProgram {
 	 * @param attributeId The handle of attribute to enable
 	 */
 	public GlProgram enableAttribute(final int attributeId){
-		//Log.d(TAG,"enableAttribute("+attributeId+")");
+		////Log.d(TAG,"enableAttribute("+attributeId+")");
 		GLES20.glEnableVertexAttribArray(attributeId);
 		return this;
 	}
@@ -138,7 +138,7 @@ public class GlProgram {
 	 * @param attributeName The name of attribute to disable
 	 */
 	public GlProgram disableAttribute(final String attributeName){
-		//Log.d(TAG,"enableAttribute("+attributeName+")");
+		////Log.d(TAG,"enableAttribute("+attributeName+")");
 		GLES20.glDisableVertexAttribArray(this.getAttributeHandle(attributeName));
 		return this;
 	}
@@ -149,7 +149,7 @@ public class GlProgram {
 	 * @param attributeId The handle of attribute to disable
 	 */
 	public GlProgram disableAttribute(final int attributeId){
-		//Log.d(TAG,"enableAttribute("+attributeId+")");
+		////Log.d(TAG,"enableAttribute("+attributeId+")");
 		GLES20.glDisableVertexAttribArray(attributeId);
 		return this;
 	}
@@ -161,7 +161,7 @@ public class GlProgram {
 	 * Caution : only calls to start/stop are taken into account for current state
 	 */
 	public GlProgram use(){
-		//Log.d(TAG,"start()");
+		////Log.d(TAG,"start()");
         GLES20.glUseProgram(this.programHandle);
         return this;
 	}
@@ -174,7 +174,7 @@ public class GlProgram {
      * @return return a compiled shader OpenGL ID
      */
 	protected int loadShader(final int type, final InputStream inputStream){
-		//Log.d(TAG,"loadShader("+type+")");
+		////Log.d(TAG,"loadShader("+type+")");
 		
 		final int shader = GLES20.glCreateShader(type);
 		
@@ -235,7 +235,7 @@ public class GlProgram {
 	 * @return An OpenGL handle to the program.
 	 */
 	protected int createAndLinkProgram(final int vertexShaderHandle, final int fragmentShaderHandle){
-		//Log.d(TAG,"createAndLinkProgram("+vertexShaderHandle+", "+fragmentShaderHandle+")");
+		////Log.d(TAG,"createAndLinkProgram("+vertexShaderHandle+", "+fragmentShaderHandle+")");
 		final int programHandle = GLES20.glCreateProgram();
 		
 		if (programHandle != UNBIND_HANDLE) {
@@ -281,7 +281,7 @@ public class GlProgram {
 	 * Free resources
 	 */
 	public void free(){
-		//Log.d(TAG,"free()");
+		////Log.d(TAG,"free()");
 		if(this.programHandle != UNBIND_HANDLE) {
 			GLES20.glDeleteProgram(this.programHandle);
 		}
@@ -300,7 +300,7 @@ public class GlProgram {
 	 * @return The handle ID, 0 if not found
 	 */
 	public int getAttributeHandle(final String name){
-		//Log.d(TAG,"getAttributeHandle("+name+")");
+		////Log.d(TAG,"getAttributeHandle("+name+")");
 		Integer handle = this.attributeHandles.get(name); 
 		return (handle == null) ? UNBIND_HANDLE : handle;
 	}
@@ -312,7 +312,7 @@ public class GlProgram {
 	 * @return The handle ID, 0 if not found
 	 */
 	public int getUniformHandle(final String name){
-		//Log.d(TAG,"getUniformHandle("+name+")");
+		////Log.d(TAG,"getUniformHandle("+name+")");
 		Integer handle = this.uniformHandles.get(name); 
 		return (handle == null) ? UNBIND_HANDLE : handle;
 	}

@@ -7,6 +7,7 @@ import android.os.Message;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -14,6 +15,7 @@ import android.view.View;
 
 import com.thommil.animalsgo.data.Messaging;
 import com.thommil.animalsgo.fragments.CameraFragment;
+import com.thommil.animalsgo.gl.CameraPlugin;
 import com.thommil.animalsgo.gl.CameraRenderer;
 import com.thommil.animalsgo.capture.CaptureValidator;
 
@@ -89,6 +91,28 @@ public class CameraActivity extends FragmentActivity implements CameraRenderer.O
 
         CaptureValidator.getInstance().setMainHandler(mMainHandler);
         CaptureValidator.getInstance().start();
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        switch(keyCode){
+            case KeyEvent.KEYCODE_VOLUME_DOWN:
+            case KeyEvent.KEYCODE_VOLUME_UP :
+                return mCameraFragment.onKeyDown(keyCode, event);
+            default:
+                return super.onKeyDown(keyCode, event);
+        }
+    }
+
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        switch(keyCode){
+            case KeyEvent.KEYCODE_VOLUME_DOWN:
+            case KeyEvent.KEYCODE_VOLUME_UP :
+                return mCameraFragment.onKeyUp(keyCode, event);
+            default:
+                return super.onKeyUp(keyCode, event);
+        }
     }
 
     @Override

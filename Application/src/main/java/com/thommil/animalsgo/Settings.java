@@ -26,8 +26,11 @@ public class Settings {
     // Mvt detection sensibility threshold for orientation change trigger
     public static final float MOVEMENT_ORIENTATION_CHANGE_THRESHOLD = 2f;
 
-    // Face detection threshold for validation
-    public static final int FACE_DETECTION_THRESHOLD = 70;
+    // Maximum zoom value
+    public static final float ZOOM_MAX = 4.0f;
+
+    // Zoom velocity
+    public static final float ZOOM_VELOCITY = 0.05f;
 
     // Landscape mode threshold on orientation
     public static final float[] LANSCAPE_MODE_VERTICAL_TRESHOLDS = new float[]{9f, 6f};

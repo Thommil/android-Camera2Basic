@@ -64,10 +64,10 @@ public class PluginManager {
     }
 
 
-    public void destroy(){
+    public void free(){
         //Log.d(TAG, "destroy()");
         for(final Plugin plugin : mPluginsMap.values()){
-            plugin.delete();
+            plugin.free();
         }
     }
 

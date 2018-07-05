@@ -141,7 +141,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     public void deinitGL() {
         //Log.d(TAG, "deinitGL()");
         deleteFBOs();
-        mPluginManager.destroy();
+        mPluginManager.free();
         mPreviewTexture.release();
         mPreviewTexture.setOnFrameAvailableListener(null);
         mWindowSurface.release();
@@ -406,6 +406,10 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
                     capture.height = mCaptureZone.height();
                 }
                 break;
+            case Messaging.CHANGE_ZOOM: {
+                mCameraPlugin.setZoomState((int)message.obj);
+            }
+            break;
             case Messaging.CAPTURE_NEXT_FRAME:
                 if(mState == STATE_PREVIEW){
                     mState = STATE_CAPTURE_NEXT_FRAME;

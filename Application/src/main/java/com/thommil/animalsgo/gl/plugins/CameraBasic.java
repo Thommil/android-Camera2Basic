@@ -57,6 +57,11 @@ public class CameraBasic extends CameraPlugin {
             }
 
             @Override
+            public int getMagnificationFilter() {
+                return GlTexture.MAG_FILTER_HIGH;
+            }
+
+            @Override
             public int getWrapMode(int axeId) {
                 return GlTexture.WRAP_CLAMP_TO_EDGE;
             }
@@ -67,29 +72,29 @@ public class CameraBasic extends CameraPlugin {
 
     @Override
     public void draw(final GlIntRect viewport, final int orientation) {
+        super.draw(viewport, orientation);
+
         //Camera shader -> FBO
         mProgram.use().enableAttributes();
-        sSquareImageBuffer.bind();
         mCameraTexture.bind();
 
-        GLES20.glVertexAttribPointer(mPositionHandle, sSquareImageBuffer.chunks[0].components,
-                sSquareImageBuffer.datatype, false, sSquareImageBuffer.stride, 0);
-        GLES20.glVertexAttribPointer(textureCoordinateHandle, sSquareImageBuffer.chunks[1].components,
-                sSquareImageBuffer.datatype, false, sSquareImageBuffer.stride, sSquareImageBuffer.chunks[1].offset);
+        mCameraPreviewBuffer.buffer.rewind();
+        GLES20.glVertexAttribPointer(mPositionHandle, mCameraPreviewBuffer.chunks[0].components,
+                sSquareImageBuffer.datatype, false, sSquareImageBuffer.stride, mCameraPreviewBuffer.buffer);
+        mCameraPreviewBuffer.buffer.position(mCameraPreviewBuffer.chunks[1].position);
+        GLES20.glVertexAttribPointer(textureCoordinateHandle, mCameraPreviewBuffer.chunks[1].components,
+                sSquareImageBuffer.datatype, false, sSquareImageBuffer.stride, mCameraPreviewBuffer.buffer);
         GLES20.glUniform1i(mTextureParamHandle, 0);
-        //TODO Transform matrix when android < 6 (using accelerometer)
-        //TODO Transform matrix on zoom
         GLES20.glUniformMatrix4fv(mTextureTranformHandle, 1, false, mCameraTransformMatrix, 0);
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, sSquareImageBuffer.count);
 
         mCameraTexture.unbind();
-        sSquareImageBuffer.unbind();
         mProgram.disableAttributes();
     }
 
     @Override
-    public void delete() {
-        super.delete();
+    public void free() {
+        super.free();
         mCameraTexture.free();
     }
 }

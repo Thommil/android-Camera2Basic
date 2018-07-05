@@ -26,7 +26,7 @@ public abstract class Plugin {
     // Type for handling UI
     public static final int TYPE_UI = 0x04;
 
-    private static final GlBuffer.Chunk<float[]> SQUARE_IMAGE_VERT_CHUNK =
+    protected static final GlBuffer.Chunk<float[]> SQUARE_IMAGE_VERT_CHUNK =
             new GlBuffer.Chunk<>(new float[]{
                     -1.0f,-1.0f,
                     -1.0f,1.0f,
@@ -34,7 +34,7 @@ public abstract class Plugin {
                     1.0f,1.0f
             },2);
 
-    private static final GlBuffer.Chunk<float[]> SQUARE_IMAGE_TEXT_CHUNK =
+    protected static final GlBuffer.Chunk<float[]> SQUARE_IMAGE_TEXT_CHUNK =
             new GlBuffer.Chunk<>(new float[]{
                     0.0f,0.0f,
                     0.0f,1.0f,
@@ -94,7 +94,7 @@ public abstract class Plugin {
 
     }
 
-    public void delete(){
+    public void free(){
         //Log.d(TAG, "delete()");
         if(mProgram != null){
             mProgram.free();;

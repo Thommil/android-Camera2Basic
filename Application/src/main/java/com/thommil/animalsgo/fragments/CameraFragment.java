@@ -22,6 +22,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.util.Size;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.SurfaceHolder;
@@ -34,6 +35,7 @@ import com.thommil.animalsgo.capture.Capture;
 import com.thommil.animalsgo.data.Messaging;
 import com.thommil.animalsgo.data.Orientation;
 import com.thommil.animalsgo.Settings;
+import com.thommil.animalsgo.gl.CameraPlugin;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,7 +47,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Fragment for operating the camera, it doesnt have any UI elements, just controllers
  */
-public class CameraFragment extends Fragment implements View.OnTouchListener, SensorEventListener {
+public class CameraFragment extends Fragment implements View.OnTouchListener, SensorEventListener{
 
     private static final String TAG = "A_GO/CameraFragment";
 
@@ -514,7 +516,24 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Se
 
     @Override
     public boolean onTouch(View view, MotionEvent motionEvent) {
+        //Log.d(TAG, "onTouch("+motionEvent+")");
         mIsTouched = !(motionEvent.getActionMasked() == MotionEvent.ACTION_UP && motionEvent.getPointerCount() == 1);
+        return true;
+    }
+
+
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        //Log.d(TAG, "onKeyDown("+keyCode+")");
+        mIsTouched = true;
+        mRendererHandler.sendMessage(mRendererHandler.obtainMessage(Messaging.CHANGE_ZOOM,
+                (keyCode == KeyEvent.KEYCODE_VOLUME_UP) ? CameraPlugin.ZOOM_STATE_IN:CameraPlugin.ZOOM_STATE_OUT));
+        return true;
+    }
+
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        //Log.d(TAG, "onKeyUp("+keyCode+")");
+        mIsTouched = false;
+        mRendererHandler.sendMessage(mRendererHandler.obtainMessage(Messaging.CHANGE_ZOOM, CameraPlugin.ZOOM_STATE_NONE));
         return true;
     }
 

@@ -27,10 +27,10 @@ public class Settings {
     public static final float MOVEMENT_ORIENTATION_CHANGE_THRESHOLD = 2f;
 
     // Maximum zoom value
-    public static final float ZOOM_MAX = 4.0f;
+    public static final float ZOOM_MAX = 10.0f;
 
     // Zoom velocity
-    public static final float ZOOM_VELOCITY = 0.05f;
+    public static final float ZOOM_VELOCITY = 50f;
 
     // Landscape mode threshold on orientation
     public static final float[] LANSCAPE_MODE_VERTICAL_TRESHOLDS = new float[]{9f, 6f};
@@ -41,6 +41,7 @@ public class Settings {
     // TODO in Prefs ?
     public static final String PLUGINS_CAMERA_DEFAULT = "camera_basic";
     public static final String PLUGINS_PREVIEW_DEFAULT = "prefs_plugins_default";
+    public static final String PLUGINS_UI_DEFAULT = "ui_basic";
 
     private final SharedPreferences mSharedPreferences;
 

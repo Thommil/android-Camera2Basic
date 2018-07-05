@@ -1,7 +1,9 @@
 package com.thommil.animalsgo.gl.plugins;
 
+import android.opengl.GLES11;
 import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
+import android.opengl.GLES30;
 
 import com.thommil.animalsgo.R;
 import com.thommil.animalsgo.gl.CameraPlugin;

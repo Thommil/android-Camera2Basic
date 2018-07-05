@@ -1,13 +1,11 @@
 package com.thommil.animalsgo.gl;
 
 import android.content.Context;
-import android.graphics.Paint;
 import android.graphics.SurfaceTexture;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
-import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 
@@ -90,6 +88,9 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     // Current PREVIEW plugin
     private PreviewPlugin mPreviewPlugin;
 
+    // Current UI plugin
+    private UIPlugin mUIPlugin;
+
     // Current preview size
     private Size mPreviewSize;
 
@@ -126,14 +127,19 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         mWindowSurface.makeCurrent();
 
         mPluginManager.initialize(Plugin.TYPE_CAMERA | Plugin.TYPE_PREVIEW | Plugin.TYPE_UI);
+        // TODO Possible choice of camera plugin based on prefs HERE
         mCameraPlugin = (CameraPlugin) mPluginManager.getPlugin(Settings.PLUGINS_CAMERA_DEFAULT);
         mPreviewPlugin = (PreviewPlugin) mPluginManager.getPlugin(Settings.getInstance().getString(Settings.PLUGINS_PREVIEW_DEFAULT));
-
+        // TODO Possible choice of UI plugin based on prefs HERE
+        mUIPlugin = (UIPlugin) mPluginManager.getPlugin(Settings.PLUGINS_UI_DEFAULT);
+        mUIPlugin.setAssetManager(mContext.getAssets());
 
         mPreviewTexture = new SurfaceTexture(mCameraPlugin.getCameraTexture().handle);
         mPreviewTexture.setOnFrameAvailableListener(this);
 
-        GlOperation.setViewport(0, 0, mSurfaceWidth, mSurfaceHeight);
+        GlOperation.setColorBufferClearValue(0,0,0,1);
+        GlOperation.setTestState(GlOperation.TEST_ALL, false);
+        GlOperation.configureBlendTest(GlOperation.BLEND_FACTOR_SRC_ALPA, GlOperation.BLEND_FACTOR_DST_ALPA, GlOperation.BLEND_FACTOR_ONE_MINUS_SRC_ALPA, null);
 
         onSetupComplete();
     }
@@ -200,6 +206,8 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         mCaptureZone.right = mViewport.width();
         mCaptureZone.bottom = (mViewport.height() - captureHeight) / 2;
         mCaptureZone.top = mCaptureZone.bottom + captureHeight;
+
+        mUIPlugin.setCaptureZone(mCaptureZone);
 
         //Log.d(TAG, "Capture zone: " + mCaptureZone);
     }
@@ -356,6 +364,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     }
 
     private final void drawCameraPreview(){
+        GlOperation.setTestState(GlOperation.TEST_BLEND, false);
         mCameraPreviewFBO.bind();
 
         //Camera draw
@@ -373,7 +382,9 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     }
 
     private final void drawUI(){
+        GlOperation.setTestState(GlOperation.TEST_BLEND, true);
         GlOperation.setViewport(0, 0, mSurfaceWidth, mSurfaceHeight);
+        mUIPlugin.draw(mViewport, mOrientation);
     }
 
     @Override

@@ -11,6 +11,8 @@
         <!-- PREVIEW -->
         <item>com.thommil.animalsgo.gl.plugins.Basic</item>
         <item>com.thommil.animalsgo.gl.plugins.Toon</item>
+        <!-- UI -->
+        <item>com.thommil.animalsgo.gl.plugins.UIBasic</item>
     </string-array>
 
     <!-- CAMERA -->
@@ -22,6 +24,10 @@
     <string name="plugins_basic_summary">...</string>
     <string name="plugins_toon_name">Toon</string>
     <string name="plugins_toon_summary">...</string>
+
+    <!-- UI -->
+    <string name="plugins_ui_basic_name">UI Basic</string>
+    <string name="plugins_ui_basic_summary">...</string>
 
 
     <!--

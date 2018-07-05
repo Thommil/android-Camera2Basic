@@ -85,7 +85,14 @@ public final class GlOperation {
 	 * Flag for sample alpha to coverage test
 	 */
 	public static final int TEST_SAMPLE_ALPHA_TO_COVERAGE = GLES20.GL_SAMPLE_ALPHA_TO_COVERAGE;
-	
+
+	/**
+	 * Flag for all tests
+	 */
+	public static final int TEST_ALL = TEST_DEPTH | TEST_CULLING | TEST_DEPTH
+			| TEST_DITHER | TEST_SAMPLE_ALPHA_TO_COVERAGE | TEST_SAMPLE_COVERAGE
+			| TEST_SCISSOR | TEST_STENCIL;
+
 	/**
 	 * Function for test comparison for EQUAL
 	 */

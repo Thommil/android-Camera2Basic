@@ -30,6 +30,7 @@ public abstract class CameraPlugin extends Plugin{
 
     protected int mZoomState = ZOOM_STATE_NONE;
     protected float mCurrentZoom = 1.0f;
+    private boolean mIsZoomDirty = false;
 
     @Override
     public int getType() {
@@ -56,11 +57,11 @@ public abstract class CameraPlugin extends Plugin{
                     mCurrentZoom = 1.0f;
                     break;
                 case ZOOM_STATE_IN:
-                    mCurrentZoom += com.thommil.animalsgo.Settings.ZOOM_VELOCITY;
+                    mCurrentZoom += (mCurrentZoom / com.thommil.animalsgo.Settings.ZOOM_VELOCITY);
                     mCurrentZoom = Math.min(com.thommil.animalsgo.Settings.ZOOM_MAX, mCurrentZoom);
                     break;
                 case ZOOM_STATE_OUT:
-                    mCurrentZoom -= com.thommil.animalsgo.Settings.ZOOM_VELOCITY;
+                    mCurrentZoom -= (mCurrentZoom /com.thommil.animalsgo.Settings.ZOOM_VELOCITY);
                     mCurrentZoom = Math.max(1f, mCurrentZoom);
                     break;
             }

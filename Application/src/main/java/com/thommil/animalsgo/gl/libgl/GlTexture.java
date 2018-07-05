@@ -197,21 +197,17 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	 * Size of a pixel using type GL_UNSIGNED_SHORT_5_5_5_1
 	 */
 	public static final int SIZEOF_UNSIGNED_SHORT_5_5_5_1 = 2;
-	
-	
-	
-	
-	
+
 	/**
 	 * Indicate the wrap mode for the "s" axe
 	 */
 	public static final int WRAP_MODE_S = GLES20.GL_TEXTURE_WRAP_S;
-	
+
 	/**
 	 * Indicate the wrap mode for the "t" axe
 	 */
 	public static final int WRAP_MODE_T = GLES20.GL_TEXTURE_WRAP_T;
-	
+
 	/**
 	 * Wrapping mode : repeat the texture
 	 */
@@ -226,10 +222,7 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	 * Wrapping mode : repeat using mirrored image
 	 */
 	public static final int WRAP_MIRRORED_REPEAT = GLES20.GL_MIRRORED_REPEAT;
-	
-	
-	
-	
+
 	
 	/**
 	 * Magnification settings for lowest quality
@@ -240,10 +233,7 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	 * Magnification settings for highest quality
 	 */
 	public static final int MAG_FILTER_HIGH = GLES20.GL_LINEAR;
-	
-	
-	
-	
+
 	
 	/**
 	 * Minification settings for lowest quality without mipmaping
@@ -302,9 +292,13 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
     public GlTexture configure(){
         GLES20.glTexParameteri(getTarget(), WRAP_MODE_S, getWrapMode(WRAP_MODE_S));
         GLES20.glTexParameteri(getTarget(), WRAP_MODE_T, getWrapMode(WRAP_MODE_T));
-        GLES20.glTexParameteri(getTarget(), GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
-        GLES20.glTexParameteri(getTarget(), GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
-        GlOperation.checkGlError(TAG, "glTexParameteri");
+        GLES20.glTexParameteri(getTarget(), GLES20.GL_TEXTURE_MIN_FILTER, getMinificationFilter());
+        GLES20.glTexParameteri(getTarget(), GLES20.GL_TEXTURE_MAG_FILTER, getMagnificationFilter());
+		GlOperation.checkGlError(TAG, "glTexParameteri");
+        if(getMinificationFilter() > MIN_FILTER_HIGH) {
+			GLES20.glGenerateMipmap(getTarget());
+			GlOperation.checkGlError(TAG, "glGenerateMipmap");
+		}
         return this;
     }
 

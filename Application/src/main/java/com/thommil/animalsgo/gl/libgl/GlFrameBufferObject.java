@@ -314,9 +314,9 @@ public class GlFrameBufferObject {
 		int getTarget();
 		
 		/**
-		 * Gets the attachment mipmap level for texture
+		 * Gets the attachment configure level for texture
 		 * 
-		 * @return The the attachment mipmap level for texture
+		 * @return The the attachment configure level for texture
 		 */
 		int getLevel();
 	}

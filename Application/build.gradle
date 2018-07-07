@@ -31,7 +31,7 @@ android {
         targetSdkVersion 27
 
         ndk {
-            moduleName "cv-opencv"
+            moduleName "animals-go"
         }
 
         sourceSets.main {

@@ -76,7 +76,7 @@ public class CameraBasic extends CameraPlugin {
     public void draw(final GlIntRect viewport, final int orientation) {
         super.draw(viewport, orientation);
 
-        //Camera shader -> FBO
+        //Camera mProgram -> FBO
         mProgram.use().enableAttributes();
         mCameraTexture.bind();
 

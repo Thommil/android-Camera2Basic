@@ -536,8 +536,7 @@ public class Sprite{
      */
     public Sprite playAnimation(final ImageAnimation animation, final float stateTime){
         final ImageAnimation.KeyFrame keyFrame = animation.getKeyFrame(stateTime);
-        //TODO TextureRegion port
-        //this.setRegion(keyFrame.getU(), keyFrame.getV(), keyFrame.getU2(), keyFrame.getV2());
+        this.setRegion(keyFrame.getU(), keyFrame.getV(), keyFrame.getU2(), keyFrame.getV2());
         if(keyFrame.width + keyFrame.height > 0) {
             this.setScale((keyFrame.width > 0) ? keyFrame.width / this.width : 1f, (keyFrame.height > 0) ? keyFrame.height / this.height : 1f);
         }

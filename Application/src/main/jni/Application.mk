@@ -1,4 +1,4 @@
-APP_MODULES := cv-opencv
+APP_MODULES := animals-go
 
 APP_STL := gnustl_static
 APP_CPPFLAGS := -frtti -fexceptions

@@ -5,7 +5,7 @@ import com.thommil.animalsgo.data.Capture;
 public class OpenCVProcessor implements ImageProcessor {
 
     static{
-        System.loadLibrary("cv-opencv");
+        System.loadLibrary("animals-go");
     }
 
     public native void validateCapture(final Capture capture);

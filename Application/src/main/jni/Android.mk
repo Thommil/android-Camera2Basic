@@ -7,6 +7,6 @@ OPENCV_INSTALL_MODULES:=on
 
 include /Users/thommil/Dev/Workspace/animals-go-android/lib/OpenCV-android-sdk/sdk/native/jni/OpenCV.mk
 
-LOCAL_MODULE := cv-opencv
-LOCAL_SRC_FILES := cv-opencv.cpp
+LOCAL_MODULE := animals-go
+LOCAL_SRC_FILES := cv-opencv.cpp libgdx-matrix4.cpp
 include $(BUILD_SHARED_LIBRARY)

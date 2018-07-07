@@ -50,12 +50,12 @@ public class GlProgram {
 	public final int programHandle;
 	
 	/**
-	 * Handle of the vertex shader
+	 * Handle of the vertex mProgram
 	 */
 	public final int vertexShaderHandle;
 	
 	/**
-	 *  Handle of the fragment shader
+	 *  Handle of the fragment mProgram
 	 */
 	public final int fragmentShaderHandle;
 	
@@ -77,8 +77,8 @@ public class GlProgram {
 	/**
 	 * Constructor, creates and link program based on specified shaders
 	 * 
-	 * @param vertexShaderInputStream The vertex shader inputstream
-	 * @param fragmentShaderInputStream The fragment shader inputstream
+	 * @param vertexShaderInputStream The vertex mProgram inputstream
+	 * @param fragmentShaderInputStream The fragment mProgram inputstream
 	 * @throws GLException
 	 */
 	public GlProgram(final InputStream vertexShaderInputStream, final InputStream fragmentShaderInputStream){
@@ -90,7 +90,7 @@ public class GlProgram {
 	}
 	
 	/**
-	 * Enables all attributes of vertex shader
+	 * Enables all attributes of vertex mProgram
 	 */
 	public GlProgram enableAttributes(){
 		for(int handle : this.mAttributeHandlesArray){
@@ -100,7 +100,7 @@ public class GlProgram {
 	}
 		
 	/**
-	 * Enables shader attribute by its name
+	 * Enables mProgram attribute by its name
 	 * 
 	 * @param attributeName The name of the attribute to enable
 	 */
@@ -111,7 +111,7 @@ public class GlProgram {
 	}
 	
 	/**
-	 * Enables shader attribute by its handle
+	 * Enables mProgram attribute by its handle
 	 * 
 	 * @param attributeId The handle of attribute to enable
 	 */
@@ -122,7 +122,7 @@ public class GlProgram {
 	}
 	
 	/**
-	 * Disables all attributes of vertex shader
+	 * Disables all attributes of vertex mProgram
 	 */
 	public GlProgram disableAttributes(){
 		for(int handle : this.mAttributeHandlesArray){
@@ -132,7 +132,7 @@ public class GlProgram {
 	}
 	
 	/**
-	 * Disables shader attribute by its name
+	 * Disables mProgram attribute by its name
 	 * 
 	 * @param attributeName The name of attribute to disable
 	 */
@@ -143,7 +143,7 @@ public class GlProgram {
 	}
 	
 	/**
-	 * Disables shader attribute by its handle
+	 * Disables mProgram attribute by its handle
 	 * 
 	 * @param attributeId The handle of attribute to disable
 	 */
@@ -168,9 +168,9 @@ public class GlProgram {
 	/*
      * Simple loader used to get shaders from specified location
      * 
-     * @param type The vertex shader type GLES20.GL_VERTEX_SHADER | GLES20.GL_FRAGMENT_SHADER
-     * @param inputStream The shader code InputStream
-     * @return return a compiled shader OpenGL ID
+     * @param type The vertex mProgram type GLES20.GL_VERTEX_SHADER | GLES20.GL_FRAGMENT_SHADER
+     * @param inputStream The mProgram code InputStream
+     * @return return a compiled mProgram OpenGL ID
      */
 	protected int loadShader(final int type, final InputStream inputStream){
 		//Log.d(TAG,"loadShader("+type+")");
@@ -188,7 +188,7 @@ public class GlProgram {
 	    		shaderCode.append(line).append("\n");
 	    	}
 
-	    	// add the source code to the shader and compile it
+	    	// add the source code to the mProgram and compile it
 	    	GLES20.glShaderSource(shader, shaderCode.toString());
 	    	GLES20.glCompileShader(shader);
 	    	
@@ -196,13 +196,13 @@ public class GlProgram {
 	        final int[] compileStatus = new int[1];
 	        GLES20.glGetShaderiv(shader, GLES20.GL_COMPILE_STATUS, compileStatus, 0);
 	     
-	        // If the compilation failed, delete the shader.
+	        // If the compilation failed, delete the mProgram.
 	        if (compileStatus[0] == GLES20.GL_FALSE) {
 	            GLES20.glDeleteShader(shader);
-	            throw new GLException(GLES20.GL_INVALID_OPERATION, "Failed to compile "+((type == GLES20.GL_VERTEX_SHADER)? "vertex":"fragment")+" shader");
+	            throw new GLException(GLES20.GL_INVALID_OPERATION, "Failed to compile "+((type == GLES20.GL_VERTEX_SHADER)? "vertex":"fragment")+" mProgram");
 	        }
 	        
-	        //Parse shader to store attributes and uniform handles
+	        //Parse mProgram to store attributes and uniform handles
 	    	final Matcher attributeMatcher = ATTRIBUTE_PATTERN.matcher(shaderCode);
 	    	while(attributeMatcher.find()){
 	    		final String attributeName = attributeMatcher.group(1);
@@ -219,7 +219,7 @@ public class GlProgram {
 	    	}
 	        
 	    }catch(IOException ioe){
-	    	throw new GLException(GLES20.GL_INVALID_OPERATION, "Failed to compile "+((type == GLES20.GL_VERTEX_SHADER)? "vertex":"fragment")+" shader");
+	    	throw new GLException(GLES20.GL_INVALID_OPERATION, "Failed to compile "+((type == GLES20.GL_VERTEX_SHADER)? "vertex":"fragment")+" mProgram");
 	    }	
 		
 		return shader;
@@ -229,8 +229,8 @@ public class GlProgram {
     /**
 	 * Helper function to compile and link a program
 	 * 
-	 * @param vertexShaderHandle An OpenGL handle to an already-compiled vertex shader.
-	 * @param fragmentShaderHandle An OpenGL handle to an already-compiled fragment shader.
+	 * @param vertexShaderHandle An OpenGL handle to an already-compiled vertex mProgram.
+	 * @param fragmentShaderHandle An OpenGL handle to an already-compiled fragment mProgram.
 	 * @return An OpenGL handle to the program.
 	 */
 	protected int createAndLinkProgram(final int vertexShaderHandle, final int fragmentShaderHandle){
@@ -238,10 +238,10 @@ public class GlProgram {
 		final int programHandle = GLES20.glCreateProgram();
 		
 		if (programHandle != UNBIND_HANDLE) {
-			// Bind the vertex shader to the program.
+			// Bind the vertex mProgram to the program.
 			GLES20.glAttachShader(programHandle, vertexShaderHandle);			
 
-			// Bind the fragment shader to the program.
+			// Bind the fragment mProgram to the program.
 			GLES20.glAttachShader(programHandle, fragmentShaderHandle);
 			
 			// Link the two shaders together into a program.

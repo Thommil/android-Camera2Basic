@@ -1,5 +1,7 @@
 package com.thommil.animalsgo.gl.ui.animation;
 
+import com.thommil.animalsgo.gl.libgl.GlTexture;
+import com.thommil.animalsgo.gl.libgl.GlTextureAtlas;
 import com.thommil.animalsgo.gl.ui.libgdx.Interpolation;
 
 /**
@@ -114,9 +116,7 @@ public class ImageAnimation extends Animation<ImageAnimation.KeyFrame> {
         }
     }
 
-    //TODO TextureRegion port
-    //public static class KeyFrame extends TextureRegion{
-    public static class KeyFrame{
+    public static class KeyFrame extends GlTextureAtlas.TextureRegion{
 
         public float width;
         public float height;
@@ -129,12 +129,12 @@ public class ImageAnimation extends Animation<ImageAnimation.KeyFrame> {
          * @param regionHeight  The height of the texture region. May be negative to flip the sprite when drawn.
          * @param width The key frame width
          * @param height The key frame height
-         *
+         */
         public KeyFrame(GlTexture texture, int regionX, int regionY, int regionWidth, int regionHeight, float width, float height) {
             super(texture, regionX, regionY, regionWidth, regionHeight);
             this.width = width;
             this.height = height;
-        }*/
+        }
 
     }
 }

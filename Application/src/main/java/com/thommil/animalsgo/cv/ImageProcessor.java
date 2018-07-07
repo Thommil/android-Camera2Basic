@@ -1,6 +1,6 @@
 package com.thommil.animalsgo.cv;
 
-import com.thommil.animalsgo.capture.Capture;
+import com.thommil.animalsgo.data.Capture;
 
 public interface ImageProcessor {
 

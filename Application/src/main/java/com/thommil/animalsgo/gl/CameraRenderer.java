@@ -6,15 +6,16 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
+import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 
-import com.thommil.animalsgo.capture.Capture;
+import com.thommil.animalsgo.data.Capture;
 import com.thommil.animalsgo.data.Messaging;
 import com.thommil.animalsgo.data.Orientation;
 import com.thommil.animalsgo.Settings;
 import com.thommil.animalsgo.fragments.CameraFragment;
-import com.thommil.animalsgo.capture.CaptureBuilder;
+import com.thommil.animalsgo.utils.CaptureBuilder;
 import com.thommil.animalsgo.gl.libgl.EglCore;
 import com.thommil.animalsgo.gl.libgl.GlFrameBufferObject;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
@@ -119,7 +120,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     }
 
     public void initGL() {
-        //Log.d(TAG, "initGL()");
+        Log.d(TAG, "initGL()");
         mEglCore = new EglCore();
 
         //create preview surface
@@ -145,7 +146,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     }
 
     public void deinitGL() {
-        //Log.d(TAG, "deinitGL()");
+        Log.d(TAG, "deinitGL()");
         deleteFBOs();
         mPluginManager.free();
         mPreviewTexture.release();
@@ -156,7 +157,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     }
 
     public void onViewportSizeUpdated(final Size previewSize) {
-        //Log.d(TAG, "onViewportSizeUpdated("+previewSize+")");
+        Log.d(TAG, "onViewportSizeUpdated("+previewSize+")");
 
         mPreviewSize = new Size(previewSize.getHeight(), previewSize.getWidth());
 
@@ -184,7 +185,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
             mViewport.top = 0;
         }
 
-        //Log.d(TAG, "Viewport : " + mViewport);
+        Log.d(TAG, "Viewport : " + mViewport);
 
         setupFBOs();
         updateCaptureZone();
@@ -209,12 +210,12 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
         mUIPlugin.setCaptureZone(mCaptureZone);
 
-        //Log.d(TAG, "Capture zone: " + mCaptureZone);
+        Log.d(TAG, "Capture zone: " + mCaptureZone);
     }
 
 
     private void deleteFBOs() {
-        //Log.d(TAG, "deleteFBO()");
+        Log.d(TAG, "deleteFBO()");
         if(mCameraPreviewFBO != null){
             mCameraPreviewFBO.free();
         }
@@ -225,7 +226,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
     private void setupFBOs()
     {
-        //Log.d(TAG, "setupFBO()");
+        Log.d(TAG, "setupFBO()");
 
         deleteFBOs();
 
@@ -266,13 +267,13 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     }
 
     protected void onSetupComplete() {
-        //Log.d(TAG, "onSetupComplete()");
+        Log.d(TAG, "onSetupComplete()");
         mOnRendererReadyListener.onRendererReady();
     }
 
     @Override
     public synchronized void start() {
-        //Log.d(TAG, "start()");
+        Log.d(TAG, "start()");
         if(mCameraFragment == null) {
             throw new RuntimeException("CameraFragment is null! Please call setCameraFragment prior to initialization.");
         }
@@ -291,7 +292,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
     @Override
     public void run() {
-        //Log.d(TAG, "run()");
+        Log.d(TAG, "run()");
 
         Looper.prepare();
 
@@ -351,7 +352,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
                 // TODO UI effects ?
                 break;
             case STATE_VALIDATION_DONE:
-                //Log.d(TAG, "Capture done : " + mCurrentCapture);
+                Log.d(TAG, "Capture done : " + CaptureBuilder.getInstance().getCapture());
                 // TODO STATE -> Choose/confirm
                 //CaptureBuilder.getInstance().getCapture().validationState = Capture.VALIDATION_WAIT;
                 mState = STATE_PREVIEW;
@@ -389,7 +390,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
     @Override
     public boolean handleMessage(Message message) {
-        //Log.d(TAG, "handleMessage(" + message+ ")");
+        Log.d(TAG, "handleMessage(" + message+ ")");
         switch(message.what){
             case Messaging.SYSTEM_SHUTDOWN:
                 shutdown();
@@ -448,24 +449,24 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
 
     protected void shutdown() {
-        //Log.d(TAG, "shutdown");
+        Log.d(TAG, "shutdown");
         mHandler.getLooper().quit();
     }
 
     public SurfaceTexture getPreviewTexture() {
-        //Log.d(TAG, "getPreviewTexture()");
+        Log.d(TAG, "getPreviewTexture()");
         return mPreviewTexture;
     }
 
     public void setOnRendererReadyListener(OnRendererReadyListener listener) {
-        //Log.d(TAG, "setOnRendererReadyListener()");
+        Log.d(TAG, "setOnRendererReadyListener()");
         mOnRendererReadyListener = listener;
 
     }
 
 
     public void setCameraFragment(CameraFragment cameraFragment) {
-        //Log.d(TAG, "setCameraFragment()");
+        Log.d(TAG, "setCameraFragment()");
         mCameraFragment = cameraFragment;
     }
 

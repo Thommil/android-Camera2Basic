@@ -82,7 +82,7 @@ public class ByteBufferPool {
    	 * @return A direct allocated ByteBuffer
    	 */
 	public ByteBuffer getDirectByteBuffer(int size) {
-		//android.util.//Log.d(TAG,"getDirectByteBuffer("+size+")");
+		//android.util.Log.d(TAG,"getDirectByteBuffer("+size+")");
 		final Queue<WeakReference<ByteBuffer>> list = poolByte.get(size);
 		if (list == null) {
 			return (ByteBuffer)ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder());
@@ -110,7 +110,7 @@ public class ByteBufferPool {
    	 * @return A direct allocated ShortBuffer
    	 */
 	public ShortBuffer getDirectShortBuffer(final int size) {
-		//android.util.//Log.d(TAG,"getDirectShortBuffer("+size+")");
+		//android.util.Log.d(TAG,"getDirectShortBuffer("+size+")");
 		final int trueSize = size * Short.BYTES;
 		final Queue<WeakReference<ShortBuffer>> list = poolShort.get(trueSize);
 		if (list == null) {
@@ -139,7 +139,7 @@ public class ByteBufferPool {
    	 * @return A direct allocated IntBuffer
    	 */
 	public IntBuffer getDirectIntBuffer(final int size) {
-		//android.util.//Log.d(TAG,"getDirectIntBuffer("+size+")");
+		//android.util.Log.d(TAG,"getDirectIntBuffer("+size+")");
 		final int trueSize = size * Integer.BYTES;
 		final Queue<WeakReference<IntBuffer>> list = poolInt.get(trueSize);
 		if (list == null) {
@@ -168,7 +168,7 @@ public class ByteBufferPool {
    	 * @return A direct allocated FloatBuffer
    	 */
 	public FloatBuffer getDirectFloatBuffer(final int size) {
-		//android.util.//Log.d(TAG,"getDirectFloatBuffer("+size+")");
+		//android.util.Log.d(TAG,"getDirectFloatBuffer("+size+")");
 		final int trueSize = size * Float.BYTES;
 		final Queue<WeakReference<FloatBuffer>> list = poolFloat.get(trueSize);
 		if (list == null) {
@@ -195,7 +195,7 @@ public class ByteBufferPool {
 	 * @param buf the ByteBuffer to return
 	 */
 	public void returnDirectBuffer(final ByteBuffer buf) {
-		//android.util.//Log.d(TAG,"returnDirectBuffer(ByteBuffer)");
+		//android.util.Log.d(TAG,"returnDirectBuffer(ByteBuffer)");
 		final int size = buf.capacity();
 		Queue<WeakReference<ByteBuffer>> list = poolByte.get(size);
 		if (list == null) {
@@ -216,7 +216,7 @@ public class ByteBufferPool {
 	 * @param buf the ShortBuffer to return
 	 */
 	public void returnDirectBuffer(final ShortBuffer buf) {
-		//android.util.//Log.d(TAG,"returnDirectBuffer(ShortBuffer)");
+		//android.util.Log.d(TAG,"returnDirectBuffer(ShortBuffer)");
 		final int size = buf.capacity();
 		Queue<WeakReference<ShortBuffer>> list = poolShort.get(size);
 		if (list == null) {
@@ -237,7 +237,7 @@ public class ByteBufferPool {
 	 * @param buf the IntBuffer to return
 	 */
 	public void returnDirectBuffer(final IntBuffer buf) {
-		//android.util.//Log.d(TAG,"returnDirectBuffer(IntBuffer)");
+		//android.util.Log.d(TAG,"returnDirectBuffer(IntBuffer)");
 		final int size = buf.capacity();
 		Queue<WeakReference<IntBuffer>> list = poolInt.get(size);
 		if (list == null) {
@@ -258,7 +258,7 @@ public class ByteBufferPool {
 	 * @param buf the FloatBuffer to return
 	 */
 	public void returnDirectBuffer(final FloatBuffer buf) {
-		//android.util.//Log.d(TAG,"returnDirectBuffer(FloatBuffer)");
+		//android.util.Log.d(TAG,"returnDirectBuffer(FloatBuffer)");
 		final int size = buf.capacity();
 		Queue<WeakReference<FloatBuffer>> list = poolFloat.get(size);
 		if (list == null) {

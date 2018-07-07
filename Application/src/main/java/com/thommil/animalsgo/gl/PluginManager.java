@@ -36,13 +36,13 @@ public class PluginManager {
     }
 
     private void loadPlugins(){
-        //Log.d(TAG, "initialize()");
+        Log.d(TAG, "initialize()");
         try {
             for (final String pluginClassname : mContext.getResources().getStringArray(R.array.plugins_list)) {
                 final Class pluginClass = this.getClass().getClassLoader().loadClass(pluginClassname);
                 final Plugin plugin = (Plugin) pluginClass.newInstance();
                 plugin.setContext(mContext);
-                //Log.d(TAG, "Plugin "+ plugin.getId()+" created");
+                Log.d(TAG, "Plugin "+ plugin.getId()+" created");
                 mPluginsMap.put(plugin.getId(), plugin);
             }
         }catch(ClassNotFoundException cne){
@@ -55,7 +55,7 @@ public class PluginManager {
     }
 
     public void initialize(final int filter){
-        //Log.d(TAG, "destroy()");
+        Log.d(TAG, "destroy()");
         for(final Plugin plugin : mPluginsMap.values()){
             if((plugin.getType() & filter) > 0){
                 plugin.create();
@@ -65,7 +65,7 @@ public class PluginManager {
 
 
     public void free(){
-        //Log.d(TAG, "destroy()");
+        Log.d(TAG, "destroy()");
         for(final Plugin plugin : mPluginsMap.values()){
             plugin.free();
         }

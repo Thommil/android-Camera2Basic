@@ -1,11 +1,9 @@
 package com.thommil.animalsgo.gl.libgl;
 
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import android.opengl.GLES20;
-import android.util.Log;
 
 import com.thommil.animalsgo.utils.ByteBufferPool;
 
@@ -61,22 +59,22 @@ public class GlFrameBufferObject {
 	/**
 	 * Contains the implementation specific settings to read buffer
 	 */
-	private static int[] readSettings = null;
+	private static int[] mReadSettings = null;
 	
 	/**
 	 * Reference to the current bind color attachment
 	 */
-	private Attachment colorAttachment = null;
+	private Attachment mColorAttachment = null;
 	
 	/**
 	 * Reference to the current bind depth attachment
 	 */
-	private Attachment depthAttachment = null;
+	private Attachment mDepthAttachment = null;
 	
 	/**
 	 * Reference to the current bind stencil attachment
 	 */
-	private Attachment stencilAttachment = null;
+	private Attachment mStencilAttachment = null;
 	
 	/**
 	 * Default constructor
@@ -94,7 +92,7 @@ public class GlFrameBufferObject {
 	 * @param type The attachment type of Attachement.TYPE_*
 	 */
 	public GlFrameBufferObject attach(final Attachment attachment, final int type){
-		////Log.d(TAG,"attach("+type+")");
+		//Log.d(TAG,"attach("+type+")");
 		switch(attachment.getTarget()){
 			case GLES20.GL_RENDERBUFFER:
 				GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, this.handle);
@@ -118,13 +116,13 @@ public class GlFrameBufferObject {
 		
 		switch(type){
 			case Attachment.TYPE_COLOR:
-				this.colorAttachment = attachment;
+				this.mColorAttachment = attachment;
 				break;
 			case Attachment.TYPE_DEPTH:
-				this.depthAttachment = attachment;
+				this.mDepthAttachment = attachment;
 				break;
 			case Attachment.TYPE_STENCIL:
-				this.stencilAttachment = attachment;
+				this.mStencilAttachment = attachment;
 				break;
 		}
 		return this;
@@ -136,16 +134,16 @@ public class GlFrameBufferObject {
 	 * @param type The attachment type of Attachement.TYPE_* to remove
 	 */
 	public GlFrameBufferObject detach(final int type){
-		////Log.d(TAG,"detach("+type+")");
+		//Log.d(TAG,"detach("+type+")");
 		switch(type){
 			case Attachment.TYPE_COLOR:
-				this.colorAttachment = null;
+				this.mColorAttachment = null;
 				break;
 			case Attachment.TYPE_DEPTH:
-				this.depthAttachment = null;
+				this.mDepthAttachment = null;
 				break;
 			case Attachment.TYPE_STENCIL:
-				this.stencilAttachment = null;
+				this.mStencilAttachment = null;
 				break;
 		}
 		
@@ -160,7 +158,7 @@ public class GlFrameBufferObject {
 	 * Bind the current FrameBufferObject
 	 */
 	public GlFrameBufferObject bind(){
-		////Log.d(TAG,"bind()");
+		//Log.d(TAG,"bind()");
 		GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, this.handle);
 		return this;
 	}
@@ -169,7 +167,7 @@ public class GlFrameBufferObject {
 	 * Unbind the current FrameBufferObject
 	 */
 	public GlFrameBufferObject unbind(){
-		////Log.d(TAG,"unbind()");
+		//Log.d(TAG,"unbind()");
 		GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, UNBIND_HANDLE);
 		return this;
 	}
@@ -185,32 +183,32 @@ public class GlFrameBufferObject {
 	 * @return A Buffer containing the pixels
 	 */
 	public ByteBuffer read(final int x, final int y, final int width, final int height){
-		////Log.d(TAG,"read()");
+		//Log.d(TAG,"read()");
 		ByteBuffer pixels;
 
 		GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, this.handle);
 		
-		if(GlFrameBufferObject.readSettings == null){
-			GlFrameBufferObject.readSettings = new int[3];
-			GLES20.glGetIntegerv(GLES20.GL_IMPLEMENTATION_COLOR_READ_TYPE, GlFrameBufferObject.readSettings, 0);
-			GLES20.glGetIntegerv(GLES20.GL_IMPLEMENTATION_COLOR_READ_FORMAT, GlFrameBufferObject.readSettings, 1);
-			GlFrameBufferObject.readSettings[2] = 0;
+		if(GlFrameBufferObject.mReadSettings == null){
+			GlFrameBufferObject.mReadSettings = new int[3];
+			GLES20.glGetIntegerv(GLES20.GL_IMPLEMENTATION_COLOR_READ_TYPE, GlFrameBufferObject.mReadSettings, 0);
+			GLES20.glGetIntegerv(GLES20.GL_IMPLEMENTATION_COLOR_READ_FORMAT, GlFrameBufferObject.mReadSettings, 1);
+			GlFrameBufferObject.mReadSettings[2] = 0;
 			
-			switch(GlFrameBufferObject.readSettings[0]){
+			switch(GlFrameBufferObject.mReadSettings[0]){
 				case GLES20.GL_UNSIGNED_BYTE:
-					switch(GlFrameBufferObject.readSettings[1]){
+					switch(GlFrameBufferObject.mReadSettings[1]){
 						case GLES20.GL_RGBA : 
-							GlFrameBufferObject.readSettings[2] = 4;
+							GlFrameBufferObject.mReadSettings[2] = 4;
 							break;
 						case GLES20.GL_RGB : 
-							GlFrameBufferObject.readSettings[2] = 3;
+							GlFrameBufferObject.mReadSettings[2] = 3;
 							break;
 						case GLES20.GL_LUMINANCE_ALPHA : 
-							GlFrameBufferObject.readSettings[2] = 2;
+							GlFrameBufferObject.mReadSettings[2] = 2;
 							break;
 						case GLES20.GL_LUMINANCE :
 						case GLES20.GL_ALPHA :
-							GlFrameBufferObject.readSettings[2] = 1;
+							GlFrameBufferObject.mReadSettings[2] = 1;
 							break;	
 					}
 					break;
@@ -218,15 +216,15 @@ public class GlFrameBufferObject {
 				case GLES20.GL_UNSIGNED_SHORT_4_4_4_4:
 				case GLES20.GL_UNSIGNED_SHORT_5_5_5_1:
 				case GLES20.GL_UNSIGNED_SHORT_5_6_5:
-					GlFrameBufferObject.readSettings[2] = 2;
+					GlFrameBufferObject.mReadSettings[2] = 2;
 					break;
 			}
-			if(GlFrameBufferObject.readSettings[2] == 0) throw new RuntimeException("Failed to get pixel format for current implementation");
+			if(GlFrameBufferObject.mReadSettings[2] == 0) throw new RuntimeException("Failed to get pixel format for current implementation");
 		}
 
-		pixels = ByteBufferPool.getInstance().getDirectByteBuffer(width * height * GlFrameBufferObject.readSettings[2]);
+		pixels = ByteBufferPool.getInstance().getDirectByteBuffer(width * height * GlFrameBufferObject.mReadSettings[2]);
 		pixels.order(ByteOrder.nativeOrder());
-		GLES20.glReadPixels(x, y, width, height, GlFrameBufferObject.readSettings[1], GlFrameBufferObject.readSettings[0], pixels);
+		GLES20.glReadPixels(x, y, width, height, GlFrameBufferObject.mReadSettings[1], GlFrameBufferObject.mReadSettings[0], pixels);
 		
 		GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, UNBIND_HANDLE);
 		
@@ -239,7 +237,7 @@ public class GlFrameBufferObject {
 	 * @return A status in a int of STATUS_*
 	 */
 	public int getStatus(){
-		////Log.d(TAG,"getStatus()");
+		//Log.d(TAG,"getStatus()");
 		GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, this.handle);
 		final int status = GLES20.glCheckFramebufferStatus(GLES20.GL_FRAMEBUFFER);
 		GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, UNBIND_HANDLE);
@@ -250,31 +248,31 @@ public class GlFrameBufferObject {
 	 * Free resources associated with current FrameBuffer
 	 */
 	public GlFrameBufferObject free(){
-		////Log.d(TAG,"free()");
+		//Log.d(TAG,"free()");
 		GLES20.glDeleteFramebuffers(1, new int[]{this.handle}, 0);
         GlOperation.checkGlError(TAG, "glDeleteTextures");
 		return this;
 	}
 	
 	/**
-	 * @return the colorAttachment
+	 * @return the mColorAttachment
 	 */
 	public Attachment getColorAttachment() {
-		return colorAttachment;
+		return mColorAttachment;
 	}
 
 	/**
-	 * @return the depthAttachment
+	 * @return the mDepthAttachment
 	 */
 	public Attachment getDepthAttachment() {
-		return depthAttachment;
+		return mDepthAttachment;
 	}
 
 	/**
-	 * @return the stencilAttachment
+	 * @return the mStencilAttachment
 	 */
 	public Attachment getStencilAttachment() {
-		return stencilAttachment;
+		return mStencilAttachment;
 	}
 
 	/**

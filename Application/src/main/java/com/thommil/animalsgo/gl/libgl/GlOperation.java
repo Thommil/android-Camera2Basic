@@ -295,7 +295,7 @@ public final class GlOperation {
 	 * @param enabled true to enable test, false otherwise
 	 */
 	public static final void setTestState(final int testFlag, final boolean enabled){
-		//android.util.//Log.d(TAG,"NEW");
+		//android.util.Log.d(TAG,"NEW");
 		if(enabled){
 			GLES20.glEnable(testFlag);
 		}
@@ -313,7 +313,7 @@ public final class GlOperation {
 	 * @param height The height of the box
 	 */
 	public static final void configureScissorBox(final int x, final int y, final int width, final int height){
-		//android.util.//Log.d(TAG,"configureScissorBox("+x+","+y+","+width+","+height+")");
+		//android.util.Log.d(TAG,"configureScissorBox("+x+","+y+","+width+","+height+")");
 		GLES20.glScissor(x, y, width, height);
 	}
 	
@@ -328,7 +328,7 @@ public final class GlOperation {
 	 * @param zPass Result value of STENCIL_OUT_* if both stencil and depth test passed
 	 */
 	public static final void configureStencilTest(final int function, final int reference, final int mask, final int sFail, final int zFail, final int zPass){
-		//android.util.//Log.d(TAG,"configureStencilTest("+function+","+reference+","+mask+","+sFail+","+zFail+","+zPass+")");
+		//android.util.Log.d(TAG,"configureStencilTest("+function+","+reference+","+mask+","+sFail+","+zFail+","+zPass+")");
 		GLES20.glStencilFunc(function, reference, mask);
 		GLES20.glStencilOp(sFail, zFail, zPass);
 	}
@@ -339,7 +339,7 @@ public final class GlOperation {
 	 * @param function A function identifier from FUNCTION_*
 	 */
 	public static final void configureDepthTest(final int function){
-		//android.util.//Log.d(TAG,"configureDepthTest("+function+")");
+		//android.util.Log.d(TAG,"configureDepthTest("+function+")");
 		GLES20.glDepthFunc(function);
 	}
 	
@@ -355,7 +355,7 @@ public final class GlOperation {
 	 * @param constantColor An optional constant color (float[4]) depending on srcFactor and dstFactor
 	 */
 	public static final void configureBlendTest(final int srcFactor, final int dstFactor, final int blendOperation, final float[] constantColor){
-		//android.util.//Log.d(TAG,"configureBlendTest("+srcFactor+","+dstFactor+","+blendOperation+","+constantColor+")");
+		//android.util.Log.d(TAG,"configureBlendTest("+srcFactor+","+dstFactor+","+blendOperation+","+constantColor+")");
 		if(constantColor != null) {
 			GLES20.glBlendColor(constantColor[0], constantColor[1], constantColor[2], constantColor[3]);
 		}
@@ -370,7 +370,7 @@ public final class GlOperation {
 	 * @param cullFace Indicates the culled face, should be of CULLING_CULL_FACE_*
 	 */
 	public static final void configureCullingTest(final int frontFace, final int cullFace){
-		//android.util.//Log.d(TAG,"configureCullingTest("+frontFace+","+cullFace+")");
+		//android.util.Log.d(TAG,"configureCullingTest("+frontFace+","+cullFace+")");
 		GLES20.glFrontFace(frontFace);
 		GLES20.glCullFace(cullFace);
 	}
@@ -384,7 +384,7 @@ public final class GlOperation {
 	 * @param alpha alpha value of clear color
 	 */
 	public static final void setColorBufferClearValue(final float red, final float green, final float blue, final float alpha){
-		//android.util.//Log.d(TAG,"setColorBufferClearValue("+red+","+green+","+blue+","+alpha+")");
+		//android.util.Log.d(TAG,"setColorBufferClearValue("+red+","+green+","+blue+","+alpha+")");
 		GLES20.glClearColor(red, green, blue, alpha);
 	}
 	
@@ -394,7 +394,7 @@ public final class GlOperation {
 	 * @param depth The default depth when clearing
 	 */
 	public static final void setDepthBufferClearValue(final float depth){
-		//android.util.//Log.d(TAG,"setDepthBufferClearValue("+depth+")");
+		//android.util.Log.d(TAG,"setDepthBufferClearValue("+depth+")");
 		GLES20.glClearDepthf(depth);
 	}
 	
@@ -404,7 +404,7 @@ public final class GlOperation {
 	 * @param stencilMask The stencil mask flags 
 	 */
 	public static final void setStencilBufferClearValue(final int stencilMask){
-		//android.util.//Log.d(TAG,"setStencilBufferClearValue("+stencilMask+")");
+		//android.util.Log.d(TAG,"setStencilBufferClearValue("+stencilMask+")");
 		GLES20.glClearStencil(stencilMask);
 	}
 	
@@ -414,7 +414,7 @@ public final class GlOperation {
 	 * @param buffersMask Should be of type BUFFER_COLOR, BUFFER_DEPTH, BUFFER_STENCIL
 	 */
 	public static final void clearBuffers(final int buffersMask){
-		//android.util.//Log.d(TAG,"clearBuffers("+buffersMask+")");
+		//android.util.Log.d(TAG,"clearBuffers("+buffersMask+")");
 		GLES20.glClear(buffersMask);
 	}
 
@@ -427,7 +427,7 @@ public final class GlOperation {
 	 * @param alpha Indicates if alpha is writable
 	 */
 	public static final void setColorBufferMask(final boolean red, final boolean green, final boolean blue, final boolean alpha){
-		//android.util.//Log.d(TAG,"setColorBufferMask("+red+","+green+","+blue+","+alpha+")");
+		//android.util.Log.d(TAG,"setColorBufferMask("+red+","+green+","+blue+","+alpha+")");
 		GLES20.glColorMask(red, green, blue, alpha);
 	}
 	
@@ -437,7 +437,7 @@ public final class GlOperation {
 	 * @param depth Indicates if the depth buffer is updated at rendering
 	 */
 	public static final void setDepthBufferMask(final boolean depth){
-		//android.util.//Log.d(TAG,"setDepthBufferMask("+depth+")");
+		//android.util.Log.d(TAG,"setDepthBufferMask("+depth+")");
 		GLES20.glDepthMask(depth);
 	}
 	
@@ -447,7 +447,7 @@ public final class GlOperation {
 	 * @param stencilMask The stencil mask flags
 	 */
 	public static final void setStencilBufferMask(final int stencilMask){
-		//android.util.//Log.d(TAG,"setStencilBufferMask("+stencilMask+")");
+		//android.util.Log.d(TAG,"setStencilBufferMask("+stencilMask+")");
 		GLES20.glStencilMask(stencilMask);
 	}
 
@@ -471,7 +471,7 @@ public final class GlOperation {
      * @return The state value(s) in a float array
      */
     public static float[] glGetState(final int key){
-        //android.util.//Log.d(TAG,"getGlState("+key+")");
+        //android.util.Log.d(TAG,"getGlState("+key+")");
         final float[] result;
         switch(key){
             //2

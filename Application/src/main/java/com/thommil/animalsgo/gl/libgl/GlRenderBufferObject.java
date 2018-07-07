@@ -88,7 +88,7 @@ public class GlRenderBufferObject implements GlFrameBufferObject.Attachment{
 	 * Bind the current RenderBufferObject
 	 */
 	public GlRenderBufferObject bind(){
-		//android.util.//Log.d(TAG,"bind()");
+		//android.util.Log.d(TAG,"bind()");
 		GLES20.glBindRenderbuffer(GLES20.GL_RENDERBUFFER, this.handle);
 		return this;
 	}
@@ -97,7 +97,7 @@ public class GlRenderBufferObject implements GlFrameBufferObject.Attachment{
 	 * Unbind the current RenderBufferObject
 	 */
 	public GlRenderBufferObject unbind(){
-		//android.util.//Log.d(TAG,"unbind()");
+		//android.util.Log.d(TAG,"unbind()");
 		GLES20.glBindRenderbuffer(GLES20.GL_RENDERBUFFER, UNBIND_HANDLE);
 		return this;
 	}
@@ -105,7 +105,7 @@ public class GlRenderBufferObject implements GlFrameBufferObject.Attachment{
 	 * Free resources associated with current RenderBuffer
 	 */
 	public GlRenderBufferObject free(){
-		//android.util.//Log.d(TAG,"free()");
+		//android.util.Log.d(TAG,"free()");
 		GLES20.glDeleteRenderbuffers(1, new int[]{this.handle}, 0);
         GlOperation.checkGlError(TAG, "glDeleteTextures");
 		return this;
@@ -116,7 +116,7 @@ public class GlRenderBufferObject implements GlFrameBufferObject.Attachment{
 	 */
 	@Override
 	public int getHandle() {
-		//android.util.//Log.d(TAG,"getHandle()");
+		//android.util.Log.d(TAG,"getHandle()");
 		return this.handle;
 	}
 
@@ -125,7 +125,7 @@ public class GlRenderBufferObject implements GlFrameBufferObject.Attachment{
 	 */
 	@Override
 	public int getTarget() {
-		//android.util.//Log.d(TAG,"getTarget()");
+		//android.util.Log.d(TAG,"getTarget()");
 		return GLES20.GL_RENDERBUFFER;
 	}
 
@@ -134,7 +134,7 @@ public class GlRenderBufferObject implements GlFrameBufferObject.Attachment{
 	 */
 	@Override
 	public int getLevel() {
-		//android.util.//Log.d(TAG,"getLevel()");
+		//android.util.Log.d(TAG,"getLevel()");
 		return 0;
 	}	
 }

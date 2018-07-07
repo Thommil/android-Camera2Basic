@@ -1,4 +1,4 @@
-package com.thommil.animalsgo.capture;
+package com.thommil.animalsgo.data;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;

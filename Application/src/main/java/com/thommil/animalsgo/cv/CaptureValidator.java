@@ -1,13 +1,11 @@
-package com.thommil.animalsgo.capture;
+package com.thommil.animalsgo.cv;
 
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
 import android.util.Log;
 
-import com.thommil.animalsgo.R;
-import com.thommil.animalsgo.cv.ImageProcessor;
-import com.thommil.animalsgo.cv.OpenCVProcessor;
+import com.thommil.animalsgo.data.Capture;
 import com.thommil.animalsgo.data.Messaging;
 
 /**
@@ -21,6 +19,7 @@ public class CaptureValidator extends HandlerThread implements Handler.Callback 
     // Machine states
     private final static int STATE_ERROR = 0x00;
     private final static int STATE_WAITING = 0x01;
+    private final static int STATE_VALIDATING = 0x02;
 
     // Current Thread state
     private int mState = STATE_WAITING;
@@ -48,7 +47,7 @@ public class CaptureValidator extends HandlerThread implements Handler.Callback 
 
     @Override
     protected void onLooperPrepared() {
-        //Log.d(TAG, "onLooperPrepared()");
+        Log.d(TAG, "onLooperPrepared()");
 
         mHandler = new Handler(getLooper(), this);
         if (mMainHandler != null) {
@@ -62,12 +61,22 @@ public class CaptureValidator extends HandlerThread implements Handler.Callback 
 
     @Override
     public boolean handleMessage(Message message) {
-        //Log.d(TAG, "handleMessage(" + message+ ")");
+        Log.d(TAG, "handleMessage(" + message+ ")");
         switch (message.what){
             case Messaging.VALIDATION_REQUEST :
                 final Capture capture = (Capture) message.obj;
-                mImageProcessor.validateCapture(capture);
-                mMainHandler.sendMessage(mMainHandler.obtainMessage(Messaging.VALIDATION_RESULT, capture));
+                try {
+                    if(mState == STATE_WAITING) {
+                        mImageProcessor.validateCapture(capture);
+                    }
+                }catch (Exception e){
+                    capture.validationState = Capture.VALIDATION_FAILED;
+                    Log.d(TAG, "Validation error : "+e);
+                }
+                finally {
+                    mMainHandler.sendMessage(mMainHandler.obtainMessage(Messaging.VALIDATION_RESULT, capture));
+                    mState = STATE_WAITING;
+                }
                 break;
             case Messaging.SYSTEM_SHUTDOWN:
                 shutdown();
@@ -87,7 +96,7 @@ public class CaptureValidator extends HandlerThread implements Handler.Callback 
     }
 
     protected void shutdown(){
-        //Log.d(TAG, "shutdown()");
+        Log.d(TAG, "shutdown()");
         quitSafely();
         sSnapshotValidatorInstance = null;
     }

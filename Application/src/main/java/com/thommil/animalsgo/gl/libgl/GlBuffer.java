@@ -110,7 +110,7 @@ public class GlBuffer<E>{
 	public static final int USAGE_STREAM_DRAW = GLES20.GL_STREAM_DRAW;
 	
 	/**
-	 * Buffer target for vertices data
+	 * Buffer target for mVertices data
 	 */
 	public static final int TARGET_ARRAY_BUFFER = GLES20.GL_ARRAY_BUFFER;
 	

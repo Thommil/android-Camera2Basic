@@ -35,13 +35,26 @@ public class Settings {
     // Landscape mode threshold on orientation
     public static final float[] LANSCAPE_MODE_VERTICAL_TRESHOLDS = new float[]{9f, 6f};
 
+
+
+    // Shaders path in assets
+    public static final String ASSETS_SHADERS_PATH = "shaders/";
+
+    // Textures path in assets
+    public static final String ASSETS_TEXTURES_PATH = "textures/";
+
+    // XML path in assets
+    public static final String ASSETS_XML_PATH = "xml/";
+
+
+
     // Settings keys & values
-    public static final String CAMERA_PREVIEW_QUALITY_AUTO = "prefs_camera_preview_quality_auto";
-    public static final String CAMERA_PREVIEW_QUALITY = "prefs_camera_preview_quality";
-    // TODO in Prefs ?
-    public static final String PLUGINS_CAMERA_DEFAULT = "camera_basic";
-    public static final String PLUGINS_PREVIEW_DEFAULT = "prefs_plugins_default";
-    public static final String PLUGINS_UI_DEFAULT = "ui_basic";
+    public static final String CAMERA_QUALITY_AUTO = "prefs_camera_quality_auto";
+
+    public static final String CAMERA_QUALITY = "prefs_camera_quality";
+    public static final String PLUGIN_CAMERA = "prefs_camera_plugin_default";
+    public static final String PLUGIN_PREVIEW = "prefs_preview_plugin_default";
+    public static final String PLUGIN_UI = "prefs_ui_plugin_default";
 
     private final SharedPreferences mSharedPreferences;
 
@@ -113,8 +126,8 @@ public class Settings {
         @Override
         public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
             //Auto/manual quality preview
-            if(key.equals(CAMERA_PREVIEW_QUALITY_AUTO)){
-                findPreference(CAMERA_PREVIEW_QUALITY).setEnabled(!getInstance().getBoolean(CAMERA_PREVIEW_QUALITY_AUTO));
+            if(key.equals(CAMERA_QUALITY_AUTO)){
+                findPreference(CAMERA_QUALITY).setEnabled(!getInstance().getBoolean(CAMERA_QUALITY_AUTO));
             }
 
         }
@@ -122,7 +135,7 @@ public class Settings {
         @Override
         public void onResume() {
             super.onResume();
-            findPreference(CAMERA_PREVIEW_QUALITY).setEnabled(!getInstance().getBoolean(CAMERA_PREVIEW_QUALITY_AUTO));
+            findPreference(CAMERA_QUALITY).setEnabled(!getInstance().getBoolean(CAMERA_QUALITY_AUTO));
             getPreferenceScreen().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
         }
 

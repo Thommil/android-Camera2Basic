@@ -4,5 +4,5 @@ import com.thommil.animalsgo.data.Capture;
 
 public interface ImageProcessor {
 
-    public void validateCapture(final Capture capture);
+    void validateCapture(final Capture capture);
 }

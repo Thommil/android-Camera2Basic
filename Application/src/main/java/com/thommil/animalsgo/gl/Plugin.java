@@ -3,6 +3,7 @@ package com.thommil.animalsgo.gl;
 import android.content.Context;
 import android.util.Log;
 
+import com.thommil.animalsgo.Settings;
 import com.thommil.animalsgo.gl.libgl.GlBuffer;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
 import com.thommil.animalsgo.gl.libgl.GlProgram;
@@ -26,23 +27,13 @@ public abstract class Plugin {
     // Type for handling UI
     public static final int TYPE_UI = 0x04;
 
-    protected static final GlBuffer.Chunk<float[]> SQUARE_IMAGE_VERT_CHUNK =
-            new GlBuffer.Chunk<>(new float[]{
-                    -1.0f,-1.0f,
-                    -1.0f,1.0f,
-                    1.0f,-1.0f,
-                    1.0f,1.0f
-            },2);
+    public static final String ATTRIBUTE_POSITION = "positionAttr";
+    public static final String ATTRIBUTE_TEXTCOORD = "textCoordAttr";
 
-    protected static final GlBuffer.Chunk<float[]> SQUARE_IMAGE_TEXT_CHUNK =
-            new GlBuffer.Chunk<>(new float[]{
-                    0.0f,0.0f,
-                    0.0f,1.0f,
-                    1.0f,0.0f,
-                    1.0f, 1.0f
-            },2);
+    public static final String UNIFORM_TEXTURE = "texture1i";
+    public static final String UNIFORM_MVP_MATRIX = "mvpMatrix4fv";
+    public static final String UNIFORM_VIEW_SIZE = "viewSize2f";
 
-    protected static GlBuffer<float[]> sSquareImageBuffer;
 
     protected Context mContext;
 
@@ -54,6 +45,8 @@ public abstract class Plugin {
 
     public abstract String getId();
 
+    public abstract String getProgramId();
+
     public abstract String getName();
 
     public abstract String getSummary();
@@ -61,49 +54,52 @@ public abstract class Plugin {
     public abstract int getType();
 
     public void create(){
-        Log.d(TAG, "create()");
-        InputStream vertexInputStream = null, fragmentInputStream = null;
-        try {
-            vertexInputStream = mContext.getAssets().open(this.getId() + ".vert.glsl");
-            fragmentInputStream = mContext.getAssets().open(this.getId() + ".frag.glsl");
+        //Log.d(TAG, "create()");
 
-            mProgram = new GlProgram(vertexInputStream, fragmentInputStream);
-        }catch(IOException ioe){
-            throw new RuntimeException("Failed to find shaders source.");
-        }finally {
-            if(vertexInputStream != null) {
-                try {
-                    vertexInputStream.close();
-                }catch(IOException ioe){
-                    Log.e(TAG,"Failed to close vertex source : " + ioe);
+        if(mProgram == null) {
+
+            InputStream vertexInputStream = null, fragmentInputStream = null;
+            try {
+                vertexInputStream = mContext.getAssets().open(com.thommil.animalsgo.Settings.ASSETS_SHADERS_PATH + this.getProgramId() + ".vert.glsl");
+                fragmentInputStream = mContext.getAssets().open(com.thommil.animalsgo.Settings.ASSETS_SHADERS_PATH + this.getProgramId() + ".frag.glsl");
+
+                mProgram = new GlProgram(vertexInputStream, fragmentInputStream);
+            } catch (IOException ioe) {
+                throw new RuntimeException("Failed to find shaders source : " + ioe);
+            } finally {
+                if (vertexInputStream != null) {
+                    try {
+                        vertexInputStream.close();
+                    } catch (IOException ioe) {
+                        Log.e(TAG, "Failed to close vertex source : " + ioe);
+                    }
+                }
+                if (fragmentInputStream != null) {
+                    try {
+                        fragmentInputStream.close();
+                    } catch (IOException ioe) {
+                        Log.e(TAG, "Failed to close fragment source : " + ioe);
+                    }
                 }
             }
-            if(fragmentInputStream!= null) {
-                try {
-                    fragmentInputStream.close();
-                }catch(IOException ioe){
-                    Log.e(TAG,"Failed to close fragment source : " + ioe);
-                }
-            }
-        }
-
-        if(sSquareImageBuffer == null){
-            sSquareImageBuffer = new GlBuffer<>(new GlBuffer.Chunk[]{SQUARE_IMAGE_VERT_CHUNK, SQUARE_IMAGE_TEXT_CHUNK});
-            sSquareImageBuffer.allocate(GlBuffer.USAGE_STATIC_DRAW, GlBuffer.TARGET_ARRAY_BUFFER, true);
         }
 
     }
 
     public void free(){
-        Log.d(TAG, "delete()");
+        //Log.d(TAG, "delete()");
         if(mProgram != null){
             mProgram.free();;
             mProgram = null;
         }
-        if(sSquareImageBuffer != null){
-            sSquareImageBuffer.free();
-            sSquareImageBuffer = null;
-        }
+    }
+
+    public GlProgram getProgram() {
+        return mProgram;
+    }
+
+    public void setProgram(GlProgram program) {
+        mProgram = program;
     }
 
     public abstract void draw(final GlIntRect viewport, final int orientation);

@@ -1,8 +1,5 @@
 package com.thommil.animalsgo.gl;
 
-import android.opengl.Matrix;
-
-import com.thommil.animalsgo.Settings;
 import com.thommil.animalsgo.gl.libgl.GlBuffer;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
 import com.thommil.animalsgo.gl.libgl.GlTexture;
@@ -24,6 +21,14 @@ public abstract class CameraPlugin extends Plugin{
                     1.0f,1.0f
             },2);
 
+    protected final GlBuffer.Chunk<float[]> mCameraPreviewFragChunk =
+            new GlBuffer.Chunk<>(new float[]{
+                    0.0f,0.0f,
+                    0.0f,1.0f,
+                    1.0f,0.0f,
+                    1.0f, 1.0f
+            },2);
+
     protected GlBuffer<float[]> mCameraPreviewBuffer;
 
     protected float[] mCameraTransformMatrix;
@@ -43,7 +48,7 @@ public abstract class CameraPlugin extends Plugin{
         super.create();
         this.mZoomState = ZOOM_STATE_NONE;
         mCurrentZoom = 1.0f;
-        mCameraPreviewBuffer = new GlBuffer<>(new GlBuffer.Chunk[]{mCameraPreviewVertChunk, SQUARE_IMAGE_TEXT_CHUNK});
+        mCameraPreviewBuffer = new GlBuffer<>(new GlBuffer.Chunk[]{mCameraPreviewVertChunk, mCameraPreviewFragChunk});
         applyZoom();
     }
 

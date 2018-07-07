@@ -47,7 +47,7 @@ public class CaptureValidator extends HandlerThread implements Handler.Callback 
 
     @Override
     protected void onLooperPrepared() {
-        Log.d(TAG, "onLooperPrepared()");
+        //Log.d(TAG, "onLooperPrepared()");
 
         mHandler = new Handler(getLooper(), this);
         if (mMainHandler != null) {
@@ -61,17 +61,18 @@ public class CaptureValidator extends HandlerThread implements Handler.Callback 
 
     @Override
     public boolean handleMessage(Message message) {
-        Log.d(TAG, "handleMessage(" + message+ ")");
+        //Log.d(TAG, "handleMessage(" + message+ ")");
         switch (message.what){
             case Messaging.VALIDATION_REQUEST :
                 final Capture capture = (Capture) message.obj;
                 try {
                     if(mState == STATE_WAITING) {
+                        mState = STATE_VALIDATING;
                         mImageProcessor.validateCapture(capture);
                     }
                 }catch (Exception e){
                     capture.validationState = Capture.VALIDATION_FAILED;
-                    Log.d(TAG, "Validation error : "+e);
+                    //Log.d(TAG, "Validation error : "+e);
                 }
                 finally {
                     mMainHandler.sendMessage(mMainHandler.obtainMessage(Messaging.VALIDATION_RESULT, capture));
@@ -85,8 +86,6 @@ public class CaptureValidator extends HandlerThread implements Handler.Callback 
         return true;
     }
 
-
-
     private void showError(final int messageResourceId){
         mState = STATE_ERROR;
         if(mMainHandler != null) {
@@ -96,7 +95,7 @@ public class CaptureValidator extends HandlerThread implements Handler.Callback 
     }
 
     protected void shutdown(){
-        Log.d(TAG, "shutdown()");
+        //Log.d(TAG, "shutdown()");
         quitSafely();
         sSnapshotValidatorInstance = null;
     }

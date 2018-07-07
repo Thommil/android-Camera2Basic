@@ -4,6 +4,7 @@ import android.content.Context;
 import android.util.Log;
 
 import com.thommil.animalsgo.R;
+import com.thommil.animalsgo.gl.libgl.GlProgram;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,11 +16,13 @@ public class PluginManager {
     private static PluginManager sPluginManagerInstance;
 
     private final Map<String, Plugin> mPluginsMap;
+    private final Map<String, GlProgram> mProgramsMap;
 
     private final Context mContext;
 
     private PluginManager(final Context context){
         mPluginsMap = new HashMap<>();
+        mProgramsMap = new HashMap<>();
         mContext = context;
         loadPlugins();
     }
@@ -36,13 +39,13 @@ public class PluginManager {
     }
 
     private void loadPlugins(){
-        Log.d(TAG, "initialize()");
+        //Log.d(TAG, "initialize()");
         try {
             for (final String pluginClassname : mContext.getResources().getStringArray(R.array.plugins_list)) {
                 final Class pluginClass = this.getClass().getClassLoader().loadClass(pluginClassname);
                 final Plugin plugin = (Plugin) pluginClass.newInstance();
                 plugin.setContext(mContext);
-                Log.d(TAG, "Plugin "+ plugin.getId()+" created");
+                //Log.d(TAG, "Plugin "+ plugin.getId()+" created");
                 mPluginsMap.put(plugin.getId(), plugin);
             }
         }catch(ClassNotFoundException cne){
@@ -55,20 +58,32 @@ public class PluginManager {
     }
 
     public void initialize(final int filter){
-        Log.d(TAG, "destroy()");
+        //Log.d(TAG, "destroy()");
         for(final Plugin plugin : mPluginsMap.values()){
             if((plugin.getType() & filter) > 0){
-                plugin.create();
+                if(mProgramsMap.containsKey(plugin.getProgramId())){
+                    plugin.setProgram(mProgramsMap.get(plugin.getProgramId()));
+                    plugin.create();
+                }
+                else{
+                    plugin.create();
+                    mProgramsMap.put(plugin.getProgramId(), plugin.getProgram());
+                }
+
             }
         }
     }
 
 
     public void free(){
-        Log.d(TAG, "destroy()");
+        //Log.d(TAG, "destroy()");
         for(final Plugin plugin : mPluginsMap.values()){
             plugin.free();
         }
+        for(final GlProgram program : mProgramsMap.values()){
+            program.free();
+        }
+        mProgramsMap.clear();
     }
 
 }

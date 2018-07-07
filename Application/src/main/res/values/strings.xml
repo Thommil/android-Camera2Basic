@@ -7,27 +7,27 @@
      -->
     <string-array name="plugins_list">
         <!-- CAMERA -->
-        <item>com.thommil.animalsgo.gl.plugins.CameraBasic</item>
+        <item>com.thommil.animalsgo.gl.plugins.CameraDefault</item>
         <!-- PREVIEW -->
-        <item>com.thommil.animalsgo.gl.plugins.Basic</item>
-        <item>com.thommil.animalsgo.gl.plugins.Toon</item>
+        <item>com.thommil.animalsgo.gl.plugins.PreviewDefault</item>
+        <item>com.thommil.animalsgo.gl.plugins.PreviewToon</item>
         <!-- UI -->
-        <item>com.thommil.animalsgo.gl.plugins.UIBasic</item>
+        <item>com.thommil.animalsgo.gl.plugins.UIDefault</item>
     </string-array>
 
     <!-- CAMERA -->
-    <string name="plugins_camera_basic_name">Camera Basic</string>
-    <string name="plugins_camera_basic_summary">...</string>
+    <string name="plugins_camera_default_name">Camera default</string>
+    <string name="plugins_camera_default_summary">...</string>
 
     <!-- PREVIEW -->
-    <string name="plugins_basic_name">Basic</string>
-    <string name="plugins_basic_summary">...</string>
-    <string name="plugins_toon_name">Toon</string>
-    <string name="plugins_toon_summary">...</string>
+    <string name="plugins_preview_default_name">Default</string>
+    <string name="plugins_preview_default_summary">...</string>
+    <string name="plugins_preview_toon_name">Toon</string>
+    <string name="plugins_preview_toon_summary">...</string>
 
     <!-- UI -->
-    <string name="plugins_ui_basic_name">UI Basic</string>
-    <string name="plugins_ui_basic_summary">...</string>
+    <string name="plugins_ui_default_name">UI default</string>
+    <string name="plugins_ui_default_summary">...</string>
 
 
     <!--
@@ -35,47 +35,74 @@
      -->
     <string name="prefs_file_key">preferences</string>
 
-    <!-- Camera -->
+    <!-- Prefs Camera -->
     <string name="prefs_camera">Camera</string>
 
-    <!-- Camera quality -->
-    <string name="prefs_camera_preview_quality_auto_title">Auto Preview quality : </string>
-    <string name="prefs_camera_preview_quality_auto_summary">... </string>
-    <string name="prefs_camera_preview_quality_title">Manual preview quality : </string>
-    <string name="prefs_camera_preview_quality_summary">...</string>
-    <string name="prefs_camera_preview_quality_dialog">Choose quality level :</string>
-    <string-array name="prefs_camera_preview_quality_entries">
+    <!-- Prefs Camera quality -->
+    <string name="prefs_camera_quality_auto_title">Auto Preview quality : </string>
+    <string name="prefs_camera_quality_auto_summary">... </string>
+    <string name="prefs_camera_quality_title">Manual preview quality : </string>
+    <string name="prefs_camera_quality_summary">...</string>
+    <string name="prefs_camera_quality_dialog">Choose quality level :</string>
+    <string-array name="prefs_camera_quality_entries">
         <item>very low</item>
         <item>low</item>
         <item>medium</item>
         <item>high</item>
         <item>very high</item>
     </string-array>
-    <string-array name="prefs_camera_preview_quality_entries_values">
+    <string-array name="prefs_camera_quality_entries_values">
         <item>very low</item>
         <item>low</item>
         <item>medium</item>
         <item>high</item>
         <item>very high</item>
     </string-array>
-    <string name="prefs_camera_preview_quality_default">medium</string>
+    <string name="prefs_camera_quality_default">medium</string>
 
+    <!-- Prefs Camera Plugins -->
+    <string name="prefs_camera_plugin_default_title">Default plugin</string>
+    <string name="prefs_camera_plugin_default_title_summary">...</string>
+    <string name="prefs_camera_plugin_default_dialog">Choose default plugin :</string>
+    <string-array name="prefs_camera_plugin_default_entries">
+        <item>Default</item>
+    </string-array>
+    <string-array name="prefs_camera_plugin_default_entries_values">
+        <item>camera/default</item>
+    </string-array>
+    <string name="prefs_camera_plugin_default_default">camera/default</string>
 
-    <string name="prefs_camera_plugins_default_title">Default plugin</string>
-    <string name="prefs_camera_plugins_default_title_summary">...</string>
-    <string name="prefs_camera_plugins_default_dialog">Choose default plugin :</string>
-    <string-array name="prefs_camera_plugins_default_entries">
-        <item>Basic</item>
+    <!-- Prefs Preview -->
+    <string name="prefs_preview">Preview</string>
+
+    <!-- Prefs Preview Plugins -->
+    <string name="prefs_preview_plugin_default_title">Default plugin</string>
+    <string name="prefs_preview_plugin_default_title_summary">...</string>
+    <string name="prefs_preview_plugin_default_dialog">Choose default plugin :</string>
+    <string-array name="prefs_preview_plugin_default_entries">
+        <item>Default</item>
         <item>Toon</item>
     </string-array>
-    <string-array name="prefs_camera_plugins_default_entries_values">
-        <item>basic</item>
-        <item>toon</item>
+    <string-array name="prefs_preview_plugin_default_entries_values">
+        <item>preview/default</item>
+        <item>preview/toon</item>
     </string-array>
-    <string name="prefs_camera_plugins_default_default">basic</string>
+    <string name="prefs_preview_plugin_default_default">preview/default</string>
 
-    <string name="prefs_camera_plugins_enabled_title">Active plugins</string>
-    <string name="prefs_camera_plugins_enabled_summary">...</string>
+    <!-- Prefs UI -->
+    <string name="prefs_ui">Interface</string>
+
+    <!-- Prefs UI Plugins-->
+    <string name="prefs_ui_plugin_default_title">Default plugin</string>
+    <string name="prefs_ui_plugin_default_title_summary">...</string>
+    <string name="prefs_ui_plugin_default_dialog">Choose default plugin :</string>
+    <string-array name="prefs_ui_plugin_default_entries">
+        <item>Default</item>
+    </string-array>
+    <string-array name="prefs_ui_plugin_default_entries_values">
+        <item>ui/default</item>
+    </string-array>
+    <string name="prefs_ui_plugin_default_default">ui/default</string>
 
 
     <!--

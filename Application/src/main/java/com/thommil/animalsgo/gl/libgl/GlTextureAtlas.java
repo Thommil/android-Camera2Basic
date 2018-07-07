@@ -1,15 +1,12 @@
 package com.thommil.animalsgo.gl.libgl;
 
 import android.content.Context;
-import android.content.res.AssetManager;
-import android.content.res.XmlResourceParser;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Log;
-import android.util.Xml;
 
-import com.thommil.animalsgo.R;
-import com.thommil.animalsgo.gl.libgl.GlTexture;
+import com.thommil.animalsgo.Settings;
+import com.thommil.animalsgo.gl.ui.Sprite;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -23,12 +20,12 @@ public class GlTextureAtlas {
 
     private static final String TAG = "A_GO/GlTextureAtlas";
 
-    //private final Map<String, Sprite> mSpriteMap = new HashMap<>();
+    private final Map<String, Sprite> mSpriteMap = new HashMap<>();
     private GlTexture mTexture;
 
-    public GlTextureAtlas(final Context context, final int xmlResourceId, final int imageResourceId, final GlTexture glTextureTemplate){
-        setSpriteMapFromId(context, xmlResourceId);
-        setTextureFromId(context, imageResourceId, glTextureTemplate);
+    public GlTextureAtlas(final Context context, final String name, final GlTexture glTextureTemplate){
+        final String textureFile = generateSpriteMapFromXml(context, name);
+        generateTextureMapFromXml(context, textureFile, glTextureTemplate);
     }
 
     public void free(){
@@ -37,20 +34,22 @@ public class GlTextureAtlas {
         }
     }
 
-    private void setSpriteMapFromId(final Context context, final int xmlResourceId) {
-        Log.d(TAG, "setSpriteMapFromId("+xmlResourceId+")");
+    private String generateSpriteMapFromXml(final Context context, final String name) {
+        //Log.d(TAG, "generateSpriteMapFromXml("+name+")");
+        String textureFile;
         try {
-            final XmlPullParser parser = context.getResources().getXml(xmlResourceId);
+            final XmlPullParser parser = context.getResources().getAssets().openXmlResourceParser(Settings.ASSETS_XML_PATH + name + ".xml");
             parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
             parser.nextTag();
 
             parser.require(XmlPullParser.START_TAG, null, "TextureAtlas");
+            textureFile = parser.getAttributeValue(null, "imagePath");
             while (parser.next() != XmlPullParser.END_TAG) {
                 if (parser.getEventType() != XmlPullParser.START_TAG) {
                     continue;
                 }
-                String name = parser.getName();
-                if (name.equals("SubTexture")) {
+
+                if (parser.getName().equals("SubTexture")) {
                     addSprite(parser);
                 }
                 else{
@@ -63,6 +62,8 @@ public class GlTextureAtlas {
         }catch(XmlPullParserException xfpe){
             throw new RuntimeException("Failed to load xml atlas : " + xfpe);
         }
+
+        return textureFile;
     }
 
     private void addSprite(final XmlPullParser parser) throws XmlPullParserException, IOException {
@@ -72,11 +73,6 @@ public class GlTextureAtlas {
         parser.nextTag();
         parser.require(XmlPullParser.END_TAG, null, "SubTexture");
     }
-    /*
-
-    <TextureAtlas imagePath="Untitled-1.png">
-	<SubTexture name="20180519_134314.jpg instance 1" x="0" y="0" width="219" height="135" pivotX="0" pivotY="0"/>
-     */
 
 
     private void skip(final XmlPullParser parser) throws XmlPullParserException, IOException {
@@ -96,12 +92,14 @@ public class GlTextureAtlas {
         }
     }
 
-    private void setTextureFromId(final Context context, final int imageResourceId, final GlTexture glTextureTemplate) {
-        Log.d(TAG, "setTextureFromId("+imageResourceId+")");
+    private void generateTextureMapFromXml(final Context context, final String textureFile, final GlTexture glTextureTemplate) {
+        //Log.d(TAG, "generateTextureMapFromXml("+textureFile+")");
         InputStream in = null;
         try {
-            in = context.getResources().openRawResource(imageResourceId);
+            in = context.getResources().getAssets().open(Settings.ASSETS_TEXTURES_PATH + textureFile);
             mTexture = new GLTextureDecorator(BitmapFactory.decodeStream(in), glTextureTemplate);
+        }catch(IOException ioe){
+            throw new RuntimeException("Texture load error : " + textureFile);
         }finally {
             try{
                 in.close();

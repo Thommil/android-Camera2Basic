@@ -2,10 +2,10 @@
 
 precision mediump float;
 
-uniform sampler2D sTexture;
-uniform vec2 viewSize;
+uniform sampler2D texture1i;
+uniform vec2 viewSize2f;
 
-varying vec2 vTexCoord;
+varying vec2 vTextCoordAttr;
 
 
 	#define HueLevCount 6
@@ -116,12 +116,12 @@ float avg_intensity(vec4 pix) {
  return (pix.r + pix.g + pix.b)/3.;
 }
 vec4 get_pixel(vec2 coords, float dx, float dy) {
- return texture2D(sTexture,coords + vec2(dx, dy));
+ return texture2D(texture1i,coords + vec2(dx, dy));
 }
 // returns pixel color
 float IsEdge(in vec2 coords){
-  float dxtex = 1.0 / viewSize.x ;
-  float dytex = 1.0 / viewSize.y ;
+  float dxtex = 1.0 / viewSize2f.x ;
+  float dytex = 1.0 / viewSize2f.y ;
 
   float pix[9];
 
@@ -164,12 +164,12 @@ void main(void)
 	ValLevels[1] = 0.3;
 	ValLevels[2] = 0.6;
 	ValLevels[3] = 1.0;
-    vec4 colorOrg = texture2D( sTexture, vTexCoord );
+    vec4 colorOrg = texture2D( texture1i, vTextCoordAttr );
     vec3 vHSV =  RGBtoHSV(colorOrg.r,colorOrg.g,colorOrg.b);
     vHSV.x = nearestLevel(vHSV.x, 0);
     vHSV.y = nearestLevel(vHSV.y, 1);
     vHSV.z = nearestLevel(vHSV.z, 2);
-    float edg = IsEdge(vTexCoord);
+    float edg = IsEdge(vTextCoordAttr);
     vec3 vRGB = (edg >= 0.3)? vec3(0.0,0.0,0.0):HSVtoRGB(vHSV.x,vHSV.y,vHSV.z);
     gl_FragColor = vec4(vRGB.x,vRGB.y,vRGB.z,1.0);
 }

@@ -178,7 +178,7 @@ public class GlBuffer<E>{
 	 * Constructor
 	 */
 	public GlBuffer(final Chunk<E>[] chunks){
-		//android.util.Log.d(TAG,"NEW");
+		//android.util.//Log.d(TAG,"NEW");
 		this.chunks = chunks;
 
 		//Init
@@ -210,14 +210,14 @@ public class GlBuffer<E>{
 		//Stride
 		this.stride = currentPosition;
 
-		this.update(false);
+		this.update();
 	}
 	
 	/**
 	 * Bind current buffer to active buffer if GPU 
 	 */
 	public GlBuffer bind(){
-		//android.util.Log.d(TAG,"bind()");
+		//android.util.//Log.d(TAG,"bind()");
 		GLES20.glBindBuffer(this.target, this.handle);
 		return this;
 	}
@@ -226,7 +226,7 @@ public class GlBuffer<E>{
 	 * Unbind current buffer from active buffer if GPU 
 	 */
 	public GlBuffer unbind(){
-		//android.util.Log.d(TAG,"unbind()");
+		//android.util.//Log.d(TAG,"unbind()");
 		GLES20.glBindBuffer(this.target, UNBIND_HANDLE);
 		return this;
 	}
@@ -281,7 +281,7 @@ public class GlBuffer<E>{
 	 * @param updateVBO Update VBO too is set to true
 	 */
 	public GlBuffer update(int chunksToUpdate[], boolean updateVBO){
-		//android.util.Log.d(TAG,"update("+chunksToUpdate+", "+commit+")");
+		//android.util.//Log.d(TAG,"update("+chunksToUpdate+", "+commit+")");
 		switch(this.datatype){
 			case TYPE_FLOAT :
 				if(this.buffer == null){
@@ -364,7 +364,7 @@ public class GlBuffer<E>{
 	 * @return The buffer handle on server (available in handle attribute too)
 	 */
 	public GlBuffer allocate(final int usage, final int target, final boolean freeLocal){
-		//android.util.Log.d(TAG,"createVBO("+usage+","+target+","+freeLocal+")");
+		//android.util.//Log.d(TAG,"createVBO("+usage+","+target+","+freeLocal+")");
 		if(this.handle == GLES20.GL_FALSE){
 			final int[] handles = new int[1];
 
@@ -411,7 +411,7 @@ public class GlBuffer<E>{
 	 * Free local and server buffers
 	 */
 	public GlBuffer free(){
-		//android.util.Log.d(TAG,"free()");
+		//android.util.//Log.d(TAG,"free()");
         if(this.handle != UNBIND_HANDLE){
             final int[] handles = new int[]{this.handle};
             this.handle = UNBIND_HANDLE;

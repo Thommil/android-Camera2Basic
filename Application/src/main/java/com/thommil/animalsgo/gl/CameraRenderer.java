@@ -127,18 +127,20 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         mWindowSurface.makeCurrent();
 
         mPluginManager.initialize(Plugin.TYPE_CAMERA | Plugin.TYPE_PREVIEW | Plugin.TYPE_UI);
+
         mCameraPlugin = (CameraPlugin) mPluginManager.getPlugin(Settings.getInstance().getString(Settings.PLUGIN_CAMERA));
-        String tmp = Settings.getInstance().getString(Settings.PLUGIN_PREVIEW);
-        mPreviewPlugin = (PreviewPlugin) mPluginManager.getPlugin(Settings.getInstance().getString(Settings.PLUGIN_PREVIEW));
-        mUIPlugin = (UIPlugin) mPluginManager.getPlugin(Settings.getInstance().getString(Settings.PLUGIN_UI));
-        mUIPlugin.setAssetManager(mContext.getAssets());
+        mCameraPlugin.setCameraTransformMatrix(mCameraTransformMatrix);
 
         mPreviewTexture = new SurfaceTexture(mCameraPlugin.getCameraTexture().handle);
         mPreviewTexture.setOnFrameAvailableListener(this);
 
+        mPreviewPlugin = (PreviewPlugin) mPluginManager.getPlugin(Settings.getInstance().getString(Settings.PLUGIN_PREVIEW));
+
+        mUIPlugin = (UIPlugin) mPluginManager.getPlugin(Settings.getInstance().getString(Settings.PLUGIN_UI));
+        mUIPlugin.setAssetManager(mContext.getAssets());
+
         GlOperation.setColorBufferClearValue(0,0,0,1);
         GlOperation.setTestState(GlOperation.TEST_ALL, false);
-        GlOperation.configureBlendTest(GlOperation.BLEND_FACTOR_SRC_ALPA, GlOperation.BLEND_FACTOR_DST_ALPA, GlOperation.BLEND_FACTOR_ONE_MINUS_SRC_ALPA, null);
 
         onSetupComplete();
     }
@@ -261,6 +263,8 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         mCameraPreviewFBO.attach(mCameraPreviewTexture, GlFrameBufferObject.Attachment.TYPE_COLOR);
         mCameraPreviewTexture.unbind();
         mCameraPreviewFBO.unbind();
+
+        mPreviewPlugin.setCameraTexture(mCameraPreviewTexture);
     }
 
     protected void onSetupComplete() {
@@ -329,62 +333,69 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
     private void draw(){
         //long time = System.currentTimeMillis();
+
+        //Clear
         GlOperation.setViewport(0, 0, mSurfaceWidth, mSurfaceHeight);
         GlOperation.clearBuffers(GlOperation.BUFFER_COLOR);
 
-        drawCameraPreview();
-
         switch(mState){
+            case STATE_PREVIEW :
             case STATE_CAPTURE_NEXT_FRAME:
-                final Capture capture = CaptureBuilder.getInstance().getCapture();
-                capture.mCameraBuffer = mCameraPreviewFBO.read(mCaptureZone.left, mCaptureZone.bottom, mCaptureZone.width(), mCaptureZone.height());
-                mMainHandler.sendMessage(mMainHandler.obtainMessage(Messaging.VALIDATION_REQUEST, capture));
-                break;
-        }
-
-        drawFilter();
-
-        switch(mState){
+            case STATE_VALIDATION_IN_PROGRESS:
             case STATE_VALIDATION_DONE:
-                //Log.d(TAG, "Capture done : " + CaptureBuilder.getInstance().getCapture());
-                // TODO STATE -> Choose/confirm
-                //CaptureBuilder.getInstance().getCapture().validationState = Capture.VALIDATION_WAIT;
-                mState = STATE_PREVIEW;
+                //Camera draw
+                mCameraPreviewFBO.bind();
+                GlOperation.setViewport(0, 0, mViewport.width(), mViewport.height());
+                mCameraPlugin.draw(mViewport, mOrientation);
+                mCameraPreviewFBO.unbind();
+
+                //Capture
+                switch(mState){
+                    case STATE_CAPTURE_NEXT_FRAME:
+                        final Capture capture = CaptureBuilder.getInstance().getCapture();
+                        capture.mCameraBuffer = mCameraPreviewFBO.read(mCaptureZone.left, mCaptureZone.bottom, mCaptureZone.width(), mCaptureZone.height());
+                        mState = STATE_VALIDATION_IN_PROGRESS;
+                        mMainHandler.sendMessage(mMainHandler.obtainMessage(Messaging.VALIDATION_REQUEST, capture));
+                        break;
+                }
+
+                //Preview draw
+                GlOperation.setViewport(mViewport.left, mViewport.bottom, mViewport.width(), mViewport.height());
+                mPreviewPlugin.draw(mViewport, mOrientation);
+
+                //Check validation state -> next step
+                switch(mState){
+                    case STATE_VALIDATION_DONE:
+                        //Log.d(TAG, "Capture done : " + CaptureBuilder.getInstance().getCapture());
+                        // TODO STATE -> Choose/confirm
+                        //CaptureBuilder.getInstance().getCapture().validationState = Capture.VALIDATION_WAIT;
+                        mState = STATE_PREVIEW;
+                        break;
+                }
+
+                // UI draw
+                GlOperation.setViewport(0, 0, mSurfaceWidth, mSurfaceHeight);
+                mUIPlugin.draw(mViewport, mOrientation);
                 break;
         }
 
-        drawUI();
 
         ////Log.d(TAG, "" + (System.currentTimeMillis() - time) + "ms");
     }
 
-    private final void drawCameraPreview(){
-        GlOperation.setTestState(GlOperation.TEST_BLEND, false);
-        mCameraPreviewFBO.bind();
-
-        //Camera draw
-        GlOperation.setViewport(0, 0, mViewport.width(), mViewport.height());
+    private synchronized void setCameraPlugin(final String name){
+        mCameraPlugin = (CameraPlugin) mPluginManager.getPlugin(name);
         mCameraPlugin.setCameraTransformMatrix(mCameraTransformMatrix);
-        mCameraPlugin.draw(mViewport, mOrientation);
-
-        mCameraPreviewFBO.unbind();
     }
 
-    private final void drawFilter(){
-        GlOperation.setViewport(mViewport.left, mViewport.bottom, mViewport.width(), mViewport.height());
+    private synchronized void setPreviewPlugin(final String name){
+        mPreviewPlugin = (PreviewPlugin) mPluginManager.getPlugin(name);
         mPreviewPlugin.setCameraTexture(mCameraPreviewTexture);
-        mPreviewPlugin.draw(mViewport, mOrientation);
-    }
-
-    private final void drawUI(){
-        GlOperation.setTestState(GlOperation.TEST_BLEND, true);
-        GlOperation.setViewport(0, 0, mSurfaceWidth, mSurfaceHeight);
-        mUIPlugin.draw(mViewport, mOrientation);
     }
 
     @Override
     public boolean handleMessage(Message message) {
-        //Log.d(TAG, "handleMessage(" + message+ ")");
+        Log.d(TAG, "handleMessage(" + message+ ")");
         switch(message.what){
             case Messaging.SYSTEM_SHUTDOWN:
                 shutdown();
@@ -395,6 +406,11 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
                     updateCaptureZone();
                 }
                 break;
+            case Messaging.CHANGE_CAMERA_PLUGIN:
+                if(mState == STATE_PREVIEW){
+                    setCameraPlugin((String)message.obj);
+                }
+                break;
             case Messaging.CHANGE_PREVIEW_SIZE:
                 if(mState == STATE_PREVIEW){
                     onViewportSizeUpdated((Size)message.obj);
@@ -402,7 +418,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
                 break;
             case Messaging.CHANGE_PREVIEW_PLUGIN:
                 if(mState == STATE_PREVIEW){
-                    mPreviewPlugin = (PreviewPlugin) mPluginManager.getPlugin((String)message.obj);
+                    setPreviewPlugin((String)message.obj);
                 }
                 break;
             case Messaging.CHANGE_CAPTURE: {

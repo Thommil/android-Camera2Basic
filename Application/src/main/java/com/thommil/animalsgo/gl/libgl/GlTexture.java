@@ -276,16 +276,6 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	 */
 	public int handle = UNBIND_HANDLE;
 
-	/**
-	 * Default constructor
-	 */
-	public GlTexture(){
-		final int[]handles = new int[1];
-		GLES20.glGenTextures(1, handles, 0);
-		this.handle = handles[0];
-		GlOperation.checkGlError(TAG, "glGenTextures");
-	}
-
     /**
      * Set texture settings based on class getters
      */
@@ -306,6 +296,7 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	 * Create texture on GPU
 	 */
 	public GlTexture allocate(){
+		GlOperation.checkGlError(TAG, "glGenTextures");
 		GLES20.glTexImage2D(getTarget(), 0, getFormat(), getWidth(), getHeight(), 0, getFormat(), getType(), getBytes());
 		GlOperation.checkGlError(TAG, "glTexImage2D");
 		return this;
@@ -325,6 +316,11 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	 * @param activeTexture The GPU active texture to use
 	 */
 	public GlTexture bind(final int activeTexture){
+        if(this.handle == UNBIND_HANDLE) {
+            final int[] handles = new int[1];
+            GLES20.glGenTextures(1, handles, 0);
+            this.handle = handles[0];
+        }
 		GLES20.glActiveTexture(activeTexture);
 		GLES20.glBindTexture(getTarget(), this.handle);
 		return this;

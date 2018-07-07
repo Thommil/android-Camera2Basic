@@ -427,6 +427,8 @@ public class CameraFragment extends Fragment implements View.OnTouchListener, Se
             mPreviewBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_OFF); // No Flash (don't bother animals)
             mPreviewBuilder.set(CaptureRequest.STATISTICS_FACE_DETECT_MODE, CaptureRequest.STATISTICS_FACE_DETECT_MODE_SIMPLE); // Faces detection
 
+            CaptureBuilder.getInstance().getCapture().validationState = Capture.VALIDATION_WAIT;
+
             mCameraDevice.createCaptureSession(surfaces, new CameraCaptureSession.StateCallback() {
 
                 @Override

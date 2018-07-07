@@ -2,6 +2,7 @@ package com.thommil.animalsgo.gl;
 
 import com.thommil.animalsgo.gl.libgl.GlBuffer;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
+import com.thommil.animalsgo.gl.libgl.GlOperation;
 import com.thommil.animalsgo.gl.libgl.GlTexture;
 
 public abstract class CameraPlugin extends Plugin{
@@ -54,6 +55,8 @@ public abstract class CameraPlugin extends Plugin{
 
     @Override
     public void draw(GlIntRect viewport, int orientation) {
+        GlOperation.setTestState(GlOperation.TEST_BLEND, false);
+
         //TODO Transform matrix when android < 6 (using accelerometer)
 
         if(mZoomState > ZOOM_STATE_NONE) {

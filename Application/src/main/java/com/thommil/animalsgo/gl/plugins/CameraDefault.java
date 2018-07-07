@@ -85,7 +85,7 @@ public class CameraDefault extends CameraPlugin {
             }
         };
 
-        mCameraTexture.bind().configure();
+        mCameraTexture.bind().configure().allocate();
     }
 
     @Override

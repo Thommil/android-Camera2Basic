@@ -7,12 +7,14 @@ import android.util.Log;
 
 import com.thommil.animalsgo.Settings;
 import com.thommil.animalsgo.gl.ui.Sprite;
+import com.thommil.animalsgo.utils.ByteBufferPool;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,9 +25,20 @@ public class GlTextureAtlas {
     private final Map<String, Sprite> mSpriteMap = new HashMap<>();
     private GlTexture mTexture;
 
-    public GlTextureAtlas(final Context context, final String name, final GlTexture glTextureTemplate){
-        final String textureFile = generateSpriteMapFromXml(context, name);
-        generateTextureMapFromXml(context, textureFile, glTextureTemplate);
+    public GlTextureAtlas(final Context context, final int id){
+        this(context, id, new GlTexture(){});
+
+    }
+
+    public GlTextureAtlas(final Context context, final int id, final GlTexture glTextureTemplate){
+        parseXML(context, id, glTextureTemplate);
+
+    }
+
+    public void allocate(){
+        if(mTexture != null){
+            mTexture.bind().allocate().configure();
+        }
     }
 
     public void free(){
@@ -34,65 +47,46 @@ public class GlTextureAtlas {
         }
     }
 
-    private String generateSpriteMapFromXml(final Context context, final String name) {
+    private void parseXML(final Context context, final int id, final GlTexture glTextureTemplate) {
         //Log.d(TAG, "generateSpriteMapFromXml("+name+")");
-        String textureFile;
         try {
-            final XmlPullParser parser = context.getResources().getAssets().openXmlResourceParser(Settings.ASSETS_XML_PATH + name + ".xml");
-            parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
-            parser.nextTag();
+            final XmlPullParser parser = context.getResources().getXml(id);
 
-            parser.require(XmlPullParser.START_TAG, null, "TextureAtlas");
-            textureFile = parser.getAttributeValue(null, "imagePath");
-            while (parser.next() != XmlPullParser.END_TAG) {
-                if (parser.getEventType() != XmlPullParser.START_TAG) {
-                    continue;
+            int eventType = parser.getEventType();
+            while (eventType != XmlPullParser.END_DOCUMENT) {
+                if(eventType == XmlPullParser.START_TAG){
+                    if(parser.getName().equals("TextureAtlas")){
+                        final String textureFile = parser.getAttributeValue(null, "imagePath");
+                        if(textureFile != null) {
+                            generateTexture(context, textureFile, glTextureTemplate);
+                        }
+                        else throw new XmlPullParserException("Missing name attribute in <TextureAtlas/>");
+                    }
+                    else if(parser.getName().equals("SubTexture")){
+                        final String name = parser.getAttributeValue(null, "name");
+                        final int x = Integer.parseInt(parser.getAttributeValue(null, "x"));
+                        final int y = Integer.parseInt(parser.getAttributeValue(null, "y"));
+                        final int width = Integer.parseInt(parser.getAttributeValue(null, "width"));
+                        final int height = Integer.parseInt(parser.getAttributeValue(null, "height"));
+                        final float pivotX = Float.parseFloat(parser.getAttributeValue(null, "pivotX"));
+                        final float pivotY = Float.parseFloat(parser.getAttributeValue(null, "pivotY"));
+                        final Sprite sprite = new Sprite(name.hashCode(), mTexture, x, y, width, height);
+                        //TODO find a way to support pivot
+                        //sprite.setOrigin(pivotX, pivotY);
+                        mSpriteMap.put(name, sprite);
+                    }
                 }
 
-                if (parser.getName().equals("SubTexture")) {
-                    addSprite(parser);
-                }
-                else{
-                    skip(parser);
-                }
-
+                eventType = parser.next();
             }
         }catch(IOException ioe){
             throw new RuntimeException("Failed to load xml atlas : " + ioe);
         }catch(XmlPullParserException xfpe){
             throw new RuntimeException("Failed to load xml atlas : " + xfpe);
         }
-
-        return textureFile;
     }
 
-    private void addSprite(final XmlPullParser parser) throws XmlPullParserException, IOException {
-        parser.require(XmlPullParser.START_TAG, null, "SubTexture");
-        final String name = parser.getAttributeValue(null, "name");
-
-        parser.nextTag();
-        parser.require(XmlPullParser.END_TAG, null, "SubTexture");
-    }
-
-
-    private void skip(final XmlPullParser parser) throws XmlPullParserException, IOException {
-        if (parser.getEventType() != XmlPullParser.START_TAG) {
-            throw new IllegalStateException();
-        }
-        int depth = 1;
-        while (depth != 0) {
-            switch (parser.next()) {
-                case XmlPullParser.END_TAG:
-                    depth--;
-                    break;
-                case XmlPullParser.START_TAG:
-                    depth++;
-                    break;
-            }
-        }
-    }
-
-    private void generateTextureMapFromXml(final Context context, final String textureFile, final GlTexture glTextureTemplate) {
+    private void generateTexture(final Context context, final String textureFile, final GlTexture glTextureTemplate) {
         //Log.d(TAG, "generateTextureMapFromXml("+textureFile+")");
         InputStream in = null;
         try {
@@ -120,8 +114,67 @@ public class GlTextureAtlas {
             mImage = image;
         }
 
+        @Override
+        public ByteBuffer getBytes() {
+            final ByteBuffer imageBuffer = ByteBufferPool.getInstance().getDirectByteBuffer(mImage.getByteCount());
+            mImage.copyPixelsToBuffer(imageBuffer);
+            return imageBuffer;
+        }
 
+        @Override
+        public int getHeight() {
+            return mImage.getHeight();
+        }
 
+        @Override
+        public int getWidth() {
+            return mImage.getWidth();
+        }
+
+        @Override
+        public int getTarget() {
+            return mGlTextureTemplate.getTarget();
+        }
+
+        @Override
+        public int getFormat() {
+            return mGlTextureTemplate.getFormat();
+        }
+
+        @Override
+        public int getType() {
+            return mGlTextureTemplate.getType();
+        }
+
+        @Override
+        public int getCompressionFormat() {
+            return mGlTextureTemplate.getCompressionFormat();
+        }
+
+        @Override
+        public int getWrapMode(int axeId) {
+            return mGlTextureTemplate.getWrapMode(axeId);
+        }
+
+        @Override
+        public int getMagnificationFilter() {
+            return mGlTextureTemplate.getMagnificationFilter();
+        }
+
+        @Override
+        public int getMinificationFilter() {
+            return mGlTextureTemplate.getMinificationFilter();
+        }
+
+        @Override
+        public int getSize() {
+            return mImage.getByteCount();
+        }
+
+        @Override
+        public int getLevel() {
+            return mGlTextureTemplate.getLevel();
+        }
     }
 
     /*******************************************************************************

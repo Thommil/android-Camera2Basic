@@ -6,6 +6,8 @@ import com.thommil.animalsgo.R;
 import com.thommil.animalsgo.gl.UIPlugin;
 import com.thommil.animalsgo.gl.libgl.GlBuffer;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
+import com.thommil.animalsgo.gl.libgl.GlOperation;
+import com.thommil.animalsgo.gl.libgl.GlTextureAtlas;
 
 public class UIDefault extends UIPlugin {
 
@@ -37,6 +39,8 @@ public class UIDefault extends UIPlugin {
 
     private int mTextureUniforHandle;
 
+    private GlTextureAtlas mTextureAtlas;
+
     @Override
     public String getId() {
         return ID;
@@ -61,6 +65,11 @@ public class UIDefault extends UIPlugin {
     public void create() {
         super.create();
 
+        GlOperation.configureBlendTest(GlOperation.BLEND_FACTOR_SRC_ALPA, GlOperation.BLEND_FACTOR_DST_ALPA, GlOperation.BLEND_FACTOR_ONE_MINUS_SRC_ALPA, null);
+
+        mTextureAtlas = new GlTextureAtlas(mContext, R.xml.ui_default_texture_atlas);
+        mTextureAtlas.allocate();
+
         mProgram.use();
         mPositionAttributeHandle = mProgram.getAttributeHandle(ATTRIBUTE_POSITION);
         //mTextureCoordinatesAttributeHandle = mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD);
@@ -71,6 +80,8 @@ public class UIDefault extends UIPlugin {
 
     @Override
     public void draw(final GlIntRect viewport, final int orientation) {
+        GlOperation.setTestState(GlOperation.TEST_BLEND, true);
+
         mProgram.use().enableAttributes();
         //mCameraTexture.bind();
 
@@ -91,5 +102,6 @@ public class UIDefault extends UIPlugin {
     public void free() {
         super.free();
         mSquareImageBuffer.free();
+        mTextureAtlas.free();
     }
 }

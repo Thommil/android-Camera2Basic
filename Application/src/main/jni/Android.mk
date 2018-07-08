@@ -9,4 +9,6 @@ include /Users/thommil/Dev/Workspace/animals-go-android/lib/OpenCV-android-sdk/s
 
 LOCAL_MODULE := animals-go
 LOCAL_SRC_FILES := cv-opencv.cpp libgdx-matrix4.cpp
+LOCAL_LDLIBS    := -llog
+
 include $(BUILD_SHARED_LIBRARY)

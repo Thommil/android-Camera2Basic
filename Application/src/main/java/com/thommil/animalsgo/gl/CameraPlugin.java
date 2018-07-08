@@ -1,5 +1,7 @@
 package com.thommil.animalsgo.gl;
 
+import android.util.Log;
+
 import com.thommil.animalsgo.gl.libgl.GlBuffer;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
 import com.thommil.animalsgo.gl.libgl.GlOperation;
@@ -82,7 +84,7 @@ public abstract class CameraPlugin extends Plugin{
         mCameraPreviewVertChunk.data[3] = mCameraPreviewVertChunk.data[4]
                 = mCameraPreviewVertChunk.data[6] = mCameraPreviewVertChunk.data[7] = mCurrentZoom;
 
-        mCameraPreviewBuffer.update(mCameraPreviewVertChunk, false);
+        mCameraPreviewBuffer.update(mCameraPreviewVertChunk);
     }
 
     @Override

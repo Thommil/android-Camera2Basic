@@ -276,6 +276,9 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	 */
 	public int handle = UNBIND_HANDLE;
 
+
+	private int mBoundActiveTexture = UNBIND_HANDLE;
+
     /**
      * Set texture settings based on class getters
      */
@@ -322,6 +325,7 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
             this.handle = handles[0];
         }
 		GLES20.glActiveTexture(activeTexture);
+        mBoundActiveTexture = activeTexture;
 		GLES20.glBindTexture(getTarget(), this.handle);
 		return this;
 	}
@@ -330,18 +334,7 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	 * Unbind the current texture to default GPU active texture GL_TEXTURE0
 	 */
 	public GlTexture unbind(){
-		this.unbind(GLES20.GL_TEXTURE0);
-		return this;
-	}
-
-	/**
-	 * Unbind the current texture
-	 *
-	 * @param activeTexture The GPU active texture to use
-	 */
-	public GlTexture unbind(final int activeTexture){
-		GLES20.glActiveTexture(activeTexture);
-		GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, UNBIND_HANDLE);
+        mBoundActiveTexture = UNBIND_HANDLE;
 		return this;
 	}
 

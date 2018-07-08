@@ -2,6 +2,7 @@ package com.thommil.animalsgo.gl;
 
 import android.content.Context;
 import android.graphics.SurfaceTexture;
+import android.opengl.GLES20;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -395,7 +396,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
     @Override
     public boolean handleMessage(Message message) {
-        Log.d(TAG, "handleMessage(" + message+ ")");
+        //Log.d(TAG, "handleMessage(" + message+ ")");
         switch(message.what){
             case Messaging.SYSTEM_SHUTDOWN:
                 shutdown();

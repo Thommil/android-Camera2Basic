@@ -1,6 +1,7 @@
 package com.thommil.animalsgo.gl.libgl;
 
 import android.opengl.GLES20;
+import android.util.Log;
 
 public class GlCanvas {
 
@@ -32,12 +33,12 @@ public class GlCanvas {
                 int chunkIndex = 0;
                 for(final GlBuffer.Chunk chunk : data.chunks){
                     if (useAllAttributes) {
-                        GLES20.glVertexAttribPointer(chunk.handle, data.chunks[chunkIndex].components,
-                                data.datatype, false, data.stride, data.chunks[chunkIndex].offset);
+                        GLES20.glVertexAttribPointer(chunk.handle, chunk.components,
+                                data.datatype, false, data.stride, chunk.offset);
                     }
                     else{
-                        GLES20.glVertexAttribPointer(attributes[chunkIndex], data.chunks[chunkIndex].components,
-                                data.datatype, false, data.stride, data.chunks[chunkIndex].offset);
+                        GLES20.glVertexAttribPointer(attributes[chunkIndex], chunk.components,
+                                data.datatype, false, data.stride, chunk.offset);
                     }
                     chunkIndex++;
                 }
@@ -66,13 +67,13 @@ public class GlCanvas {
 
                 int chunkIndex = 0;
                 for(final GlBuffer.Chunk chunk : data.chunks){
-                    data.buffer.position(data.chunks[chunkIndex].position);
+                    data.buffer.position(chunk.position);
                     if (useAllAttributes) {
-                        GLES20.glVertexAttribPointer(chunk.handle, data.chunks[chunkIndex].components,
+                        GLES20.glVertexAttribPointer(chunk.handle, chunk.components,
                                 data.datatype, false, data.stride, data.buffer);
                     }
                     else{
-                        GLES20.glVertexAttribPointer(attributes[chunkIndex], data.chunks[chunkIndex].components,
+                        GLES20.glVertexAttribPointer(attributes[chunkIndex], chunk.components,
                                 data.datatype, false, data.stride, data.buffer);
                     }
                     chunkIndex++;

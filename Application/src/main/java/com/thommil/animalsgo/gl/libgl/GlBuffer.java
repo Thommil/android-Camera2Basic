@@ -5,11 +5,11 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
-import java.util.HashMap;
-import java.util.Map;
+
 
 
 import android.opengl.GLES20;
+import android.opengl.GLES30;
 
 import com.thommil.animalsgo.utils.ByteBufferPool;
 
@@ -140,11 +140,6 @@ public class GlBuffer<E>{
 	 */
 	public final Chunk<E>[] chunks;
 
-    /**
-     * Chunks MAP
-     */
-    private final Map<String,Chunk<E>> mChunksMap = new HashMap<>();
-
 	/**
 	 * The mode of the buffer MODE_*
 	 */
@@ -229,7 +224,6 @@ public class GlBuffer<E>{
 		int index=0;
 		//First pass -> size & position
 		for(Chunk<E> chunk : this.chunks){
-		    mChunksMap.put(chunk.name, chunk);
 			//BufferSize
 			this.size += chunk.size;
 			//Position
@@ -242,7 +236,7 @@ public class GlBuffer<E>{
 		//Stride
 		this.stride = currentPosition;
 
-		this.update();
+		update(false);
 	}
 	
 	/**
@@ -250,7 +244,12 @@ public class GlBuffer<E>{
 	 */
 	public GlBuffer bind(){
 		//android.util.//Log.d(TAG,"bind()");
-		GLES20.glBindBuffer(this.target, this.handle);
+        if(mVaoHandle != UNBIND_HANDLE){
+            GLES30.glBindVertexArray(mVaoHandle);
+        }
+        else {
+            GLES20.glBindBuffer(this.target, this.handle);
+        }
 		return this;
 	}
 	
@@ -259,78 +258,59 @@ public class GlBuffer<E>{
 	 */
 	public GlBuffer unbind(){
 		//android.util.//Log.d(TAG,"unbind()");
-		GLES20.glBindBuffer(this.target, UNBIND_HANDLE);
-		return this;
-	}
-	
-	/**
-	 * Update the whole buffer
-	 *
-	 * @param updateVBO If true, buffer will be updated on VBO
-	 */
-	public GlBuffer update(final boolean updateVBO){
-		this.update(this.indexCache, updateVBO);
-		return this;
-	}
-
-	/**
-	 * Update the whole buffer without commit
-	 *
-	 */
-	public GlBuffer update(){
-		this.update(this.indexCache, false);
-		return this;
-	}
-
-	/**
-	 * Update buffer with the indicated chunk index
-	 *
-	 * Data can be commited into VBO if queried.
-	 *
-	 * @param chunkToUpdate The index/id of the chunk to update
-	 */
-	public GlBuffer update(final int chunkToUpdate, final boolean updateVBO){
-		this.update(new int[]{chunkToUpdate}, updateVBO);
-		return this;
-	}
-
-	/**
-	 * Update buffer with the indicated chunk index without commit
-	 *
-	 * @param chunkToUpdate The index/id of the chunk to update
-	 */
-	public GlBuffer update(final int chunkToUpdate){
-		this.update(new int[]{chunkToUpdate}, false);
+        if(mVaoHandle != UNBIND_HANDLE){
+            GLES30.glBindVertexArray(UNBIND_HANDLE);
+        }
+        else {
+            GLES20.glBindBuffer(this.target, this.UNBIND_HANDLE);
+        }
 		return this;
 	}
 
     /**
-     * Update buffer with the list of chunks indicated without commit
-     *
-     * @param chunksToUpdate The list of chunks index to update
+     * Update local buffer with all chunks
      */
-    public GlBuffer update(int chunksToUpdate[]){
-        this.update(chunksToUpdate, false);
-        return this;
+    public GlBuffer update(){
+        return update(this.chunks, true);
     }
 
-	/**
+    /**
+     * Update buffer with all chunks
+     *
+     * Data can be commited into VBO if queried.
+     *
+     * @param commit Update VBO too is set to true
+     */
+    public GlBuffer update(boolean commit){
+        return update(this.chunks, commit);
+    }
+
+    /**
+     * Update local buffer with the list of chunks indicated.
+     *
+     * @param chunks The list of chunks index to update
+     */
+    public GlBuffer update(final Chunk<E>[] chunks){
+        return update(chunks, true);
+    }
+
+
+    /**
 	 * Update buffer with the list of chunks indicated.
 	 *
 	 * Data can be commited into VBO if queried.
 	 *
-	 * @param chunksToUpdate The list of chunks index to update
-	 * @param updateVBO Update VBO too is set to true
+	 * @param chunks The list of chunks index to update
+	 * @param commit Update VBO too is set to true
 	 */
-	public GlBuffer update(int chunksToUpdate[], boolean updateVBO){
+	public GlBuffer update(final Chunk<E>[] chunks, boolean commit){
 		//android.util.//Log.d(TAG,"update("+chunksToUpdate+", "+commit+")");
 		switch(this.datatype){
 			case TYPE_FLOAT :
 				if(this.buffer == null){
 					this.buffer = ByteBufferPool.getInstance().getDirectFloatBuffer(this.size / Float.BYTES);
 				}
-				for(int id : chunksToUpdate){
-					final Chunk<E> chunk = this.chunks[id];
+				for(final Chunk<E> chunk : chunks){
 					for(int elementIndex=0, compIndex=0; elementIndex < this.count ; elementIndex++, compIndex+=chunk.components){
 						this.buffer.position((chunk.position+ ((elementIndex*this.stride))/chunk.datasize));
 						((FloatBuffer)this.buffer).put(((float[])chunk.data),compIndex,chunk.components);
@@ -341,8 +321,7 @@ public class GlBuffer<E>{
 				if(this.buffer == null){
 					this.buffer = ByteBufferPool.getInstance().getDirectByteBuffer(this.size);
 				}
-				for(int id : chunksToUpdate){
-					final Chunk<E> chunk = this.chunks[id];
+                for(final Chunk<E> chunk : chunks){
 					for(int elementIndex=0, compIndex=0; elementIndex < this.count ; elementIndex++, compIndex+=chunk.components){
 						this.buffer.position((chunk.position+ ((elementIndex*this.stride))/chunk.datasize));
 						((ByteBuffer)this.buffer).put(((byte[])chunk.data),compIndex,chunk.components);
@@ -353,8 +332,7 @@ public class GlBuffer<E>{
 				if(this.buffer == null){
 					this.buffer = ByteBufferPool.getInstance().getDirectShortBuffer(this.size / Short.BYTES);
 				}
-				for(int id : chunksToUpdate){
-					final Chunk<E> chunk = this.chunks[id];
+                for(final Chunk<E> chunk : chunks){
 					for(int elementIndex=0, compIndex=0; elementIndex < this.count ; elementIndex++, compIndex+=chunk.components){
 						this.buffer.position((chunk.position+ ((elementIndex*this.stride))/chunk.datasize));
 						((ShortBuffer)this.buffer).put(((short[])chunk.data),compIndex,chunk.components);
@@ -365,8 +343,7 @@ public class GlBuffer<E>{
 				if(this.buffer == null){
 					this.buffer = ByteBufferPool.getInstance().getDirectIntBuffer(this.size / Integer.BYTES);
 				}
-				for(int id : chunksToUpdate){
-					final Chunk<E> chunk = this.chunks[id];
+                for(final Chunk<E> chunk : chunks){
 					for(int elementIndex=0, compIndex=0; elementIndex < this.count ; elementIndex++, compIndex+=chunk.components){
 						this.buffer.position((chunk.position+ ((elementIndex*this.stride))/chunk.datasize));
 						((IntBuffer)this.buffer).put(((int[])chunk.data),compIndex,chunk.components);
@@ -376,7 +353,7 @@ public class GlBuffer<E>{
 		}
 
 		//Update server if needed
-		if(updateVBO && this.handle != UNBIND_HANDLE){
+		if(commit && this.handle != UNBIND_HANDLE){
 			GLES20.glBindBuffer(this.target, this.handle);
 			this.buffer.rewind();
 			GLES20.glBufferSubData(this.target, 0, this.size, this.buffer);
@@ -385,6 +362,75 @@ public class GlBuffer<E>{
 
 		return this;
 	}
+
+    /**
+     * Update local and remote buffer with the chunk indicated.
+     *
+     * @param chunk The chunk to update
+     */
+    public GlBuffer update(final Chunk<E> chunk){
+        return update(chunk, true);
+    }
+
+    /**
+     * Update buffer with the chunk indicated.
+     *
+     * Data can be commited into VBO if queried.
+     *
+     * @param chunk The chunk to update
+     * @param commit Update VBO too is set to true
+     */
+    public GlBuffer update(final Chunk<E> chunk, boolean commit){
+        //android.util.//Log.d(TAG,"update("+chunk+", "+commit+")");
+        switch(this.datatype){
+            case TYPE_FLOAT :
+                if(this.buffer == null){
+                    this.buffer = ByteBufferPool.getInstance().getDirectFloatBuffer(this.size / Float.BYTES);
+                }
+                for(int elementIndex=0, compIndex=0; elementIndex < this.count ; elementIndex++, compIndex+=chunk.components){
+                    this.buffer.position((chunk.position+ ((elementIndex*this.stride))/chunk.datasize));
+                    ((FloatBuffer)this.buffer).put(((float[])chunk.data),compIndex,chunk.components);
+                }
+                break;
+            case TYPE_BYTE :
+                if(this.buffer == null){
+                    this.buffer = ByteBufferPool.getInstance().getDirectByteBuffer(this.size);
+                }
+                for(int elementIndex=0, compIndex=0; elementIndex < this.count ; elementIndex++, compIndex+=chunk.components){
+                    this.buffer.position((chunk.position+ ((elementIndex*this.stride))/chunk.datasize));
+                    ((ByteBuffer)this.buffer).put(((byte[])chunk.data),compIndex,chunk.components);
+                }
+                break;
+            case TYPE_SHORT :
+                if(this.buffer == null){
+                    this.buffer = ByteBufferPool.getInstance().getDirectShortBuffer(this.size / Short.BYTES);
+                }
+                for(int elementIndex=0, compIndex=0; elementIndex < this.count ; elementIndex++, compIndex+=chunk.components){
+                    this.buffer.position((chunk.position+ ((elementIndex*this.stride))/chunk.datasize));
+                    ((ShortBuffer)this.buffer).put(((short[])chunk.data),compIndex,chunk.components);
+                }
+                break;
+            case TYPE_INT :
+                if(this.buffer == null){
+                    this.buffer = ByteBufferPool.getInstance().getDirectIntBuffer(this.size / Integer.BYTES);
+                }
+                for(int elementIndex=0, compIndex=0; elementIndex < this.count ; elementIndex++, compIndex+=chunk.components){
+                    this.buffer.position((chunk.position+ ((elementIndex*this.stride))/chunk.datasize));
+                    ((IntBuffer)this.buffer).put(((int[])chunk.data),compIndex,chunk.components);
+                }
+                break;
+        }
+
+        //Update server if needed
+        if(commit && this.handle != UNBIND_HANDLE){
+            GLES20.glBindBuffer(this.target, this.handle);
+            this.buffer.rewind();
+            GLES20.glBufferSubData(this.target, 0, this.size, this.buffer);
+            GLES20.glBindBuffer(this.target, UNBIND_HANDLE);
+        }
+
+        return this;
+    }
 
 	/**
 	 * Create a VBO on GPU and bind buffer data to it
@@ -439,11 +485,27 @@ public class GlBuffer<E>{
 			mode = MODE_VBO;
 
             if(GlOperation.getVersion()[0] >= 3){
+                GLES30.glGenVertexArrays(1, handles, 0);
+                mVaoHandle = handles[0];
+                GlOperation.checkGlError(TAG, "glGenVertexArrays");
 
+                GLES30.glBindVertexArray(mVaoHandle);
+                GLES20.glBindBuffer(target, this.handle);
+
+                for(final Chunk chunk : this.chunks){
+                    GLES20.glEnableVertexAttribArray(chunk.handle);
+                    GLES20.glVertexAttribPointer(chunk.handle, chunk.components,
+                            datatype, false, stride, chunk.offset);
+                }
+                GlOperation.checkGlError(TAG, "glVertexAttribPointer");
+
+                GLES20.glBindBuffer(target, UNBIND_HANDLE);
+                GLES30.glBindVertexArray(UNBIND_HANDLE);
+
+                mode = MODE_VAO;
             }
-
-			//TODO VAO
 		}
+
 		return this;
 	}
 
@@ -452,12 +514,19 @@ public class GlBuffer<E>{
 	 */
 	public GlBuffer free(){
 		//android.util.//Log.d(TAG,"free()");
-        mChunksMap.clear();
+        final int[] handles = new int[1];
         if(this.handle != UNBIND_HANDLE){
-            final int[] handles = new int[]{this.handle};
+            handles[0] = this.handle;
             this.handle = UNBIND_HANDLE;
             GLES20.glDeleteBuffers(1, handles, 0);
             GlOperation.checkGlError(TAG, "glDeleteBuffers");
+        }
+
+        if(mVaoHandle != UNBIND_HANDLE){
+            handles[0] = mVaoHandle;
+            mVaoHandle = UNBIND_HANDLE;
+            GLES30.glDeleteVertexArrays(1, handles, 0);
+            GlOperation.checkGlError(TAG, "glDeleteVertexArrays");
         }
 
 		if(this.buffer != null){
@@ -494,14 +563,9 @@ public class GlBuffer<E>{
 
 
 		/**
-		 * Can be used to store associated attribute handle name
+		 * Can be used to store associated attribute handle
 		 */
-		public final String name;
-
-        /**
-         * Can be used to store associated attribute handle
-         */
-        public int handle;
+		public int handle;
 
 		/**
 		 * The data contained in this chunk (set by Application)
@@ -541,13 +605,11 @@ public class GlBuffer<E>{
 		/**
 		 * Default constructor
 		 *
-         * @param name       The chunk name (set to attribute value in GSGL)
 		 * @param data       The data elements in byte[], short[], int[], float[]
 		 * @param components The number of components per data entry (1, 2, 3 or 4)
 		 */
-		public Chunk(final String name, final T data, final int components) {
-			this.name = name;
-		    this.data = data;
+		public Chunk(final T data, final int components) {
+			this.data = data;
 			this.components = components;
 			this.offset = 0;
 			this.handle = UNBIND_HANDLE;

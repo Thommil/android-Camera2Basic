@@ -82,8 +82,8 @@ public class GlProgram {
 	 * @throws GLException
 	 */
 	public GlProgram(final InputStream vertexShaderInputStream, final InputStream fragmentShaderInputStream){
-		this.mAttributeHandles = new HashMap<String, Integer>();
-		this.mUniformHandles = new HashMap<String, Integer>();
+		this.mAttributeHandles = new HashMap<>();
+		this.mUniformHandles = new HashMap<>();
 		this.vertexShaderHandle = this.loadShader(GLES20.GL_VERTEX_SHADER, vertexShaderInputStream);
 		this.fragmentShaderHandle = this.loadShader(GLES20.GL_FRAGMENT_SHADER, fragmentShaderInputStream);
 		this.programHandle = this.createAndLinkProgram(vertexShaderHandle, fragmentShaderHandle);

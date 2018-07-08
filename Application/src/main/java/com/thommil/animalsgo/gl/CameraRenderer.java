@@ -259,7 +259,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
 
         mCameraPreviewFBO = new GlFrameBufferObject();
-        mCameraPreviewTexture.bind().configure().allocate();
+        mCameraPreviewTexture.bind().allocate().configure();
         mCameraPreviewFBO.attach(mCameraPreviewTexture, GlFrameBufferObject.Attachment.TYPE_COLOR);
         mCameraPreviewTexture.unbind();
         mCameraPreviewFBO.unbind();
@@ -374,8 +374,8 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
                 }
 
                 // UI draw
-                GlOperation.setViewport(0, 0, mSurfaceWidth, mSurfaceHeight);
-                mUIPlugin.draw(mViewport, mOrientation);
+                //GlOperation.setViewport(0, 0, mSurfaceWidth, mSurfaceHeight);
+                //mUIPlugin.draw(mViewport, mOrientation);
                 break;
         }
 

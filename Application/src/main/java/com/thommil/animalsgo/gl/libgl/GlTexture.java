@@ -285,7 +285,7 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
         GLES20.glTexParameteri(getTarget(), GLES20.GL_TEXTURE_MIN_FILTER, getMinificationFilter());
         GLES20.glTexParameteri(getTarget(), GLES20.GL_TEXTURE_MAG_FILTER, getMagnificationFilter());
 		GlOperation.checkGlError(TAG, "glTexParameteri");
-        if(getMinificationFilter() > MIN_FILTER_HIGH) {
+        if(getMinificationFilter() >= MIN_FILTER_MIPMAP_LOW) {
 			GLES20.glGenerateMipmap(getTarget());
 			GlOperation.checkGlError(TAG, "glGenerateMipmap");
 		}

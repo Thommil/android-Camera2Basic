@@ -15,7 +15,7 @@ public abstract class CameraPlugin extends Plugin{
     public static final int ZOOM_STATE_RESET = 0x04;
 
     protected final GlBuffer.Chunk<float[]> mCameraPreviewVertChunk =
-            new GlBuffer.Chunk<>(ATTRIBUTE_POSITION, new float[]{
+            new GlBuffer.Chunk<>(new float[]{
                     -1.0f,-1.0f,
                     -1.0f,1.0f,
                     1.0f,-1.0f,
@@ -23,7 +23,7 @@ public abstract class CameraPlugin extends Plugin{
             },2);
 
     protected final GlBuffer.Chunk<float[]> mCameraPreviewFragChunk =
-            new GlBuffer.Chunk<>(ATTRIBUTE_TEXTCOORD, new float[]{
+            new GlBuffer.Chunk<>(new float[]{
                     0.0f,0.0f,
                     0.0f,1.0f,
                     1.0f,0.0f,
@@ -82,7 +82,7 @@ public abstract class CameraPlugin extends Plugin{
         mCameraPreviewVertChunk.data[3] = mCameraPreviewVertChunk.data[4]
                 = mCameraPreviewVertChunk.data[6] = mCameraPreviewVertChunk.data[7] = mCurrentZoom;
 
-        mCameraPreviewBuffer.update(0);
+        mCameraPreviewBuffer.update(mCameraPreviewVertChunk, false);
     }
 
     @Override

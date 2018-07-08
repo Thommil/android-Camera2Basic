@@ -17,7 +17,7 @@ public class UIDefault extends UIPlugin {
     private static final String PROGRAM_ID = "ui_default";
 
     protected final GlBuffer.Chunk<float[]> mSquareImageVertChunk =
-            new GlBuffer.Chunk<>(ATTRIBUTE_POSITION, new float[]{
+            new GlBuffer.Chunk<>(new float[]{
                     -1.0f,-1.0f,
                     -1.0f,1.0f,
                     1.0f,-1.0f,
@@ -25,7 +25,7 @@ public class UIDefault extends UIPlugin {
             },2);
 
     protected final GlBuffer.Chunk<float[]> mSquareImageFragChunk =
-            new GlBuffer.Chunk<>(ATTRIBUTE_TEXTCOORD, new float[]{
+            new GlBuffer.Chunk<>(new float[]{
                     0.0f,0.0f,
                     0.0f,1.0f,
                     1.0f,0.0f,

@@ -16,7 +16,7 @@ public class PreviewDefault extends PreviewPlugin {
     private static final String PROGRAM_ID = "default";
 
     protected final GlBuffer.Chunk<float[]> mSquareImageVertChunk =
-            new GlBuffer.Chunk<>(ATTRIBUTE_POSITION, new float[]{
+            new GlBuffer.Chunk<>(new float[]{
                     -1.0f,-1.0f,
                     -1.0f,1.0f,
                     1.0f,-1.0f,
@@ -24,7 +24,7 @@ public class PreviewDefault extends PreviewPlugin {
             },2);
 
     protected final GlBuffer.Chunk<float[]> mSquareImageFragChunk =
-            new GlBuffer.Chunk<>(ATTRIBUTE_TEXTCOORD, new float[]{
+            new GlBuffer.Chunk<>(new float[]{
                     0.0f,0.0f,
                     0.0f,1.0f,
                     1.0f,0.0f,

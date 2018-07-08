@@ -5,6 +5,7 @@ import android.opengl.GLES20;
 import com.thommil.animalsgo.R;
 import com.thommil.animalsgo.gl.PreviewPlugin;
 import com.thommil.animalsgo.gl.libgl.GlBuffer;
+import com.thommil.animalsgo.gl.libgl.GlCanvas;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
 
 
@@ -16,7 +17,7 @@ public class PreviewToon extends PreviewPlugin {
     private static final String PROGRAM_ID = "toon";
 
     protected final GlBuffer.Chunk<float[]> mSquareImageVertChunk =
-            new GlBuffer.Chunk<>(new float[]{
+            new GlBuffer.Chunk<>(ATTRIBUTE_POSITION, new float[]{
                     -1.0f,-1.0f,
                     -1.0f,1.0f,
                     1.0f,-1.0f,
@@ -24,7 +25,7 @@ public class PreviewToon extends PreviewPlugin {
             },2);
 
     protected final GlBuffer.Chunk<float[]> mSquareImageFragChunk =
-            new GlBuffer.Chunk<>(new float[]{
+            new GlBuffer.Chunk<>(ATTRIBUTE_TEXTCOORD, new float[]{
                     0.0f,0.0f,
                     0.0f,1.0f,
                     1.0f,0.0f,
@@ -32,9 +33,6 @@ public class PreviewToon extends PreviewPlugin {
             },2);
 
     protected GlBuffer<float[]> mSquareImageBuffer;
-
-    private int mPositionAttributeHandle;
-    private int mTextureCoordinatesAttributeHandle;
 
     private int mTextureUniforHandle;
     private int mViewSizeUniformHandle;
@@ -64,8 +62,8 @@ public class PreviewToon extends PreviewPlugin {
         super.create();
 
         mProgram.use();
-        mPositionAttributeHandle = mProgram.getAttributeHandle(ATTRIBUTE_POSITION);
-        mTextureCoordinatesAttributeHandle = mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD);
+        mSquareImageVertChunk.handle = mProgram.getAttributeHandle(ATTRIBUTE_POSITION);
+        mSquareImageFragChunk.handle = mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD);
         mTextureUniforHandle = mProgram.getUniformHandle(UNIFORM_TEXTURE);
         mViewSizeUniformHandle = mProgram.getUniformHandle(UNIFORM_VIEW_SIZE);
 
@@ -74,21 +72,14 @@ public class PreviewToon extends PreviewPlugin {
 
     @Override
     public void draw(final GlIntRect viewport, final int orientation) {
-        mProgram.use().enableAttributes();
+        mProgram.use();
         mCameraTexture.bind();
 
-        mSquareImageBuffer.buffer.rewind();
-        GLES20.glVertexAttribPointer(mPositionAttributeHandle, mSquareImageBuffer.chunks[0].components,
-                mSquareImageBuffer.datatype, false, mSquareImageBuffer.stride, mSquareImageBuffer.buffer);
-        mSquareImageBuffer.buffer.position(mSquareImageBuffer.chunks[1].position);
-        GLES20.glVertexAttribPointer(mTextureCoordinatesAttributeHandle, mSquareImageBuffer.chunks[1].components,
-                mSquareImageBuffer.datatype, false, mSquareImageBuffer.stride, mSquareImageBuffer.buffer);
         GLES20.glUniform1i(mTextureUniforHandle, 0);
         GLES20.glUniform2f(mViewSizeUniformHandle, viewport.width(), viewport.height());
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, mSquareImageBuffer.count);
+        GlCanvas.drawArrays(mProgram, mSquareImageBuffer);
 
         mCameraTexture.unbind();
-        mProgram.disableAttributes();
     }
 
     @Override

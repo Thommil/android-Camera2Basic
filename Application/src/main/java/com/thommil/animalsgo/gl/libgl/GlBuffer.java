@@ -5,7 +5,8 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
-
+import java.util.HashMap;
+import java.util.Map;
 
 
 import android.opengl.GLES20;
@@ -68,7 +69,22 @@ public class GlBuffer<E>{
 	 */
 	@SuppressWarnings("unused")
 	private static final String TAG = "A_GO/GlBuffer";
-	
+
+	/**
+	 * Mode local
+	 */
+	public static final int MODE_LOCAL = 0x00;
+
+	/**
+	 * Mode VBO
+	 */
+	public static final int MODE_VBO = 0x01;
+
+	/**
+	 * Mode VAO
+	 */
+	public static final int MODE_VAO = 0x02;
+
 	/**
 	 * Alias for BYTE in OpenGL for inner data type
 	 */
@@ -124,6 +140,16 @@ public class GlBuffer<E>{
 	 */
 	public final Chunk<E>[] chunks;
 
+    /**
+     * Chunks MAP
+     */
+    private final Map<String,Chunk<E>> mChunksMap = new HashMap<>();
+
+	/**
+	 * The mode of the buffer MODE_*
+	 */
+	public int mode = MODE_LOCAL;
+
 	/**
 	 * The type of data in buffer (should be Chunk.TYPE_BYTE, Chunk.TYPE_SHORT, Chunk.TYPE_INT, Chunk.TYPE_FLOAT)
 	 */
@@ -167,7 +193,12 @@ public class GlBuffer<E>{
 	/**
 	 * Handle on server buffer if TYPE_SERVER_STATIC_DRAW or TYPE_SERVER_DYNAMIC_DRAW
 	 */
-	public int handle = GLES20.GL_FALSE;
+	public int handle = UNBIND_HANDLE;
+
+    /**
+     * Handle on server VAO
+     */
+    private int mVaoHandle = UNBIND_HANDLE;
 	
 	/**
 	 * Cache the list of chunk ids
@@ -198,6 +229,7 @@ public class GlBuffer<E>{
 		int index=0;
 		//First pass -> size & position
 		for(Chunk<E> chunk : this.chunks){
+		    mChunksMap.put(chunk.name, chunk);
 			//BufferSize
 			this.size += chunk.size;
 			//Position
@@ -272,6 +304,16 @@ public class GlBuffer<E>{
 		return this;
 	}
 
+    /**
+     * Update buffer with the list of chunks indicated without commit
+     *
+     * @param chunksToUpdate The list of chunks index to update
+     */
+    public GlBuffer update(int chunksToUpdate[]){
+        this.update(chunksToUpdate, false);
+        return this;
+    }
+
 	/**
 	 * Update buffer with the list of chunks indicated.
 	 *
@@ -345,16 +387,6 @@ public class GlBuffer<E>{
 	}
 
 	/**
-	 * Update buffer with the list of chunks indicated without commit
-	 *
-	 * @param chunksToUpdate The list of chunks index to update
-	 */
-	public GlBuffer update(int chunksToUpdate[]){
-		this.update(chunksToUpdate, false);
-		return this;
-	}
-
-	/**
 	 * Create a VBO on GPU and bind buffer data to it
 	 * 
 	 * @param usage Should be USAGE_STATIC_DRAW, USAGE_DYNAMIC_DRAW or USAGE_STREAM_DRAW
@@ -403,6 +435,14 @@ public class GlBuffer<E>{
 				}
 				this.buffer = null;
 			}
+
+			mode = MODE_VBO;
+
+            if(GlOperation.getVersion()[0] >= 3){
+
+            }
+
+			//TODO VAO
 		}
 		return this;
 	}
@@ -412,6 +452,7 @@ public class GlBuffer<E>{
 	 */
 	public GlBuffer free(){
 		//android.util.//Log.d(TAG,"free()");
+        mChunksMap.clear();
         if(this.handle != UNBIND_HANDLE){
             final int[] handles = new int[]{this.handle};
             this.handle = UNBIND_HANDLE;
@@ -451,6 +492,17 @@ public class GlBuffer<E>{
 	 */
 	public static class Chunk<T> {
 
+
+		/**
+		 * Can be used to store associated attribute handle name
+		 */
+		public final String name;
+
+        /**
+         * Can be used to store associated attribute handle
+         */
+        public int handle;
+
 		/**
 		 * The data contained in this chunk (set by Application)
 		 */
@@ -489,16 +541,20 @@ public class GlBuffer<E>{
 		/**
 		 * Default constructor
 		 *
+         * @param name       The chunk name (set to attribute value in GSGL)
 		 * @param data       The data elements in byte[], short[], int[], float[]
 		 * @param components The number of components per data entry (1, 2, 3 or 4)
 		 */
-		public Chunk(final T data, final int components) {
-			this.data = data;
+		public Chunk(final String name, final T data, final int components) {
+			this.name = name;
+		    this.data = data;
 			this.components = components;
 			this.offset = 0;
+			this.handle = UNBIND_HANDLE;
 
 			//Byte data
 			if (data instanceof byte[]) {
+
 				this.datatype = GlBuffer.TYPE_BYTE;
 				this.datasize = Byte.BYTES;
 				this.size = this.datasize * ((byte[]) this.data).length;

@@ -29,6 +29,7 @@ public abstract class Plugin {
 
     public static final String ATTRIBUTE_POSITION = "positionAttr";
     public static final String ATTRIBUTE_TEXTCOORD = "textCoordAttr";
+    public static final String ATTRIBUTE_COLOR = "colorAttr";
 
     public static final String UNIFORM_TEXTURE = "texture1i";
     public static final String UNIFORM_MVP_MATRIX = "mvpMatrix4fv";

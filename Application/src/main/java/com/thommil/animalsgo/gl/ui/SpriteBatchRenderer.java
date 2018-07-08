@@ -141,6 +141,40 @@ public class SpriteBatchRenderer{
         mesh.setIndices(indices);
 
         return mesh;
+
+     public void render (ShaderProgram shader, int primitiveType, int offset, int count, boolean autoBind) {
+     if (count == 0) return;
+
+     if (autoBind) bind(shader);
+
+     if (isVertexArray) {
+     if (indices.getNumIndices() > 0) {
+     ShortBuffer buffer = indices.getBuffer();
+     int oldPosition = buffer.position();
+     int oldLimit = buffer.limit();
+     buffer.position(offset);
+     buffer.limit(offset + count);
+     Gdx.gl20.glDrawElements(primitiveType, count, GL20.GL_UNSIGNED_SHORT, buffer);
+     buffer.position(oldPosition);
+     buffer.limit(oldLimit);
+     } else {
+     Gdx.gl20.glDrawArrays(primitiveType, offset, count);
+     }
+     } else {
+     if (indices.getNumIndices() > 0) {
+     if (count + offset > indices.getNumMaxIndices()) {
+     throw new GdxRuntimeException("Mesh attempting to access memory outside of the index buffer (count: "
+     + count + ", offset: " + offset + ", max: " + indices.getNumMaxIndices() + ")");
+     }
+
+     Gdx.gl20.glDrawElements(primitiveType, count, GL20.GL_UNSIGNED_SHORT, offset * 2);
+     } else {
+     Gdx.gl20.glDrawArrays(primitiveType, offset, count);
+     }
+     }
+
+     if (autoBind) unbind(shader);
+     }
     }*/
 
     /**
@@ -158,40 +192,4 @@ public class SpriteBatchRenderer{
         this.mVerticesSize = Sprite.VERTEX_SIZE;
         return new float[size * Sprite.SPRITE_SIZE];
     }
-
-    /**
-     * Subclasses should override this method to use their specific shaders
-     *
-    protected ShaderProgram createShader () {
-        final String vertexShader = "attribute vec4 " + ShaderProgram.POSITION_ATTRIBUTE + ";\n" //
-                + "attribute vec2 " + ShaderProgram.TEXCOORD_ATTRIBUTE + "0;\n" //
-                + "attribute vec4 " + ShaderProgram.COLOR_ATTRIBUTE + ";\n" //
-                + "uniform mat4 u_projectionViewMatrix;\n" //
-                + "varying vec4 v_color;\n" //
-                + "varying vec2 v_texCoords;\n" //
-                + "\n" //
-                + "void main()\n" //
-                + "{\n" //
-                + "   v_color = " + ShaderProgram.COLOR_ATTRIBUTE + ";\n" //
-                + "   v_texCoords = " + ShaderProgram.TEXCOORD_ATTRIBUTE + "0;\n" //
-                + "   gl_Position =  u_projectionViewMatrix * " + ShaderProgram.POSITION_ATTRIBUTE + ";\n" //
-                + "}\n";
-        final String fragmentShader = "#ifdef GL_ES\n" //
-                + "#define LOWP lowp\n" //
-                + "precision mediump float;\n" //
-                + "#else\n" //
-                + "#define LOWP \n" //
-                + "#endif\n" //
-                + "varying vec2 v_texCoords;\n" //
-                + "varying vec4 v_color;\n" //
-                + "uniform sampler2D "+TextureSet.UNIFORM_TEXTURE_0+";\n" //
-                + "void main()\n"//
-                + "{\n" //
-                + "  gl_FragColor = v_color * texture2D("+TextureSet.UNIFORM_TEXTURE_0+", v_texCoords);\n" //
-                + "}";
-
-        final ShaderProgram mProgram = new ShaderProgram(vertexShader, fragmentShader);
-        if (!mProgram.isCompiled()) throw new IllegalArgumentException("Error compiling mProgram: " + mProgram.getLog());
-        return mProgram;
-    }*/
 }

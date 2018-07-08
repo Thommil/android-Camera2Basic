@@ -5,7 +5,10 @@ import android.opengl.GLES20;
 
 import com.thommil.animalsgo.R;
 import com.thommil.animalsgo.gl.CameraPlugin;
+import com.thommil.animalsgo.gl.libgl.GlBuffer;
+import com.thommil.animalsgo.gl.libgl.GlCanvas;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
+import com.thommil.animalsgo.gl.libgl.GlOperation;
 import com.thommil.animalsgo.gl.libgl.GlTexture;
 
 public class CameraDefault extends CameraPlugin {
@@ -14,9 +17,6 @@ public class CameraDefault extends CameraPlugin {
 
     private static final String ID = "camera/default";
     private static final String PROGRAM_ID = "camera_default";
-
-    private int mPositionAttributeHandle;
-    private int mTextureCoordinatesAttributeHandle;
 
     private int mTextureUniforHandle;
     private int mMvpMatrixNuniformHandle;
@@ -53,8 +53,8 @@ public class CameraDefault extends CameraPlugin {
         super.create();
 
         mProgram.use();
-        mPositionAttributeHandle = mProgram.getAttributeHandle(ATTRIBUTE_POSITION);
-        mTextureCoordinatesAttributeHandle = mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD);
+        mCameraPreviewVertChunk.handle = mProgram.getAttributeHandle(ATTRIBUTE_POSITION);
+        mCameraPreviewFragChunk.handle = mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD);
         mTextureUniforHandle = mProgram.getUniformHandle(UNIFORM_TEXTURE);
         mMvpMatrixNuniformHandle = mProgram.getUniformHandle(UNIFORM_MVP_MATRIX);
 
@@ -92,23 +92,14 @@ public class CameraDefault extends CameraPlugin {
     public void draw(final GlIntRect viewport, final int orientation) {
         super.draw(viewport, orientation);
 
-        //Camera mProgram -> FBO
-        mProgram.use().enableAttributes();
+        mProgram.use();
         mCameraTexture.bind();
-
-        mCameraPreviewBuffer.buffer.rewind();
-        GLES20.glVertexAttribPointer(mPositionAttributeHandle, mCameraPreviewBuffer.chunks[0].components,
-                mCameraPreviewBuffer.datatype, false, mCameraPreviewBuffer.stride, mCameraPreviewBuffer.buffer);
-        mCameraPreviewBuffer.buffer.position(mCameraPreviewBuffer.chunks[1].position);
-        GLES20.glVertexAttribPointer(mTextureCoordinatesAttributeHandle, mCameraPreviewBuffer.chunks[1].components,
-                mCameraPreviewBuffer.datatype, false, mCameraPreviewBuffer.stride, mCameraPreviewBuffer.buffer);
 
         GLES20.glUniform1i(mTextureUniforHandle, 0);
         GLES20.glUniformMatrix4fv(mMvpMatrixNuniformHandle, 1, false, mCameraTransformMatrix, 0);
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, mCameraPreviewBuffer.count);
+        GlCanvas.drawArrays(mProgram, mCameraPreviewBuffer);
 
         mCameraTexture.unbind();
-        mProgram.disableAttributes();
     }
 
     @Override

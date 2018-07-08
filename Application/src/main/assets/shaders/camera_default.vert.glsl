@@ -1,5 +1,5 @@
 //position
-attribute vec4 positionAttr;
+attribute vec2 positionAttr;
 
 //camera transform and texture
 uniform mat4 mvpMatrix4fv;

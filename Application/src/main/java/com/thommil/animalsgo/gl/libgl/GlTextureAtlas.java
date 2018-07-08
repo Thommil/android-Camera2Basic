@@ -41,6 +41,14 @@ public class GlTextureAtlas {
         }
     }
 
+    public GlTexture getTexture() {
+        return mTexture;
+    }
+
+    public Sprite getSprite(final String name){
+        return mSpriteMap.get(name);
+    }
+
     public void free(){
         if(mTexture != null){
             mTexture.free();
@@ -71,8 +79,7 @@ public class GlTextureAtlas {
                         final float pivotX = Float.parseFloat(parser.getAttributeValue(null, "pivotX"));
                         final float pivotY = Float.parseFloat(parser.getAttributeValue(null, "pivotY"));
                         final Sprite sprite = new Sprite(name.hashCode(), mTexture, x, y, width, height);
-                        //TODO find a way to support pivot
-                        //sprite.setOrigin(pivotX, pivotY);
+                        sprite.setOrigin(width * pivotX, height * pivotY);
                         mSpriteMap.put(name, sprite);
                     }
                 }
@@ -118,6 +125,7 @@ public class GlTextureAtlas {
         public ByteBuffer getBytes() {
             final ByteBuffer imageBuffer = ByteBufferPool.getInstance().getDirectByteBuffer(mImage.getByteCount());
             mImage.copyPixelsToBuffer(imageBuffer);
+            mImage.recycle();
             return imageBuffer;
         }
 

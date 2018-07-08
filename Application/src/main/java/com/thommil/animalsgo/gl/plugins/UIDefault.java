@@ -14,10 +14,10 @@ public class UIDefault extends UIPlugin {
     private static final String TAG = "A_GO/Plugin/UIDefault";
 
     private static final String ID = "ui/default";
-    private static final String PROGRAM_ID = "tmp";
+    private static final String PROGRAM_ID = "ui_default";
 
     protected final GlBuffer.Chunk<float[]> mSquareImageVertChunk =
-            new GlBuffer.Chunk<>(new float[]{
+            new GlBuffer.Chunk<>(ATTRIBUTE_POSITION, new float[]{
                     -1.0f,-1.0f,
                     -1.0f,1.0f,
                     1.0f,-1.0f,
@@ -25,7 +25,7 @@ public class UIDefault extends UIPlugin {
             },2);
 
     protected final GlBuffer.Chunk<float[]> mSquareImageFragChunk =
-            new GlBuffer.Chunk<>(new float[]{
+            new GlBuffer.Chunk<>(ATTRIBUTE_TEXTCOORD, new float[]{
                     0.0f,0.0f,
                     0.0f,1.0f,
                     1.0f,0.0f,
@@ -36,6 +36,7 @@ public class UIDefault extends UIPlugin {
 
     private int mPositionAttributeHandle;
     private int mTextureCoordinatesAttributeHandle;
+    private int mColorAttributeHandle;
 
     private int mTextureUniforHandle;
 
@@ -72,8 +73,9 @@ public class UIDefault extends UIPlugin {
 
         mProgram.use();
         mPositionAttributeHandle = mProgram.getAttributeHandle(ATTRIBUTE_POSITION);
-        //mTextureCoordinatesAttributeHandle = mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD);
-        //mTextureUniforHandle = mProgram.getUniformHandle(UNIFORM_TEXTURE);
+        mTextureCoordinatesAttributeHandle = mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD);
+        mColorAttributeHandle= mProgram.getAttributeHandle(ATTRIBUTE_COLOR);
+        mTextureUniforHandle = mProgram.getUniformHandle(UNIFORM_TEXTURE);
 
         mSquareImageBuffer = new GlBuffer<>(new GlBuffer.Chunk[]{mSquareImageVertChunk, mSquareImageFragChunk});
     }
@@ -82,20 +84,21 @@ public class UIDefault extends UIPlugin {
     public void draw(final GlIntRect viewport, final int orientation) {
         GlOperation.setTestState(GlOperation.TEST_BLEND, true);
 
-        mProgram.use().enableAttributes();
-        //mCameraTexture.bind();
+        /*mProgram.use().enableAttributes();
+        mTextureAtlas.getTexture().bind();
 
         mSquareImageBuffer.buffer.rewind();
         GLES20.glVertexAttribPointer(mPositionAttributeHandle, mSquareImageBuffer.chunks[0].components,
                 mSquareImageBuffer.datatype, false, mSquareImageBuffer.stride, mSquareImageBuffer.buffer);
-        //mSquareImageBuffer.buffer.position(mSquareImageBuffer.chunks[1].position);
+        mSquareImageBuffer.buffer.position(mSquareImageBuffer.chunks[1].position);
         //GLES20.glVertexAttribPointer(mTextureCoordinatesAttributeHandle, mSquareImageBuffer.chunks[1].components,
         //        mSquareImageBuffer.datatype, false, mSquareImageBuffer.stride, mSquareImageBuffer.buffer);
-        //GLES20.glUniform1i(mTextureUniforHandle, 0);
+        //GLES20.glUniformMatrix4fv(mMvpMatrixNuniformHandle, 1, false, mCameraTransformMatrix, 0);
+        GLES20.glUniform1i(mTextureUniforHandle, 0);
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, mSquareImageBuffer.count);
 
-        //mCameraTexture.unbind();
-        mProgram.disableAttributes();
+        mTextureAtlas.getTexture().unbind();
+        mProgram.disableAttributes();*/
     }
 
     @Override

@@ -5,6 +5,9 @@ import android.opengl.GLException;
 import android.opengl.GLUtils;
 import android.util.Log;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * Tools class used to operate on OpenGL pipeline :
  * <ul>
@@ -287,7 +290,12 @@ public final class GlOperation {
 	 * Culling, specify the face to be culled for FRONT and BACK faces
 	 */
 	public static final int CULLING_CULL_FACE_FRONT_AND_BACK = GLES20.GL_FRONT_AND_BACK;
-	
+
+    /**
+     * Version regexp
+     */
+    private static final Pattern VERSION_PATTERN = Pattern.compile("[^\\d]*(\\d){1,2}\\.(\\d){1,2}.*");
+
 	/**
 	 * Enable or disable several preset OpenGLES tests
 	 * 
@@ -507,6 +515,26 @@ public final class GlOperation {
         GLES20.glGetFloatv(key, result, 0);
         return result;
     }
+
+    public static int[] getVersion(){
+        final int[]version = new int[2];
+        final String strVersion = GLES20.glGetString(GLES20.GL_SHADING_LANGUAGE_VERSION);
+        final Matcher versionMatcher = VERSION_PATTERN.matcher(strVersion);
+        try {
+            if(versionMatcher.matches()) {
+                version[0] = Integer.parseInt(versionMatcher.group(1));
+                version[1] = Integer.parseInt(versionMatcher.group(2));
+            }
+            else{
+                version[0] = 2;
+                version[1] = 0;
+            }
+        }catch (NumberFormatException nbe){
+            version[0] = 2;
+            version[1] = 0;
+        }
+    	return version;
+	}
 
     public static void setViewport(final int left, final int bottom, final int width, final int height){
     	GLES20.glViewport(left, bottom, width, height);

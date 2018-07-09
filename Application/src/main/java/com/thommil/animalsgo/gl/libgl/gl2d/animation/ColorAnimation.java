@@ -1,7 +1,7 @@
-package com.thommil.animalsgo.gl.ui.animation;
+package com.thommil.animalsgo.gl.libgl.gl2d.animation;
 
-import com.thommil.animalsgo.gl.ui.libgdx.Color;
-import com.thommil.animalsgo.gl.ui.libgdx.Interpolation;
+import com.thommil.animalsgo.gl.libgl.GlColor;
+import com.thommil.animalsgo.gl.libgl.gl2d.Interpolation;
 
 /**
  * Animation implementation based on interpolated vector translation.
@@ -10,11 +10,11 @@ import com.thommil.animalsgo.gl.ui.libgdx.Interpolation;
  *
  * @author thommil on 4/19/16.
  */
-public class ColorAnimation extends Animation<Color> {
+public class ColorAnimation extends Animation<GlColor> {
 
     protected int iteration = 0;
 
-    private Color tmpKeyFrame;
+    private GlColor tmpKeyFrame;
 
     protected int lastIteration=0;
 
@@ -24,7 +24,7 @@ public class ColorAnimation extends Animation<Color> {
      * @param frameDuration the time between frames in seconds.
      * @param keyFrames     the objects representing the frames.
      */
-    public ColorAnimation(float frameDuration, Color... keyFrames) {
+    public ColorAnimation(float frameDuration, GlColor... keyFrames) {
         super(frameDuration, keyFrames);
     }
 
@@ -35,7 +35,7 @@ public class ColorAnimation extends Animation<Color> {
      * @param playMode      The animation playmode
      * @param keyFrames     the objects representing the frames.
      */
-    public ColorAnimation(float frameDuration, PlayMode playMode, Color... keyFrames) {
+    public ColorAnimation(float frameDuration, PlayMode playMode, GlColor... keyFrames) {
         super(frameDuration, playMode, keyFrames);
     }
 
@@ -46,7 +46,7 @@ public class ColorAnimation extends Animation<Color> {
      * @param interpolator  The interpolator to use
      * @param keyFrames     the objects representing the frames.
      */
-    public ColorAnimation(float frameDuration, Interpolation interpolator, Color... keyFrames) {
+    public ColorAnimation(float frameDuration, Interpolation interpolator, GlColor... keyFrames) {
         super(frameDuration, interpolator, keyFrames);
     }
 
@@ -58,7 +58,7 @@ public class ColorAnimation extends Animation<Color> {
      * @param interpolator  The interpolator to use
      * @param keyFrames     the objects representing the frames.
      */
-    public ColorAnimation(float frameDuration, PlayMode playMode, Interpolation interpolator, Color... keyFrames) {
+    public ColorAnimation(float frameDuration, PlayMode playMode, Interpolation interpolator, GlColor... keyFrames) {
         super(frameDuration, playMode, interpolator, keyFrames);
     }
 
@@ -67,7 +67,7 @@ public class ColorAnimation extends Animation<Color> {
      */
     @Override
     public void initialize() {
-        this.tmpKeyFrame = new Color();
+        this.tmpKeyFrame = new GlColor();
     }
 
     /**
@@ -85,7 +85,7 @@ public class ColorAnimation extends Animation<Color> {
      * @return the object state at the given time
      */
     @Override
-    public Color getKeyFrame(float stateTime) {
+    public GlColor getKeyFrame(float stateTime) {
         this.iteration = (int) (stateTime / this.animationDuration);
         final float interpolatedStateTime = this.interpolator.apply(0, this.animationDuration, (stateTime % this.animationDuration) / this.animationDuration);
 

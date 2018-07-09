@@ -11,8 +11,6 @@ import java.nio.ShortBuffer;
 import android.opengl.GLES20;
 import android.opengl.GLES30;
 
-import com.thommil.animalsgo.utils.ByteBufferPool;
-
 /**
  * Buffer abstraction class :
  * 		<ul>

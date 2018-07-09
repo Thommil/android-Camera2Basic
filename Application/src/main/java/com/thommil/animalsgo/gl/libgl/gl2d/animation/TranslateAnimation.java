@@ -1,7 +1,7 @@
-package com.thommil.animalsgo.gl.ui.animation;
+package com.thommil.animalsgo.gl.libgl.gl2d.animation;
 
-import com.thommil.animalsgo.gl.ui.libgdx.Interpolation;
-import com.thommil.animalsgo.gl.ui.libgdx.Vector2;
+import com.thommil.animalsgo.gl.libgl.gl2d.Interpolation;
+import com.thommil.animalsgo.gl.libgl.gl2d.Vector2;
 
 /**
  * Animation implementation based on interpolated vector translation

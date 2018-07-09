@@ -14,13 +14,15 @@
  * limitations under the License.
  ******************************************************************************/
 
-package com.thommil.animalsgo.gl.ui.libgdx;
+package com.thommil.animalsgo.gl.libgl.gl2d;
+
+import com.thommil.animalsgo.utils.MathUtils;
 
 import java.io.Serializable;
 
 /** Encapsulates a 2D vector. Allows chaining methods by returning a reference to itself
  * @author badlogicgames@gmail.com */
-public class Vector2 implements Serializable, Vector<Vector2> {
+public class Vector2 implements Serializable{
 	private static final long serialVersionUID = 913902788239530931L;
 
 	public final static Vector2 X = new Vector2(1, 0);
@@ -50,7 +52,6 @@ public class Vector2 implements Serializable, Vector<Vector2> {
 		set(v);
 	}
 
-	@Override
 	public Vector2 cpy () {
 		return new Vector2(this);
 	}
@@ -59,7 +60,6 @@ public class Vector2 implements Serializable, Vector<Vector2> {
 		return (float)Math.sqrt(x * x + y * y);
 	}
 
-	@Override
 	public float len () {
 		return (float)Math.sqrt(x * x + y * y);
 	}
@@ -68,12 +68,10 @@ public class Vector2 implements Serializable, Vector<Vector2> {
 		return x * x + y * y;
 	}
 
-	@Override
 	public float len2 () {
 		return x * x + y * y;
 	}
 
-	@Override
 	public Vector2 set (Vector2 v) {
 		x = v.x;
 		y = v.y;
@@ -90,7 +88,6 @@ public class Vector2 implements Serializable, Vector<Vector2> {
 		return this;
 	}
 
-	@Override
 	public Vector2 sub (Vector2 v) {
 		x -= v.x;
 		y -= v.y;
@@ -107,7 +104,6 @@ public class Vector2 implements Serializable, Vector<Vector2> {
 		return this;
 	}
 
-	@Override
 	public Vector2 nor () {
 		float len = len();
 		if (len != 0) {
@@ -117,7 +113,6 @@ public class Vector2 implements Serializable, Vector<Vector2> {
 		return this;
 	}
 
-	@Override
 	public Vector2 add (Vector2 v) {
 		x += v.x;
 		y += v.y;
@@ -138,7 +133,6 @@ public class Vector2 implements Serializable, Vector<Vector2> {
 		return x1 * x2 + y1 * y2;
 	}
 
-	@Override
 	public float dot (Vector2 v) {
 		return x * v.x + y * v.y;
 	}
@@ -147,7 +141,6 @@ public class Vector2 implements Serializable, Vector<Vector2> {
 		return x * ox + y * oy;
 	}
 
-	@Override
 	public Vector2 scl (float scalar) {
 		x *= scalar;
 		y *= scalar;
@@ -162,21 +155,18 @@ public class Vector2 implements Serializable, Vector<Vector2> {
 		return this;
 	}
 
-	@Override
 	public Vector2 scl (Vector2 v) {
 		this.x *= v.x;
 		this.y *= v.y;
 		return this;
 	}
 
-	@Override
 	public Vector2 mulAdd (Vector2 vec, float scalar) {
 		this.x += vec.x * scalar;
 		this.y += vec.y * scalar;
 		return this;
 	}
 
-	@Override
 	public Vector2 mulAdd (Vector2 vec, Vector2 mulVec) {
 		this.x += vec.x * mulVec.x;
 		this.y += vec.y * mulVec.y;
@@ -189,7 +179,6 @@ public class Vector2 implements Serializable, Vector<Vector2> {
 		return (float)Math.sqrt(x_d * x_d + y_d * y_d);
 	}
 
-	@Override
 	public float dst (Vector2 v) {
 		final float x_d = v.x - x;
 		final float y_d = v.y - y;
@@ -211,7 +200,6 @@ public class Vector2 implements Serializable, Vector<Vector2> {
 		return x_d * x_d + y_d * y_d;
 	}
 
-	@Override
 	public float dst2 (Vector2 v) {
 		final float x_d = v.x - x;
 		final float y_d = v.y - y;
@@ -227,12 +215,10 @@ public class Vector2 implements Serializable, Vector<Vector2> {
 		return x_d * x_d + y_d * y_d;
 	}
 
-	@Override
 	public Vector2 limit (float limit) {
 		return limit2(limit * limit);
 	}
 
-	@Override
 	public Vector2 limit2 (float limit2) {
 		float len2 = len2();
 		if (len2 > limit2) {
@@ -241,7 +227,6 @@ public class Vector2 implements Serializable, Vector<Vector2> {
 		return this;
 	}
 
-	@Override
 	public Vector2 clamp (float min, float max) {
 		final float len2 = len2();
 		if (len2 == 0f) return this;
@@ -252,12 +237,10 @@ public class Vector2 implements Serializable, Vector<Vector2> {
 		return this;
 	}
 
-	@Override
 	public Vector2 setLength (float len) {
 		return setLength2(len * len);
 	}
 
-	@Override
 	public Vector2 setLength2 (float len2) {
 		float oldLen2 = len2();
 		return (oldLen2 == 0 || oldLen2 == len2) ? this : scl((float)Math.sqrt(len2 / oldLen2));
@@ -285,17 +268,6 @@ public class Vector2 implements Serializable, Vector<Vector2> {
 			}
 		}
 		throw new RuntimeException("Malformed Vector2: " + v);
-	}
-
-	/** Left-multiplies this vector by the given matrix
-	 * @param mat the matrix
-	 * @return this vector */
-	public Vector2 mul (Matrix3 mat) {
-		float x = this.x * mat.val[0] + this.y * mat.val[3] + mat.val[6];
-		float y = this.x * mat.val[1] + this.y * mat.val[4] + mat.val[7];
-		this.x = x;
-		this.y = y;
-		return this;
 	}
 
 	/** Calculates the 2D cross product between this and the given vector.
@@ -402,7 +374,6 @@ public class Vector2 implements Serializable, Vector<Vector2> {
 		return this;
 	}
 
-	@Override
 	public Vector2 lerp (Vector2 target, float alpha) {
 		final float invAlpha = 1.0f - alpha;
 		this.x = (x * invAlpha) + (target.x * alpha);
@@ -410,38 +381,33 @@ public class Vector2 implements Serializable, Vector<Vector2> {
 		return this;
 	}
 
-	@Override
 	public Vector2 interpolate (Vector2 target, float alpha, Interpolation interpolation) {
 		return lerp(target, interpolation.apply(alpha));
 	}
 
-	@Override
 	public Vector2 setToRandomDirection () {
 		float theta = MathUtils.random(0f, MathUtils.PI2);
 		return this.set(MathUtils.cos(theta), MathUtils.sin(theta));
 	}
 
-	@Override
 	public int hashCode () {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + NumberUtils.floatToIntBits(x);
-		result = prime * result + NumberUtils.floatToIntBits(y);
+		result = prime * result + Float.floatToIntBits(x);
+		result = prime * result + Float.floatToIntBits(y);
 		return result;
 	}
 
-	@Override
 	public boolean equals (Object obj) {
 		if (this == obj) return true;
 		if (obj == null) return false;
 		if (getClass() != obj.getClass()) return false;
 		Vector2 other = (Vector2)obj;
-		if (NumberUtils.floatToIntBits(x) != NumberUtils.floatToIntBits(other.x)) return false;
-		if (NumberUtils.floatToIntBits(y) != NumberUtils.floatToIntBits(other.y)) return false;
+		if (Float.floatToIntBits(x) != Float.floatToIntBits(other.x)) return false;
+		if (Float.floatToIntBits(y) != Float.floatToIntBits(other.y)) return false;
 		return true;
 	}
 
-	@Override
 	public boolean epsilonEquals (Vector2 other, float epsilon) {
 		if (other == null) return false;
 		if (Math.abs(other.x - x) > epsilon) return false;
@@ -472,77 +438,62 @@ public class Vector2 implements Serializable, Vector<Vector2> {
 		return epsilonEquals(x, y, MathUtils.FLOAT_ROUNDING_ERROR);
 	}
 
-	@Override
 	public boolean isUnit () {
 		return isUnit(0.000000001f);
 	}
 
-	@Override
 	public boolean isUnit (final float margin) {
 		return Math.abs(len2() - 1f) < margin;
 	}
 
-	@Override
 	public boolean isZero () {
 		return x == 0 && y == 0;
 	}
 
-	@Override
 	public boolean isZero (final float margin) {
 		return len2() < margin;
 	}
 
-	@Override
 	public boolean isOnLine (Vector2 other) {
 		return MathUtils.isZero(x * other.y - y * other.x);
 	}
 
-	@Override
 	public boolean isOnLine (Vector2 other, float epsilon) {
 		return MathUtils.isZero(x * other.y - y * other.x, epsilon);
 	}
 
-	@Override
 	public boolean isCollinear (Vector2 other, float epsilon) {
 		return isOnLine(other, epsilon) && dot(other) > 0f;
 	}
 
-	@Override
 	public boolean isCollinear (Vector2 other) {
 		return isOnLine(other) && dot(other) > 0f;
 	}
 
-	@Override
 	public boolean isCollinearOpposite (Vector2 other, float epsilon) {
 		return isOnLine(other, epsilon) && dot(other) < 0f;
 	}
 
-	@Override
 	public boolean isCollinearOpposite (Vector2 other) {
 		return isOnLine(other) && dot(other) < 0f;
 	}
 
-	@Override
 	public boolean isPerpendicular (Vector2 vector) {
 		return MathUtils.isZero(dot(vector));
 	}
 
-	@Override
 	public boolean isPerpendicular (Vector2 vector, float epsilon) {
 		return MathUtils.isZero(dot(vector), epsilon);
 	}
 
-	@Override
 	public boolean hasSameDirection (Vector2 vector) {
 		return dot(vector) > 0;
 	}
 
-	@Override
 	public boolean hasOppositeDirection (Vector2 vector) {
 		return dot(vector) < 0;
 	}
 
-	@Override
 	public Vector2 setZero () {
 		this.x = 0;
 		this.y = 0;

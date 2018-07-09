@@ -35,7 +35,7 @@ public final class GlOperation {
 	private final static String TAG = "A_GO/GlOperation";
 	
 	/**
-	 * Flag for Color buffer
+	 * Flag for GlColor buffer
 	 */
 	public static final int BUFFER_COLOR = GLES20.GL_COLOR_BUFFER_BIT;
 	

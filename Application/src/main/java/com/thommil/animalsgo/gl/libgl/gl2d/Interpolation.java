@@ -14,7 +14,9 @@
  * limitations under the License.
  ******************************************************************************/
 
-package com.thommil.animalsgo.gl.ui.libgdx;
+package com.thommil.animalsgo.gl.libgl.gl2d;
+
+import com.thommil.animalsgo.utils.MathUtils;
 
 /** Takes a linear value in the range of 0-1 and outputs a (usually) non-linear, interpolated value.
  * @author Nathan Sweet */

@@ -6,16 +6,15 @@ import android.graphics.BitmapFactory;
 import android.util.Log;
 
 import com.thommil.animalsgo.Settings;
-import com.thommil.animalsgo.gl.ui.Sprite;
-import com.thommil.animalsgo.utils.ByteBufferPool;
 
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 public class GlTextureAtlas {
@@ -24,74 +23,61 @@ public class GlTextureAtlas {
 
     private final Map<String, SpriteTemplate> mSpriteMap = new HashMap<>();
     private GlTexture mTexture;
+    private GlTexture mGlTextureTemplate;
 
-    public GlTextureAtlas(final Context context, final int id){
-        this(context, id, new GlTexture(){});
-
-    }
-
-    public GlTextureAtlas(final Context context, final int id, final GlTexture glTextureTemplate){
-        parseXML(context, id, glTextureTemplate);
+    public GlTextureAtlas(){
+        this(new GlTexture(){});
 
     }
 
-    public void allocate(){
+    public GlTextureAtlas(final GlTexture glTextureTemplate){
+        mGlTextureTemplate = glTextureTemplate;
+    }
+
+    public GlTextureAtlas allocate(){
+        //Log.d(TAG, "allocate()");
         if(mTexture != null){
             mTexture.bind().allocate().configure();
         }
+        return this;
     }
 
     public GlTexture getTexture() {
         return mTexture;
     }
 
-    public Sprite createSprite(final String name, final int id){
+    /*public Sprite createSprite(final String name, final int id){
         final SpriteTemplate template = mSpriteMap.get(name);
         return new Sprite(id, mTexture, template.x, template.y, template.width, template.height, 1f, 1f);
-    }
+    }*/
 
-    public void free(){
+    public GlTextureAtlas free(){
+        //Log.d(TAG, "free()");
         if(mTexture != null){
             mTexture.free();
         }
+        return this;
     }
 
-    private void parseXML(final Context context, final int id, final GlTexture glTextureTemplate) {
-        //Log.d(TAG, "generateSpriteMapFromXml("+name+")");
-        try {
-            final XmlPullParser parser = context.getResources().getXml(id);
+    public GlTextureAtlas parseJON(final Context context, final JSONObject json) throws JSONException{
+        //Log.d(TAG, "parseJON("+json+")");
+        final JSONObject meta = json.getJSONObject("meta");
+        generateTexture(context, meta.getString("image"));
 
-            int eventType = parser.getEventType();
-            while (eventType != XmlPullParser.END_DOCUMENT) {
-                if(eventType == XmlPullParser.START_TAG){
-                    if(parser.getName().equals("TextureAtlas")){
-                        final String textureFile = parser.getAttributeValue(null, "imagePath");
-                        if(textureFile != null) {
-                            generateTexture(context, textureFile, glTextureTemplate);
-                        }
-                        else throw new XmlPullParserException("Missing name attribute in <TextureAtlas/>");
-                    }
-                    else if(parser.getName().equals("SubTexture")){
-                        final String name = parser.getAttributeValue(null, "name");
-                        final int x = Integer.parseInt(parser.getAttributeValue(null, "x"));
-                        final int y = Integer.parseInt(parser.getAttributeValue(null, "y"));
-                        final int width = Integer.parseInt(parser.getAttributeValue(null, "width"));
-                        final int height = Integer.parseInt(parser.getAttributeValue(null, "height"));
-                        final float pivotX = Float.parseFloat(parser.getAttributeValue(null, "pivotX"));
-                        final float pivotY = Float.parseFloat(parser.getAttributeValue(null, "pivotY"));
-                        final Sprite sprite = new Sprite(name.hashCode(), mTexture, x, y, width, height);
-                        sprite.setOrigin(width * pivotX, height * pivotY);
-                        mSpriteMap.put(name, new SpriteTemplate(name, x, y, width, height, pivotX, pivotY));
-                    }
-                }
-
-                eventType = parser.next();
-            }
-        }catch(IOException ioe){
-            throw new RuntimeException("Failed to load xml atlas : " + ioe);
-        }catch(XmlPullParserException xfpe){
-            throw new RuntimeException("Failed to load xml atlas : " + xfpe);
+        final JSONObject sprites = json.getJSONObject("frames");
+        final Iterator<String> names = sprites.keys();
+        while(names.hasNext()){
+            final String name = names.next();
+            final JSONObject sprite = sprites.getJSONObject(name);
+            final JSONObject frame = sprite.getJSONObject("frame");
+            final int x = frame.getInt("x");
+            final int y = frame.getInt("y");
+            final int width = frame.getInt("w");
+            final int height = frame.getInt("h");
+            mSpriteMap.put(name, new SpriteTemplate(name, x, y, width, height));
         }
+
+        return this;
     }
 
     private static class SpriteTemplate {
@@ -100,26 +86,22 @@ public class GlTextureAtlas {
         final public int y;
         final public int width;
         final public int height;
-        final public float pivotX;
-        final public float pivotY;
 
-        public SpriteTemplate(String name, int x, int y, int width, int height, float pivotX, float pivotY) {
+        public SpriteTemplate(String name, int x, int y, int width, int height) {
             this.name = name;
             this.x = x;
             this.y = y;
             this.width = width;
             this.height = height;
-            this.pivotX = pivotX;
-            this.pivotY = pivotY;
         }
     }
 
-    private void generateTexture(final Context context, final String textureFile, final GlTexture glTextureTemplate) {
+    private void generateTexture(final Context context, final String textureFile) {
         //Log.d(TAG, "generateTextureMapFromXml("+textureFile+")");
         InputStream in = null;
         try {
             in = context.getResources().getAssets().open(Settings.ASSETS_TEXTURES_PATH + textureFile);
-            mTexture = new GLTextureDecorator(BitmapFactory.decodeStream(in), glTextureTemplate);
+            mTexture = new GLTextureDecorator(BitmapFactory.decodeStream(in), mGlTextureTemplate);
         }catch(IOException ioe){
             throw new RuntimeException("Texture load error : " + textureFile);
         }finally {

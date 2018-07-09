@@ -18,15 +18,15 @@ package com.thommil.animalsgo.gl.libgl;
 
 import android.opengl.EGL14;
 import android.opengl.EGLSurface;
-import android.util.Log;
+import android.view.Surface;
 
 /**
  * Common base class for EGL surfaces.
  * <p>
  * There can be multiple surfaces associated with a single context.
  */
-public class EglSurfaceBase {
-    private static final String TAG = "A_GO/EglSurfaceBase";
+public class EglSurface {
+    private static final String TAG = "A_GO/EglSurface";
 
     // EglCore object we're associated with.  It may be associated with multiple surfaces.
     protected EglCore mEglCore;
@@ -35,8 +35,23 @@ public class EglSurfaceBase {
     private int mWidth = -1;
     private int mHeight = -1;
 
-    protected EglSurfaceBase(EglCore eglCore) {
+    private Surface mSurface;
+    private boolean mReleaseSurface;
+
+    /**
+     * Associates an EGL surface with the native window surface.
+     * <p>
+     * Set releaseSurface to true if you want the Surface to be released when release() is
+     * called.  This is convenient, but can interfere with framework classes that expect to
+     * manage the Surface themselves (e.g. if you release a SurfaceView's Surface, the
+     * surfaceDestroyed() callback won't fire).
+     */
+    public EglSurface(EglCore eglCore, Surface surface, boolean releaseSurface) {
         mEglCore = eglCore;
+        ////Log.d(TAG, "WindowSurface");
+        createWindowSurface(surface);
+        mSurface = surface;
+        mReleaseSurface = releaseSurface;
     }
 
     /**
@@ -114,7 +129,7 @@ public class EglSurfaceBase {
      * Makes our EGL context and surface current for drawing, using the supplied surface
      * for reading.
      */
-    public void makeCurrentReadFrom(EglSurfaceBase readSurface) {
+    public void makeCurrentReadFrom(EglSurface readSurface) {
         mEglCore.makeCurrent(mEGLSurface, readSurface.mEGLSurface);
     }
 
@@ -129,5 +144,22 @@ public class EglSurfaceBase {
             //Log.d(TAG, "WARNING: swapBuffers() failed");
         }
         return result;
+    }
+
+    /**
+     * Releases any resources associated with the EGL surface (and, if configured to do so,
+     * with the Surface as well).
+     * <p>
+     * Does not require that the surface's EGL context be current.
+     */
+    public void release() {
+        ////Log.d(TAG, "release");
+        releaseEglSurface();
+        if (mSurface != null) {
+            if (mReleaseSurface) {
+                mSurface.release();
+            }
+            mSurface = null;
+        }
     }
 }

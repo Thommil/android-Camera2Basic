@@ -5,8 +5,6 @@ import java.nio.ByteOrder;
 
 import android.opengl.GLES20;
 
-import com.thommil.animalsgo.utils.ByteBufferPool;
-
 /**
  * Abstraction class for FBO use 
  * 

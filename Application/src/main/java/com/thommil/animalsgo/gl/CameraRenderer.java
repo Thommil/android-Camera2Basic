@@ -2,12 +2,10 @@ package com.thommil.animalsgo.gl;
 
 import android.content.Context;
 import android.graphics.SurfaceTexture;
-import android.opengl.GLES20;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
-import android.util.Log;
 import android.util.Size;
 import android.view.Surface;
 
@@ -16,13 +14,13 @@ import com.thommil.animalsgo.data.Messaging;
 import com.thommil.animalsgo.data.Orientation;
 import com.thommil.animalsgo.Settings;
 import com.thommil.animalsgo.fragments.CameraFragment;
-import com.thommil.animalsgo.utils.CaptureBuilder;
+import com.thommil.animalsgo.gl.libgl.EglSurface;
+import com.thommil.animalsgo.cv.CaptureBuilder;
 import com.thommil.animalsgo.gl.libgl.EglCore;
 import com.thommil.animalsgo.gl.libgl.GlFrameBufferObject;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
 import com.thommil.animalsgo.gl.libgl.GlOperation;
 import com.thommil.animalsgo.gl.libgl.GlTexture;
-import com.thommil.animalsgo.gl.libgl.WindowSurface;
 
 
 public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFrameAvailableListener, Handler.Callback {
@@ -54,7 +52,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
     private EglCore mEglCore;
 
     // Primary WindowSurface for rendering to screen
-    private WindowSurface mWindowSurface;
+    private EglSurface mWindowSurface;
 
     // Texture created for GLES rendering of camera data
     private SurfaceTexture mPreviewTexture;
@@ -124,7 +122,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         mEglCore = new EglCore();
 
         //create preview surface
-        mWindowSurface = new WindowSurface(mEglCore, mSurface, true);
+        mWindowSurface = new EglSurface(mEglCore, mSurface, true);
         mWindowSurface.makeCurrent();
 
         mPluginManager.initialize(Plugin.TYPE_CAMERA | Plugin.TYPE_PREVIEW | Plugin.TYPE_UI);

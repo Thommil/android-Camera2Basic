@@ -1,18 +1,15 @@
 package com.thommil.animalsgo.gl.plugins;
 
-import android.opengl.GLES20;
-
 import com.thommil.animalsgo.R;
 import com.thommil.animalsgo.gl.UIPlugin;
-import com.thommil.animalsgo.gl.libgl.GlBuffer;
-import com.thommil.animalsgo.gl.libgl.GlCanvas;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
 import com.thommil.animalsgo.gl.libgl.GlOperation;
 import com.thommil.animalsgo.gl.libgl.GlTextureAtlas;
-import com.thommil.animalsgo.gl.ui.Sprite;
-import com.thommil.animalsgo.utils.ByteBufferPool;
+import com.thommil.animalsgo.utils.ResourcesLoader;
 
-import java.nio.ByteBuffer;
+import org.json.JSONException;
+
+import java.io.IOException;
 import java.nio.FloatBuffer;
 
 public class UIDefault extends UIPlugin {
@@ -21,9 +18,8 @@ public class UIDefault extends UIPlugin {
 
     private static final String ID = "ui/default";
     private static final String PROGRAM_ID = "ui_default";
+    private static final String ATLAS_FILE = "ui_default.json";
 
-
-    protected Sprite mSprite;
 
     private int mPositionAttributeHandle;
     private int mTextureCoordinatesAttributeHandle;
@@ -59,13 +55,16 @@ public class UIDefault extends UIPlugin {
 
         GlOperation.configureBlendTest(GlOperation.BLEND_FACTOR_SRC_ALPA, GlOperation.BLEND_FACTOR_DST_ALPA, GlOperation.BLEND_FACTOR_ONE_MINUS_SRC_ALPA, null);
 
-        mTextureAtlas = new GlTextureAtlas(mContext, R.xml.ui_default_texture_atlas);
+
+        mTextureAtlas = new GlTextureAtlas();
+        try {
+            mTextureAtlas.parseJON(mContext, ResourcesLoader.jsonFromAsset(mContext, com.thommil.animalsgo.Settings.ASSETS_TEXTURES_PATH + ATLAS_FILE));
+        }catch(IOException ioe){
+            throw new RuntimeException("Failed to load texture atlas : " + ioe);
+        }catch(JSONException je){
+            throw new RuntimeException("Failed to load texture atlas : " + je);
+        }
         mTextureAtlas.allocate();
-
-        mSprite = mTextureAtlas.createSprite("logo", 1);
-
-        mSprite.setSize(0.2f,0.2f);
-        mSprite.setOriginCenter();;
 
         mProgram.use();
         mPositionAttributeHandle = mProgram.getAttributeHandle(ATTRIBUTE_POSITION);
@@ -73,7 +72,7 @@ public class UIDefault extends UIPlugin {
         mColorAttributeHandle = mProgram.getAttributeHandle(ATTRIBUTE_COLOR);
         mTextureUniforHandle = mProgram.getUniformHandle(UNIFORM_TEXTURE);
 
-        buffer = ByteBufferPool.getInstance().getDirectFloatBuffer(Sprite.SPRITE_SIZE);
+        //buffer = ByteBufferPool.getInstance().getDirectFloatBuffer(Sprite.SPRITE_SIZE);
     }
 //final GlBuffer<short[]> indices =  GlBufferGlBuffer.Chunk<short[]>(new short[]{0,1,2,3,3,0});
 FloatBuffer buffer;
@@ -81,7 +80,7 @@ FloatBuffer buffer;
     public void draw(final GlIntRect viewport, final int orientation) {
         GlOperation.setTestState(GlOperation.TEST_BLEND, true);
 
-        mProgram.use().enableAttributes();
+        /*mProgram.use().enableAttributes();
         mTextureAtlas.getTexture().bind();
         mSprite.rotate(1);
         buffer.rewind();
@@ -101,7 +100,7 @@ FloatBuffer buffer;
         GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
 
         mTextureAtlas.getTexture().unbind();
-        mProgram.disableAttributes();
+        mProgram.disableAttributes();*/
     }
 
     @Override

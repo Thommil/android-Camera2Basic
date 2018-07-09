@@ -61,7 +61,7 @@ public class GlSprite extends GlBuffer<float[]> {
     }
 
 
-    /*@Override
+    @Override
     public GlBuffer commit(boolean push) {
         //Log.d(TAG,"commit("+push+")");
         if(this.buffer == null){
@@ -120,5 +120,5 @@ public class GlSprite extends GlBuffer<float[]> {
     @Override
     public GlBuffer commit(Chunk<float[]> chunk, boolean push) {
         throw new RuntimeException("Only full commit is supported by GlSprite");
-    }*/
+    }
 }

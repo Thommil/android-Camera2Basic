@@ -215,9 +215,7 @@ public class GlBuffer<E>{
         if(mVaoHandle != UNBIND_HANDLE){
             GLES30.glBindVertexArray(mVaoHandle);
         }
-        else {
-            GLES20.glBindBuffer(this.target, this.handle);
-        }
+        GLES20.glBindBuffer(this.target, this.handle);
 		return this;
 	}
 	
@@ -226,11 +224,9 @@ public class GlBuffer<E>{
 	 */
 	public GlBuffer unbind(){
 		//android.util.//Log.d(TAG,"unbind()");
-        if(mVaoHandle != UNBIND_HANDLE){
+		GLES20.glBindBuffer(this.target, this.UNBIND_HANDLE);
+		if(mVaoHandle != UNBIND_HANDLE){
             GLES30.glBindVertexArray(UNBIND_HANDLE);
-        }
-        else {
-            GLES20.glBindBuffer(this.target, this.UNBIND_HANDLE);
         }
 		return this;
 	}
@@ -406,10 +402,10 @@ public class GlBuffer<E>{
     protected void push(){
         //Log.d(TAG,"push()");
         if(this.handle != UNBIND_HANDLE) {
-            GLES20.glBindBuffer(this.target, this.handle);
+            bind();
             this.buffer.position(0);
             GLES20.glBufferSubData(this.target, 0, this.size, this.buffer);
-            GLES20.glBindBuffer(this.target, UNBIND_HANDLE);
+            unbind();
         }
     }
 

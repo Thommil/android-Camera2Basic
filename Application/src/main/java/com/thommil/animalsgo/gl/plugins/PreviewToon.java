@@ -62,23 +62,29 @@ public class PreviewToon extends PreviewPlugin {
     public void create() {
         super.create();
 
+        //Buffer
+        mPreviewBuffer = new GlBuffer<>(mVertChunk, mTextChunk);
+        mPreviewBuffer.commit();
+
+        //Program
         mProgram.use();
         mVertChunk.handle = mProgram.getAttributeHandle(ATTRIBUTE_POSITION);
         mTextChunk.handle = mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD);
         mTextureUniforHandle = mProgram.getUniformHandle(UNIFORM_TEXTURE);
         mViewSizeUniformHandle = mProgram.getUniformHandle(UNIFORM_VIEW_SIZE);
-
-        mPreviewBuffer = new GlBuffer<>(mVertChunk, mTextChunk);
-        mPreviewBuffer.commit();
     }
 
     @Override
     public void draw(final GlIntRect viewport, final int orientation) {
-        GlOperation.setActiveTexture(TEXTURE_INDEX);
-
+        //Program
         mProgram.use();
-        GLES20.glUniform1i(mTextureUniforHandle, TEXTURE_INDEX);
+        GLES20.glUniform1i(mTextureUniforHandle, mSourceTexture.index);
         GLES20.glUniform2f(mViewSizeUniformHandle, viewport.width(), viewport.height());
+
+        //Texture
+        mSourceTexture.bind();
+
+        //Draw
         GlCanvas.drawArrays(mProgram, mPreviewBuffer);
     }
 

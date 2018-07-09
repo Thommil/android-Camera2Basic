@@ -279,11 +279,21 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	public int handle = UNBIND_HANDLE;
 
     /**
+     * Active texture binding
+     */
+    public int index = -1;
+
+    /**
+     * Current texture index
+     */
+    private static int sCurrentIndex = 0;
+
+    /**
      * Set texture settings based on class getters
      */
     public GlTexture configure(){
-        GLES20.glTexParameteri(getTarget(), WRAP_MODE_S, getWrapMode(WRAP_MODE_S));
-        GLES20.glTexParameteri(getTarget(), WRAP_MODE_T, getWrapMode(WRAP_MODE_T));
+        GLES20.glTexParameteri(getTarget(), GLES20.GL_TEXTURE_WRAP_S, getWrapMode(WRAP_MODE_S));
+        GLES20.glTexParameteri(getTarget(), GLES20.GL_TEXTURE_WRAP_T, getWrapMode(WRAP_MODE_T));
         GLES20.glTexParameteri(getTarget(), GLES20.GL_TEXTURE_MIN_FILTER, getMinificationFilter());
         GLES20.glTexParameteri(getTarget(), GLES20.GL_TEXTURE_MAG_FILTER, getMagnificationFilter());
 		GlOperation.checkGlError(TAG, "glTexParameteri");
@@ -315,7 +325,7 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
             }
 		}
         else{
-            GLES20.glTexImage2D(getTarget(), 0, getFormat(), getWidth(), getHeight(), 0, getFormat(), getType(), null);
+            GLES20.glTexImage2D(getTarget(), 0, getFormat(), getWidth(), getHeight(), 0, getFormat(), GLES20.GL_UNSIGNED_BYTE, null);
             GlOperation.checkGlError(TAG, "glTexImage2D");
         }
 		return this;
@@ -330,9 +340,32 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
             GLES20.glGenTextures(1, handles, 0);
             this.handle = handles[0];
         }
-		GLES20.glBindTexture(getTarget(), this.handle);
+        if(this.index < 0) {
+            synchronized (this) {
+                if (sCurrentIndex >= 31) {
+                    sCurrentIndex = 0;
+                    Log.w(TAG,"Texture index overflow, check calls to free()");
+                }
+                index = sCurrentIndex++;
+                GlOperation.setActiveTexture(index);
+                GLES20.glBindTexture(getTarget(), this.handle);
+            }
+        }
+        else{
+            GlOperation.setActiveTexture(index);
+        }
+
 		return this;
 	}
+
+	public synchronized GlTexture unbind(){
+	    if(index >= 0) {
+            GlOperation.setActiveTexture(index);
+            GLES20.glBindTexture(getTarget(), UNBIND_HANDLE);
+            sCurrentIndex--;
+        }
+        return this;
+    }
 
 	/**
 	 * Get the bitmap for this Texture
@@ -464,8 +497,9 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	 * Removes texture from GPU 
 	 */
 	public GlTexture free(){
-		final int textureHandle[] = new int[]{this.handle};
-		GLES20.glDeleteTextures(1, textureHandle, 0);
+        //Log.d(TAG, "free()");
+	    unbind();
+		GLES20.glDeleteTextures(1, new int[]{this.handle}, 0);
 		GlOperation.checkGlError(TAG, "glDeleteTextures");
 		return this;
 	}

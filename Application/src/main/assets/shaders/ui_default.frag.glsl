@@ -12,6 +12,6 @@ uniform sampler2D texture1i;
 
 void main()
 {
-    //gl_FragColor = vColorAttr * texture2D(texture1i, vTextCoordAttr);
-    gl_FragColor = texture2D(texture1i, vTextCoordAttr);
+    gl_FragColor = vColorAttr * texture2D(texture1i, vTextCoordAttr);
+    //gl_FragColor = texture2D(texture1i, vTextCoordAttr);
 }

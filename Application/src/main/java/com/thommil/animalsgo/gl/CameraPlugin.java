@@ -50,6 +50,8 @@ public abstract class CameraPlugin extends Plugin{
         super.create();
         this.mZoomState = ZOOM_STATE_NONE;
         mCurrentZoom = 1.0f;
+
+        //Buffer
         mCameraPreviewBuffer = new GlBuffer<>(mVertChunk, mTextChunk);
         mCameraPreviewBuffer.commit();
     }

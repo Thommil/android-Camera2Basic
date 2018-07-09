@@ -57,7 +57,7 @@ public class GlFrameBufferObject {
 	/**
 	 * Contains the implementation specific settings to read buffer
 	 */
-	private static int[] mReadSettings = null;
+	private int[] mReadSettings = null;
 	
 	/**
 	 * Reference to the current bind color attachment
@@ -149,6 +149,7 @@ public class GlFrameBufferObject {
 		GLES20.glFramebufferRenderbuffer(GLES20.GL_FRAMEBUFFER, type, GLES20.GL_RENDERBUFFER, UNBIND_HANDLE);
 		GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, UNBIND_HANDLE);
         GlOperation.checkGlError(TAG, "glFramebufferRenderbuffer");
+		mReadSettings = null;
 		return this;
 	}
 	
@@ -186,27 +187,27 @@ public class GlFrameBufferObject {
 
 		GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, this.handle);
 		
-		if(GlFrameBufferObject.mReadSettings == null){
-			GlFrameBufferObject.mReadSettings = new int[3];
-			GLES20.glGetIntegerv(GLES20.GL_IMPLEMENTATION_COLOR_READ_TYPE, GlFrameBufferObject.mReadSettings, 0);
-			GLES20.glGetIntegerv(GLES20.GL_IMPLEMENTATION_COLOR_READ_FORMAT, GlFrameBufferObject.mReadSettings, 1);
-			GlFrameBufferObject.mReadSettings[2] = 0;
+		if(mReadSettings == null){
+			mReadSettings = new int[3];
+			GLES20.glGetIntegerv(GLES20.GL_IMPLEMENTATION_COLOR_READ_TYPE, mReadSettings, 0);
+			GLES20.glGetIntegerv(GLES20.GL_IMPLEMENTATION_COLOR_READ_FORMAT, mReadSettings, 1);
+			mReadSettings[2] = 0;
 			
-			switch(GlFrameBufferObject.mReadSettings[0]){
+			switch(mReadSettings[0]){
 				case GLES20.GL_UNSIGNED_BYTE:
-					switch(GlFrameBufferObject.mReadSettings[1]){
-						case GLES20.GL_RGBA : 
-							GlFrameBufferObject.mReadSettings[2] = 4;
+					switch(mReadSettings[1]){
+						case GLES20.GL_RGBA :
+							mReadSettings[2] = 4;
 							break;
-						case GLES20.GL_RGB : 
-							GlFrameBufferObject.mReadSettings[2] = 3;
+						case GLES20.GL_RGB :
+							mReadSettings[2] = 3;
 							break;
-						case GLES20.GL_LUMINANCE_ALPHA : 
-							GlFrameBufferObject.mReadSettings[2] = 2;
+						case GLES20.GL_LUMINANCE_ALPHA :
+							mReadSettings[2] = 2;
 							break;
 						case GLES20.GL_LUMINANCE :
 						case GLES20.GL_ALPHA :
-							GlFrameBufferObject.mReadSettings[2] = 1;
+							mReadSettings[2] = 1;
 							break;	
 					}
 					break;
@@ -214,18 +215,25 @@ public class GlFrameBufferObject {
 				case GLES20.GL_UNSIGNED_SHORT_4_4_4_4:
 				case GLES20.GL_UNSIGNED_SHORT_5_5_5_1:
 				case GLES20.GL_UNSIGNED_SHORT_5_6_5:
-					GlFrameBufferObject.mReadSettings[2] = 2;
+					mReadSettings[2] = 2;
 					break;
 			}
-			if(GlFrameBufferObject.mReadSettings[2] == 0) throw new RuntimeException("Failed to get pixel format for current implementation");
+			if(mReadSettings[2] == 0) throw new RuntimeException("Failed to get pixel format for current implementation");
 		}
 
-		pixels = ByteBufferPool.getInstance().getDirectByteBuffer(width * height * GlFrameBufferObject.mReadSettings[2]);
-		pixels.order(ByteOrder.nativeOrder());
-		GLES20.glReadPixels(x, y, width, height, GlFrameBufferObject.mReadSettings[1], GlFrameBufferObject.mReadSettings[0], pixels);
-		
+		pixels = ByteBufferPool.getInstance().getDirectByteBuffer(width * height * mReadSettings[2]);
+
+		switch(mReadSettings[1]){
+			case GLES20.GL_RGBA :
+				pixels.order(ByteOrder.LITTLE_ENDIAN);
+				break;
+			default:
+				pixels.order(ByteOrder.nativeOrder());
+		}
+		GLES20.glReadPixels(x, y, width, height, mReadSettings[1], mReadSettings[0], pixels);
+
 		GLES20.glBindFramebuffer(GLES20.GL_FRAMEBUFFER, UNBIND_HANDLE);
-		
+
 		return pixels;
 	}
 	

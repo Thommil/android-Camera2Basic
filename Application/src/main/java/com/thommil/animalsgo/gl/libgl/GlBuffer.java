@@ -279,8 +279,9 @@ public class GlBuffer<E>{
 					this.buffer = ByteBufferPool.getInstance().getDirectFloatBuffer(this.size >> 2);
 				}
 				for(final Chunk<E> chunk : chunks){
+                    final int offset = this.stride >> 2;
 					for(int elementIndex=0, compIndex=0; elementIndex < this.count ; elementIndex++, compIndex+=chunk.components){
-						this.buffer.position(chunk.position + (elementIndex * (this.stride >> 2)));
+						this.buffer.position(chunk.position + (elementIndex * offset));
 						((FloatBuffer)this.buffer).put(((float[])chunk.data),compIndex,chunk.components);
 					}
 				}
@@ -290,8 +291,9 @@ public class GlBuffer<E>{
                     this.buffer = ByteBufferPool.getInstance().getDirectIntBuffer(this.size >> 2);
                 }
                 for(final Chunk<E> chunk : chunks){
+                    final int offset = this.stride >> 2;
                     for(int elementIndex=0, compIndex=0; elementIndex < this.count ; elementIndex++, compIndex+=chunk.components){
-                        this.buffer.position(chunk.position + (elementIndex * (this.stride >> 2)));
+                        this.buffer.position(chunk.position + (elementIndex * offset));
                         ((IntBuffer)this.buffer).put(((int[])chunk.data),compIndex,chunk.components);
                     }
                 }
@@ -301,8 +303,9 @@ public class GlBuffer<E>{
 					this.buffer = ByteBufferPool.getInstance().getDirectShortBuffer(this.size >> 1);
 				}
                 for(final Chunk<E> chunk : chunks){
+                    final int offset = this.stride >> 1;
 					for(int elementIndex=0, compIndex=0; elementIndex < this.count ; elementIndex++, compIndex+=chunk.components){
-						this.buffer.position(chunk.position + (elementIndex * (this.stride >> 1)));
+						this.buffer.position(chunk.position + (elementIndex * offset));
 						((ShortBuffer)this.buffer).put(((short[])chunk.data),compIndex,chunk.components);
 					}
 				}
@@ -313,7 +316,7 @@ public class GlBuffer<E>{
                 }
                 for(final Chunk<E> chunk : chunks){
                     for(int elementIndex=0, compIndex=0; elementIndex < this.count ; elementIndex++, compIndex+=chunk.components){
-                        this.buffer.position(chunk.position + (elementIndex * (this.stride)));
+                        this.buffer.position(chunk.position + (elementIndex * this.stride));
                         ((ByteBuffer)this.buffer).put(((byte[])chunk.data),compIndex,chunk.components);
                     }
                 }
@@ -348,39 +351,45 @@ public class GlBuffer<E>{
     public GlBuffer commit(final Chunk<E> chunk, boolean push){
         //Log.d(TAG,"update("+chunk+", "+commit+")");
         switch(this.datatype){
-            case TYPE_FLOAT :
-                if(this.buffer == null){
+            case TYPE_FLOAT : {
+                if (this.buffer == null) {
                     this.buffer = ByteBufferPool.getInstance().getDirectFloatBuffer(this.size >> 2);
                 }
-                for(int elementIndex=0, compIndex=0; elementIndex < this.count ; elementIndex++, compIndex+=chunk.components){
-                    this.buffer.position(chunk.position + (elementIndex * (this.stride >> 2)));
-                    ((FloatBuffer)this.buffer).put(((float[])chunk.data),compIndex,chunk.components);
+                final int offset = this.stride >> 2;
+                for (int elementIndex = 0, compIndex = 0; elementIndex < this.count; elementIndex++, compIndex += chunk.components) {
+                    this.buffer.position(chunk.position + (elementIndex * offset));
+                    ((FloatBuffer) this.buffer).put(((float[]) chunk.data), compIndex, chunk.components);
                 }
                 break;
-            case TYPE_INT :
-                if(this.buffer == null){
+            }
+            case TYPE_INT : {
+                if (this.buffer == null) {
                     this.buffer = ByteBufferPool.getInstance().getDirectIntBuffer(this.size >> 2);
                 }
-                for(int elementIndex=0, compIndex=0; elementIndex < this.count ; elementIndex++, compIndex+=chunk.components){
-                    this.buffer.position(chunk.position + (elementIndex * (this.stride >> 2)));
-                    ((IntBuffer)this.buffer).put(((int[])chunk.data),compIndex,chunk.components);
+                final int offset = this.stride >> 2;
+                for (int elementIndex = 0, compIndex = 0; elementIndex < this.count; elementIndex++, compIndex += chunk.components) {
+                    this.buffer.position(chunk.position + (elementIndex * offset));
+                    ((IntBuffer) this.buffer).put(((int[]) chunk.data), compIndex, chunk.components);
                 }
                 break;
-            case TYPE_SHORT :
-                if(this.buffer == null){
+            }
+            case TYPE_SHORT : {
+                if (this.buffer == null) {
                     this.buffer = ByteBufferPool.getInstance().getDirectShortBuffer(this.size >> 1);
                 }
-                for(int elementIndex=0, compIndex=0; elementIndex < this.count ; elementIndex++, compIndex+=chunk.components){
-                    this.buffer.position(chunk.position + (elementIndex * (this.stride >> 1)));
-                    ((ShortBuffer)this.buffer).put(((short[])chunk.data),compIndex,chunk.components);
+                final int offset = this.stride >> 1;
+                for (int elementIndex = 0, compIndex = 0; elementIndex < this.count; elementIndex++, compIndex += chunk.components) {
+                    this.buffer.position(chunk.position + (elementIndex * offset));
+                    ((ShortBuffer) this.buffer).put(((short[]) chunk.data), compIndex, chunk.components);
                 }
                 break;
+            }
             default :
                 if(this.buffer == null){
                     this.buffer = ByteBufferPool.getInstance().getDirectByteBuffer(this.size);
                 }
                 for(int elementIndex=0, compIndex=0; elementIndex < this.count ; elementIndex++, compIndex+=chunk.components){
-                    this.buffer.position(chunk.position + (elementIndex*this.stride));
+                    this.buffer.position(chunk.position + (elementIndex * this.stride));
                     ((ByteBuffer)this.buffer).put(((byte[])chunk.data),compIndex,chunk.components);
                 }
                 break;
@@ -415,7 +424,7 @@ public class GlBuffer<E>{
 	 */
 	public GlBuffer allocate(final int usage, final int target, final boolean freeLocal){
 		//android.util.//Log.d(TAG,"createVBO("+usage+","+target+","+freeLocal+")");
-		if(this.handle == GLES20.GL_FALSE){
+		if(this.handle == UNBIND_HANDLE){
 			final int[] handles = new int[1];
 
 			//Create buffer on server
@@ -427,6 +436,9 @@ public class GlBuffer<E>{
 
 			//Bind it
 			GLES20.glBindBuffer(target, this.handle);
+			if(this.buffer == null){
+				this.commit(false);
+			}
 			//Push data into it
 			this.buffer.position(0);
 			GLES20.glBufferData(target, this.size, this.buffer, usage);

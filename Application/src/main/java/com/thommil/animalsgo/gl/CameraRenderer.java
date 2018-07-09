@@ -137,7 +137,6 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         mPreviewPlugin = (PreviewPlugin) mPluginManager.getPlugin(Settings.getInstance().getString(Settings.PLUGIN_PREVIEW));
 
         mUIPlugin = (UIPlugin) mPluginManager.getPlugin(Settings.getInstance().getString(Settings.PLUGIN_UI));
-        mUIPlugin.setAssetManager(mContext.getAssets());
 
         GlOperation.setColorBufferClearValue(0,0,0,1);
         GlOperation.setTestState(GlOperation.TEST_ALL, false);
@@ -245,12 +244,15 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
             public int getWrapMode(int axeId) {
                 return GlTexture.WRAP_CLAMP_TO_EDGE;
             }
+
+            @Override
+            public int getMagnificationFilter() {
+                return GlTexture.MAG_FILTER_HIGH;
+            }
         };
 
-
         mCameraPreviewFBO = new GlFrameBufferObject();
-        GlOperation.setActiveTexture(PreviewPlugin.TEXTURE_INDEX);
-        mCameraPreviewFBOTexture.bind().allocate().configure();
+        mCameraPreviewFBOTexture.bind().configure().allocate();
         mCameraPreviewFBO.attach(mCameraPreviewFBOTexture, GlFrameBufferObject.Attachment.TYPE_COLOR);
 
         mPreviewPlugin.setSourceTexture(mCameraPreviewFBOTexture);

@@ -51,12 +51,7 @@ public class CameraDefault extends CameraPlugin {
     public void create() {
         super.create();
 
-        mProgram.use();
-        mVertChunk.handle = mProgram.getAttributeHandle(ATTRIBUTE_POSITION);
-        mTextChunk.handle = mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD);
-        mTextureUniforHandle = mProgram.getUniformHandle(UNIFORM_TEXTURE);
-        mMvpMatrixNuniformHandle = mProgram.getUniformHandle(UNIFORM_MVP_MATRIX);
-
+        //Texture
         mCameraTexture = new GlTexture() {
             @Override
             public int getTarget() {
@@ -73,19 +68,29 @@ public class CameraDefault extends CameraPlugin {
                 return GlTexture.WRAP_CLAMP_TO_EDGE;
             }
         };
+        mCameraTexture.bind().configure();
 
-        GlOperation.setActiveTexture(TEXTURE_INDEX);
-        mCameraTexture.bind().allocate().configure();
+        //Program
+        mProgram.use();
+        mVertChunk.handle = mProgram.getAttributeHandle(ATTRIBUTE_POSITION);
+        mTextChunk.handle = mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD);
+        mTextureUniforHandle = mProgram.getUniformHandle(UNIFORM_TEXTURE);
+        mMvpMatrixNuniformHandle = mProgram.getUniformHandle(UNIFORM_MVP_MATRIX);
     }
 
     @Override
     public void draw(final GlIntRect viewport, final int orientation) {
         super.draw(viewport, orientation);
-        GlOperation.setActiveTexture(TEXTURE_INDEX);
 
+        //Program
         mProgram.use();
-        GLES20.glUniform1i(mTextureUniforHandle, TEXTURE_INDEX);
+        GLES20.glUniform1i(mTextureUniforHandle, mCameraTexture.index);
         GLES20.glUniformMatrix4fv(mMvpMatrixNuniformHandle, 1, false, mCameraTransformMatrix, 0);
+
+        //Texture
+        mCameraTexture.bind();
+
+        //Draw
         GlCanvas.drawArrays(mProgram, mCameraPreviewBuffer);
     }
 

@@ -12,8 +12,6 @@ public abstract class UIPlugin extends Plugin {
 
     public static final int TEXTURE_INDEX = 0;
 
-    protected AssetManager mAssetManager;
-
     protected final GlIntRect mTargetCaptureZone = new GlIntRect();
 
     @Override
@@ -27,9 +25,4 @@ public abstract class UIPlugin extends Plugin {
         mTargetCaptureZone.left = captureZone.left;
         mTargetCaptureZone.right = captureZone.right;
     }
-
-    public void setAssetManager(final AssetManager assetManager){
-        mAssetManager = assetManager;
-    }
-
 }

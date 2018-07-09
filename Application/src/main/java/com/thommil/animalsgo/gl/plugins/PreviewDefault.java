@@ -60,21 +60,27 @@ public class PreviewDefault extends PreviewPlugin {
     public void create() {
         super.create();
 
+        //Buffer
+        mPreviewBuffer = new GlBuffer<>(mVertChunk, mTextChunk);
+        mPreviewBuffer.commit();
+
+        //Program
         mProgram.use();
         mVertChunk.handle = mProgram.getAttributeHandle(ATTRIBUTE_POSITION);
         mTextChunk.handle = mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD);
         mTextureUniforHandle = mProgram.getUniformHandle(UNIFORM_TEXTURE);
-
-        mPreviewBuffer = new GlBuffer<>(mVertChunk, mTextChunk);
-        mPreviewBuffer.commit();
     }
 
     @Override
     public void draw(final GlIntRect viewport, final int orientation) {
-        GlOperation.setActiveTexture(TEXTURE_INDEX);
-
+        //Program
         mProgram.use();
-        GLES20.glUniform1i(mTextureUniforHandle, TEXTURE_INDEX);
+        GLES20.glUniform1i(mTextureUniforHandle, mSourceTexture.index);
+
+        //Texture
+        mSourceTexture.bind();
+
+        //Draw
         GlCanvas.drawArrays(mProgram, mPreviewBuffer);
     }
 

@@ -7,6 +7,7 @@ import com.thommil.animalsgo.gl.PreviewPlugin;
 import com.thommil.animalsgo.gl.libgl.GlBuffer;
 import com.thommil.animalsgo.gl.libgl.GlCanvas;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
+import com.thommil.animalsgo.gl.libgl.GlOperation;
 
 
 public class PreviewToon extends PreviewPlugin {
@@ -16,23 +17,23 @@ public class PreviewToon extends PreviewPlugin {
     private static final String ID = "preview/toon";
     private static final String PROGRAM_ID = "toon";
 
-    protected final GlBuffer.Chunk<float[]> mSquareImageVertChunk =
+    protected final GlBuffer.Chunk<float[]> mVertChunk =
             new GlBuffer.Chunk<>(new float[]{
-                    -1.0f,-1.0f,
-                    -1.0f,1.0f,
-                    1.0f,-1.0f,
-                    1.0f,1.0f
+                    -1.0f, 1.0f,    // left top
+                    -1.0f, -1.0f,   // left bottom
+                    1.0f, 1.0f,     // right top
+                    1.0f, -1.0f     // right bottom
             },2);
 
-    protected final GlBuffer.Chunk<float[]> mSquareImageFragChunk =
+    protected final GlBuffer.Chunk<float[]> mTextChunk =
             new GlBuffer.Chunk<>(new float[]{
-                    0.0f,0.0f,
                     0.0f,1.0f,
-                    1.0f,0.0f,
-                    1.0f, 1.0f
+                    0.0f,0.0f,
+                    1.0f,1.0f,
+                    1.0f,0.0f
             },2);
 
-    protected GlBuffer<float[]> mSquareImageBuffer;
+    protected GlBuffer<float[]> mPreviewBuffer;
 
     private int mTextureUniforHandle;
     private int mViewSizeUniformHandle;
@@ -62,30 +63,28 @@ public class PreviewToon extends PreviewPlugin {
         super.create();
 
         mProgram.use();
-        mSquareImageVertChunk.handle = mProgram.getAttributeHandle(ATTRIBUTE_POSITION);
-        mSquareImageFragChunk.handle = mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD);
+        mVertChunk.handle = mProgram.getAttributeHandle(ATTRIBUTE_POSITION);
+        mTextChunk.handle = mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD);
         mTextureUniforHandle = mProgram.getUniformHandle(UNIFORM_TEXTURE);
         mViewSizeUniformHandle = mProgram.getUniformHandle(UNIFORM_VIEW_SIZE);
 
-        mSquareImageBuffer = new GlBuffer<>(new GlBuffer.Chunk[]{mSquareImageVertChunk, mSquareImageFragChunk});
-        mSquareImageBuffer.commit();
+        mPreviewBuffer = new GlBuffer<>(mVertChunk, mTextChunk);
+        mPreviewBuffer.commit();
     }
 
     @Override
     public void draw(final GlIntRect viewport, final int orientation) {
+        GlOperation.setActiveTexture(TEXTURE_INDEX);
+
         mProgram.use();
-        mCameraTexture.bind();
-
-        GLES20.glUniform1i(mTextureUniforHandle, 0);
+        GLES20.glUniform1i(mTextureUniforHandle, TEXTURE_INDEX);
         GLES20.glUniform2f(mViewSizeUniformHandle, viewport.width(), viewport.height());
-        GlCanvas.drawArrays(mProgram, mSquareImageBuffer);
-
-        mCameraTexture.unbind();
+        GlCanvas.drawArrays(mProgram, mPreviewBuffer);
     }
 
     @Override
     public void free() {
         super.free();
-        mSquareImageBuffer.free();
+        mPreviewBuffer.free();
     }
 }

@@ -4,7 +4,9 @@ import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+import android.graphics.Bitmap;
 import android.opengl.GLES20;
+import android.opengl.GLUtils;
 import android.util.Log;
 
 /**
@@ -276,9 +278,6 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
 	 */
 	public int handle = UNBIND_HANDLE;
 
-
-	private int mBoundActiveTexture = UNBIND_HANDLE;
-
     /**
      * Set texture settings based on class getters
      */
@@ -295,55 +294,52 @@ public abstract class GlTexture implements GlFrameBufferObject.Attachment{
         return this;
     }
 
+    /**
+     * Create texture on GPU & reycle image
+     */
+    public GlTexture allocate() {
+        return allocate(true);
+    }
+
 	/**
 	 * Create texture on GPU
 	 */
-	public GlTexture allocate(){
+	public GlTexture allocate(boolean recycleBitmap){
 		GlOperation.checkGlError(TAG, "glGenTextures");
-		GLES20.glTexImage2D(getTarget(), 0, getFormat(), getWidth(), getHeight(), 0, getFormat(), getType(), getBytes());
-		GlOperation.checkGlError(TAG, "glTexImage2D");
+		final Bitmap bitmap = getBitmap();
+		if(bitmap != null) {
+            GLUtils.texImage2D(getTarget(), getLevel(),getFormat(),bitmap,0);
+            GlOperation.checkGlError(TAG, "texImage2D");
+            if(recycleBitmap) {
+                bitmap.recycle();
+            }
+		}
+        else{
+            GLES20.glTexImage2D(getTarget(), 0, getFormat(), getWidth(), getHeight(), 0, getFormat(), getType(), null);
+            GlOperation.checkGlError(TAG, "glTexImage2D");
+        }
 		return this;
 	}
 
 	/**
-	 * Bind the current texture to default GPU active texture GL_TEXTURE0
+	 * Bind the current texture to GPU active texture activeTexture
 	 */
 	public GlTexture bind(){
-		this.bind(GLES20.GL_TEXTURE0);
-		return this;
-	}
-	
-	/**
-	 * Bind the current texture to GPU active texture activeTexture  
-	 * 
-	 * @param activeTexture The GPU active texture to use
-	 */
-	public GlTexture bind(final int activeTexture){
         if(this.handle == UNBIND_HANDLE) {
             final int[] handles = new int[1];
             GLES20.glGenTextures(1, handles, 0);
             this.handle = handles[0];
         }
-		GLES20.glActiveTexture(activeTexture);
-        mBoundActiveTexture = activeTexture;
 		GLES20.glBindTexture(getTarget(), this.handle);
-		return this;
-	}
-	
-	/**
-	 * Unbind the current texture to default GPU active texture GL_TEXTURE0
-	 */
-	public GlTexture unbind(){
-        mBoundActiveTexture = UNBIND_HANDLE;
 		return this;
 	}
 
 	/**
-	 * Get the bytes for this Texture
+	 * Get the bitmap for this Texture
 	 * 
-	 * @return The bytes of texture in a ByteBuffer 
+	 * @return The bitmap attached
 	 */
-	public ByteBuffer getBytes(){
+	public Bitmap getBitmap(){
 		return null;
 	}
 

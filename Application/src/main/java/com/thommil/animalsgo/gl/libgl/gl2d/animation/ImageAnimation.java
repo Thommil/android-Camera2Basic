@@ -116,7 +116,8 @@ public class ImageAnimation extends Animation<ImageAnimation.KeyFrame> {
         }
     }
 
-    public static class KeyFrame extends GlTextureAtlas.TextureRegion{
+    //TODO implement
+    public static class KeyFrame {
 
         public float width;
         public float height;
@@ -131,7 +132,7 @@ public class ImageAnimation extends Animation<ImageAnimation.KeyFrame> {
          * @param height The key frame height
          */
         public KeyFrame(GlTexture texture, int regionX, int regionY, int regionWidth, int regionHeight, float width, float height) {
-            super(texture, regionX, regionY, regionWidth, regionHeight);
+            //super(texture, regionX, regionY, regionWidth, regionHeight);
             this.width = width;
             this.height = height;
         }

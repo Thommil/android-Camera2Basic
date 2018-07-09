@@ -6,11 +6,12 @@
 #endif
 
 varying vec2 vTextCoordAttr;
-varying vec4 vColorAttr;
+varying LOWP vec4 vColorAttr;
 
 uniform sampler2D texture1i;
 
 void main()
 {
-    gl_FragColor = texture2D(texture1i, vTextCoordAttr);//vColorAttr * texture2D(texture1i, vTextCoordAttr);
+    //gl_FragColor = vColorAttr * texture2D(texture1i, vTextCoordAttr);
+    gl_FragColor = texture2D(texture1i, vTextCoordAttr);
 }

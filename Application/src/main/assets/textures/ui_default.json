@@ -1,25 +1,27 @@
 ﻿{"frames": {
 
-	"small":
-	{
-		"frame": {"x":0,"y":208,"w":19,"h":30},
-		"rotated": false,
-		"trimmed": false,
-		"spriteSourceSize": {"x":0,"y":0,"w":19,"h":30},
-		"sourceSize": {"w":19,"h":30}
-	},
-	"big":
-	{
-		"frame": {"x":0,"y":0,"w":130,"h":208},
-		"rotated": false,
-		"trimmed": false,
-		"spriteSourceSize": {"x":0,"y":0,"w":130,"h":208},
-		"sourceSize": {"w":130,"h":208}
-	}},
-	"meta": {
-		"image": "ui_default.png",
-		"format": "RGB8",
-		"size": {"w":256,"h":256},
-		"scale": "1"
-	}
+"small":
+{
+	"frame": {"x":100,"y":0,"w":19,"h":30},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":19,"h":30},
+	"sourceSize": {"w":19,"h":30}
+},
+"big":
+{
+	"frame": {"x":0,"y":0,"w":100,"h":100},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":100,"h":100},
+	"sourceSize": {"w":100,"h":100}
+}},
+"meta": {
+	"app": "Adobe Animate",
+	"version": "16.0.1.119",
+	"image": "ui_default.png",
+	"format": "RGBA8888",
+	"size": {"w":128,"h":128},
+	"scale": "1"
+}
 }

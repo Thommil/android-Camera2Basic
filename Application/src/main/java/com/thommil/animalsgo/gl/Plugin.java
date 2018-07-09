@@ -1,6 +1,7 @@
 package com.thommil.animalsgo.gl;
 
 import android.content.Context;
+import android.opengl.GLES20;
 import android.util.Log;
 
 import com.thommil.animalsgo.Settings;

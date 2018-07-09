@@ -168,7 +168,7 @@ public class GlCanvas {
                     chunkIndex++;
                 }
 
-                indices.buffer.rewind();
+                indices.buffer.position(0);
                 GLES20.glDrawElements(GLES20.GL_TRIANGLE_STRIP, data.count, indices.datatype, indices.buffer);
 
                 if (useAllAttributes) {

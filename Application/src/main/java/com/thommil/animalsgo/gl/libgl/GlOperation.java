@@ -539,5 +539,9 @@ public final class GlOperation {
     public static void setViewport(final int left, final int bottom, final int width, final int height){
     	GLES20.glViewport(left, bottom, width, height);
 	}
+
+    public static void setActiveTexture(final int textureIndex){
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0 + textureIndex);
+    }
 }
 

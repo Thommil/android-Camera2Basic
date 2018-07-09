@@ -6,14 +6,16 @@ public abstract class PreviewPlugin extends Plugin {
 
     private static final String TAG = "A_GO/PreviewPlugin";
 
-    protected GlTexture mCameraTexture;
+    public static final int TEXTURE_INDEX = 2;
+
+    protected GlTexture mSourceTexture;
 
     @Override
     public int getType() {
         return TYPE_PREVIEW;
     }
 
-    public void setCameraTexture(final GlTexture cameraTexture){
-        mCameraTexture = cameraTexture;
+    public void setSourceTexture(final GlTexture sourceTexture){
+        mSourceTexture = sourceTexture;
     }
 }

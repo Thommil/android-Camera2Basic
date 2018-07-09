@@ -1,7 +1,5 @@
 package com.thommil.animalsgo.gl;
 
-import android.util.Log;
-
 import com.thommil.animalsgo.gl.libgl.GlBuffer;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
 import com.thommil.animalsgo.gl.libgl.GlOperation;
@@ -11,25 +9,27 @@ public abstract class CameraPlugin extends Plugin{
 
     private static final String TAG = "A_GO/CameraPlugin";
 
+    public static final int TEXTURE_INDEX = 1;
+
     public static final int ZOOM_STATE_NONE = 0x00;
     public static final int ZOOM_STATE_IN = 0x01;
     public static final int ZOOM_STATE_OUT = 0x02;
     public static final int ZOOM_STATE_RESET = 0x04;
 
-    protected final GlBuffer.Chunk<float[]> mCameraPreviewVertChunk =
+    protected final GlBuffer.Chunk<float[]> mVertChunk =
             new GlBuffer.Chunk<>(new float[]{
-                    -1.0f,-1.0f,
-                    -1.0f,1.0f,
-                    1.0f,-1.0f,
-                    1.0f,1.0f
+                    -1.0f, 1.0f,    // left top
+                    -1.0f, -1.0f,   // left bottom
+                    1.0f, 1.0f,     // right top
+                    1.0f, -1.0f     // right bottom
             },2);
 
-    protected final GlBuffer.Chunk<float[]> mCameraPreviewFragChunk =
+    protected final GlBuffer.Chunk<float[]> mTextChunk =
             new GlBuffer.Chunk<>(new float[]{
-                    0.0f,0.0f,
                     0.0f,1.0f,
-                    1.0f,0.0f,
-                    1.0f, 1.0f
+                    0.0f,0.0f,
+                    1.0f,1.0f,
+                    1.0f,0.0f
             },2);
 
     protected GlBuffer<float[]> mCameraPreviewBuffer;
@@ -50,7 +50,7 @@ public abstract class CameraPlugin extends Plugin{
         super.create();
         this.mZoomState = ZOOM_STATE_NONE;
         mCurrentZoom = 1.0f;
-        mCameraPreviewBuffer = new GlBuffer<>(new GlBuffer.Chunk[]{mCameraPreviewVertChunk, mCameraPreviewFragChunk});
+        mCameraPreviewBuffer = new GlBuffer<>(mVertChunk, mTextChunk);
         mCameraPreviewBuffer.commit();
     }
 
@@ -79,12 +79,12 @@ public abstract class CameraPlugin extends Plugin{
     }
 
     private void applyZoom(){
-        mCameraPreviewVertChunk.data[0] = mCameraPreviewVertChunk.data[1]
-                = mCameraPreviewVertChunk.data[2] = mCameraPreviewVertChunk.data[5] = -mCurrentZoom;
-        mCameraPreviewVertChunk.data[3] = mCameraPreviewVertChunk.data[4]
-                = mCameraPreviewVertChunk.data[6] = mCameraPreviewVertChunk.data[7] = mCurrentZoom;
+        mVertChunk.data[0] = mVertChunk.data[2]
+                = mVertChunk.data[3] = mVertChunk.data[7] = -mCurrentZoom;
+        mVertChunk.data[1] = mVertChunk.data[4]
+                = mVertChunk.data[5] = mVertChunk.data[6] = mCurrentZoom;
 
-        mCameraPreviewBuffer.commit(mCameraPreviewVertChunk);
+        mCameraPreviewBuffer.commit(mVertChunk);
     }
 
     @Override

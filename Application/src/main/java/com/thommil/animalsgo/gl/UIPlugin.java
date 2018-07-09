@@ -10,6 +10,8 @@ public abstract class UIPlugin extends Plugin {
 
     private static final String TAG = "A_GO/UIPlugin";
 
+    public static final int TEXTURE_INDEX = 0;
+
     protected AssetManager mAssetManager;
 
     protected final GlIntRect mTargetCaptureZone = new GlIntRect();

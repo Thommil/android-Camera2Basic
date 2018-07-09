@@ -1,9 +1,15 @@
 package com.thommil.animalsgo.gl.plugins;
 
+import android.opengl.GLES11Ext;
+import android.opengl.GLES20;
+
 import com.thommil.animalsgo.R;
 import com.thommil.animalsgo.gl.UIPlugin;
+import com.thommil.animalsgo.gl.libgl.GlCanvas;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
 import com.thommil.animalsgo.gl.libgl.GlOperation;
+import com.thommil.animalsgo.gl.libgl.GlSprite;
+import com.thommil.animalsgo.gl.libgl.GlTexture;
 import com.thommil.animalsgo.gl.libgl.GlTextureAtlas;
 import com.thommil.animalsgo.utils.ResourcesLoader;
 
@@ -29,6 +35,8 @@ public class UIDefault extends UIPlugin {
 
     private GlTextureAtlas mTextureAtlas;
 
+    private GlSprite mSprite;
+
     @Override
     public String getId() {
         return ID;
@@ -53,10 +61,17 @@ public class UIDefault extends UIPlugin {
     public void create() {
         super.create();
 
-        GlOperation.configureBlendTest(GlOperation.BLEND_FACTOR_SRC_ALPA, GlOperation.BLEND_FACTOR_DST_ALPA, GlOperation.BLEND_FACTOR_ONE_MINUS_SRC_ALPA, null);
+        mTextureAtlas = new GlTextureAtlas(new GlTexture() {
+            @Override
+            public int getMagnificationFilter() {
+                return GlTexture.MAG_FILTER_HIGH;
+            }
 
-
-        mTextureAtlas = new GlTextureAtlas();
+            @Override
+            public int getWrapMode(int axeId) {
+                return GlTexture.WRAP_CLAMP_TO_EDGE;
+            }
+        });
         try {
             mTextureAtlas.parseJON(mContext, ResourcesLoader.jsonFromAsset(mContext, com.thommil.animalsgo.Settings.ASSETS_TEXTURES_PATH + ATLAS_FILE));
         }catch(IOException ioe){
@@ -64,43 +79,31 @@ public class UIDefault extends UIPlugin {
         }catch(JSONException je){
             throw new RuntimeException("Failed to load texture atlas : " + je);
         }
+        GlOperation.setActiveTexture(TEXTURE_INDEX);
         mTextureAtlas.allocate();
+        mSprite = mTextureAtlas.createSprite("small");
+        mSprite.commit();
+
 
         mProgram.use();
-        mPositionAttributeHandle = mProgram.getAttributeHandle(ATTRIBUTE_POSITION);
-        mTextureCoordinatesAttributeHandle = mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD);
-        mColorAttributeHandle = mProgram.getAttributeHandle(ATTRIBUTE_COLOR);
+        mSprite.chunks[GlSprite.CHUNK_VERTEX_INDEX].handle = mProgram.getAttributeHandle(ATTRIBUTE_POSITION);
+        mSprite.chunks[GlSprite.CHUNK_COLOR_INDEX].handle = mProgram.getAttributeHandle(ATTRIBUTE_COLOR);
+        mSprite.chunks[GlSprite.CHUNK_TEXTURE_INDEX].handle = mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD);
         mTextureUniforHandle = mProgram.getUniformHandle(UNIFORM_TEXTURE);
 
-        //buffer = ByteBufferPool.getInstance().getDirectFloatBuffer(Sprite.SPRITE_SIZE);
+        GlOperation.configureBlendTest(GlOperation.BLEND_FACTOR_SRC_ALPA, GlOperation.BLEND_FACTOR_ONE_MINUS_SRC_ALPA, GlOperation.BLEND_OPERATION_ADD, null);
+
     }
 //final GlBuffer<short[]> indices =  GlBufferGlBuffer.Chunk<short[]>(new short[]{0,1,2,3,3,0});
 FloatBuffer buffer;
     @Override
     public void draw(final GlIntRect viewport, final int orientation) {
         GlOperation.setTestState(GlOperation.TEST_BLEND, true);
+        GlOperation.setActiveTexture(TEXTURE_INDEX);
 
-        /*mProgram.use().enableAttributes();
-        mTextureAtlas.getTexture().bind();
-        mSprite.rotate(1);
-        buffer.rewind();
-        buffer.put(mSprite.getVertices());
-
-
-        buffer.rewind();
-        GLES20.glVertexAttribPointer(mPositionAttributeHandle, 2,
-                GLES20.GL_FLOAT, false, Sprite.SPRITE_SIZE, buffer);
-        buffer.position(2);
-        GLES20.glVertexAttribPointer(mColorAttributeHandle, 1,
-                GLES20.GL_FLOAT, false, Sprite.SPRITE_SIZE, buffer);
-        buffer.position(3);
-        GLES20.glVertexAttribPointer(mTextureCoordinatesAttributeHandle, 2,
-                GLES20.GL_FLOAT, false, Sprite.SPRITE_SIZE, buffer);
-        GLES20.glUniform1i(mTextureUniforHandle, 0);
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
-
-        mTextureAtlas.getTexture().unbind();
-        mProgram.disableAttributes();*/
+        mProgram.use();
+        GLES20.glUniform1i(mTextureUniforHandle, TEXTURE_INDEX);
+        GlCanvas.drawArrays(mProgram, mSprite);
     }
 
     @Override

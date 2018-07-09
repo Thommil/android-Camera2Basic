@@ -5,7 +5,6 @@ import android.opengl.GLES20;
 
 import com.thommil.animalsgo.R;
 import com.thommil.animalsgo.gl.CameraPlugin;
-import com.thommil.animalsgo.gl.libgl.GlBuffer;
 import com.thommil.animalsgo.gl.libgl.GlCanvas;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
 import com.thommil.animalsgo.gl.libgl.GlOperation;
@@ -53,8 +52,8 @@ public class CameraDefault extends CameraPlugin {
         super.create();
 
         mProgram.use();
-        mCameraPreviewVertChunk.handle = mProgram.getAttributeHandle(ATTRIBUTE_POSITION);
-        mCameraPreviewFragChunk.handle = mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD);
+        mVertChunk.handle = mProgram.getAttributeHandle(ATTRIBUTE_POSITION);
+        mTextChunk.handle = mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD);
         mTextureUniforHandle = mProgram.getUniformHandle(UNIFORM_TEXTURE);
         mMvpMatrixNuniformHandle = mProgram.getUniformHandle(UNIFORM_MVP_MATRIX);
 
@@ -73,33 +72,21 @@ public class CameraDefault extends CameraPlugin {
             public int getWrapMode(int axeId) {
                 return GlTexture.WRAP_CLAMP_TO_EDGE;
             }
-
-            @Override
-            public int getFormat() {
-                return FORMAT_RGB;
-            }
-
-            @Override
-            public int getType() {
-                return TYPE_UNSIGNED_SHORT_5_6_5;
-            }
         };
 
-        mCameraTexture.bind().configure().allocate();
+        GlOperation.setActiveTexture(TEXTURE_INDEX);
+        mCameraTexture.bind().allocate().configure();
     }
 
     @Override
     public void draw(final GlIntRect viewport, final int orientation) {
         super.draw(viewport, orientation);
+        GlOperation.setActiveTexture(TEXTURE_INDEX);
 
         mProgram.use();
-        mCameraTexture.bind();
-
-        GLES20.glUniform1i(mTextureUniforHandle, 0);
+        GLES20.glUniform1i(mTextureUniforHandle, TEXTURE_INDEX);
         GLES20.glUniformMatrix4fv(mMvpMatrixNuniformHandle, 1, false, mCameraTransformMatrix, 0);
         GlCanvas.drawArrays(mProgram, mCameraPreviewBuffer);
-
-        mCameraTexture.unbind();
     }
 
     @Override

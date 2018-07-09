@@ -173,7 +173,7 @@ public class GlBuffer<E>{
 	/**
 	 * Constructor
 	 */
-	public GlBuffer(final Chunk<E>[] chunks){
+	public GlBuffer(final Chunk<E> ...chunks){
 		//android.util.//Log.d(TAG,"NEW");
 		this.chunks = chunks;
 
@@ -320,13 +320,10 @@ public class GlBuffer<E>{
                 break;
 		}
 
-		//Update server if needed
-		if(push && this.handle != UNBIND_HANDLE){
-			GLES20.glBindBuffer(this.target, this.handle);
-			this.buffer.rewind();
-			GLES20.glBufferSubData(this.target, 0, this.size, this.buffer);
-			GLES20.glBindBuffer(this.target, UNBIND_HANDLE);
-		}
+        //Update server if needed
+        if(push){
+            push();
+        }
 
 		return this;
 	}
@@ -349,7 +346,7 @@ public class GlBuffer<E>{
      * @param push Update VBO too is set to true
      */
     public GlBuffer commit(final Chunk<E> chunk, boolean push){
-        //android.util.//Log.d(TAG,"update("+chunk+", "+commit+")");
+        //Log.d(TAG,"update("+chunk+", "+commit+")");
         switch(this.datatype){
             case TYPE_FLOAT :
                 if(this.buffer == null){
@@ -390,14 +387,21 @@ public class GlBuffer<E>{
         }
 
         //Update server if needed
-        if(push && this.handle != UNBIND_HANDLE){
-            GLES20.glBindBuffer(this.target, this.handle);
-            this.buffer.rewind();
-            GLES20.glBufferSubData(this.target, 0, this.size, this.buffer);
-            GLES20.glBindBuffer(this.target, UNBIND_HANDLE);
+        if(push){
+            push();
         }
 
         return this;
+    }
+
+    protected void push(){
+        //Log.d(TAG,"push()");
+        if(this.handle != UNBIND_HANDLE) {
+            GLES20.glBindBuffer(this.target, this.handle);
+            this.buffer.position(0);
+            GLES20.glBufferSubData(this.target, 0, this.size, this.buffer);
+            GLES20.glBindBuffer(this.target, UNBIND_HANDLE);
+        }
     }
 
 	/**
@@ -424,7 +428,7 @@ public class GlBuffer<E>{
 			//Bind it
 			GLES20.glBindBuffer(target, this.handle);
 			//Push data into it
-			this.buffer.rewind();
+			this.buffer.position(0);
 			GLES20.glBufferData(target, this.size, this.buffer, usage);
 			//Unbind it
 			GLES20.glBindBuffer(target, UNBIND_HANDLE);

@@ -51,7 +51,7 @@ public abstract class CameraPlugin extends Plugin{
         this.mZoomState = ZOOM_STATE_NONE;
         mCurrentZoom = 1.0f;
         mCameraPreviewBuffer = new GlBuffer<>(new GlBuffer.Chunk[]{mCameraPreviewVertChunk, mCameraPreviewFragChunk});
-        applyZoom();
+        mCameraPreviewBuffer.commit();
     }
 
     @Override
@@ -84,7 +84,7 @@ public abstract class CameraPlugin extends Plugin{
         mCameraPreviewVertChunk.data[3] = mCameraPreviewVertChunk.data[4]
                 = mCameraPreviewVertChunk.data[6] = mCameraPreviewVertChunk.data[7] = mCurrentZoom;
 
-        mCameraPreviewBuffer.update(mCameraPreviewVertChunk);
+        mCameraPreviewBuffer.commit(mCameraPreviewVertChunk);
     }
 
     @Override

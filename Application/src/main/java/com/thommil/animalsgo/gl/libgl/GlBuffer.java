@@ -207,8 +207,6 @@ public class GlBuffer<E>{
 		}
 		//Stride
 		this.stride = currentPosition;
-
-		update(false);
 	}
 	
 	/**
@@ -242,19 +240,19 @@ public class GlBuffer<E>{
     /**
      * Update local buffer with all chunks
      */
-    public GlBuffer update(){
-        return update(false);
+    public GlBuffer commit(){
+        return commit(false);
     }
 
     /**
      * Update buffer with all chunks
      *
-     * Data can be commited into VBO if queried.
+     * Data can be pushed into VBO if queried.
      *
-     * @param commit Update VBO too is set to true
+     * @param push Update VBO too is set to true
      */
-    public GlBuffer update(boolean commit){
-        return update(this.chunks, commit);
+    public GlBuffer commit(boolean push){
+        return commit(this.chunks, push);
     }
 
     /**
@@ -262,8 +260,8 @@ public class GlBuffer<E>{
      *
      * @param chunks The list of chunks index to update
      */
-    public GlBuffer update(final Chunk<E>[] chunks){
-        return update(chunks, false);
+    public GlBuffer commit(final Chunk<E>[] chunks){
+        return commit(chunks, false);
     }
 
 
@@ -273,9 +271,9 @@ public class GlBuffer<E>{
 	 * Data can be commited into VBO if queried.
 	 *
 	 * @param chunks The list of chunks index to update
-	 * @param commit Update VBO too is set to true
+	 * @param push Update VBO too is set to true
 	 */
-	public GlBuffer update(final Chunk<E>[] chunks, boolean commit){
+	public GlBuffer commit(final Chunk<E>[] chunks, boolean push){
 		//android.util.//Log.d(TAG,"update("+chunks+", "+commit+")");
 		switch(this.datatype){
 			case TYPE_FLOAT :
@@ -325,7 +323,7 @@ public class GlBuffer<E>{
 		}
 
 		//Update server if needed
-		if(commit && this.handle != UNBIND_HANDLE){
+		if(push && this.handle != UNBIND_HANDLE){
 			GLES20.glBindBuffer(this.target, this.handle);
 			this.buffer.rewind();
 			GLES20.glBufferSubData(this.target, 0, this.size, this.buffer);
@@ -340,19 +338,19 @@ public class GlBuffer<E>{
      *
      * @param chunk The chunk to update
      */
-    public GlBuffer update(final Chunk<E> chunk){
-        return update(chunk, false);
+    public GlBuffer commit(final Chunk<E> chunk){
+        return commit(chunk, false);
     }
 
     /**
      * Update buffer with the chunk indicated.
      *
-     * Data can be commited into VBO if queried.
+     * Data can be pushed into VBO if queried.
      *
      * @param chunk The chunk to update
-     * @param commit Update VBO too is set to true
+     * @param push Update VBO too is set to true
      */
-    public GlBuffer update(final Chunk<E> chunk, boolean commit){
+    public GlBuffer commit(final Chunk<E> chunk, boolean push){
         //android.util.//Log.d(TAG,"update("+chunk+", "+commit+")");
         switch(this.datatype){
             case TYPE_FLOAT :
@@ -394,7 +392,7 @@ public class GlBuffer<E>{
         }
 
         //Update server if needed
-        if(commit && this.handle != UNBIND_HANDLE){
+        if(push && this.handle != UNBIND_HANDLE){
             GLES20.glBindBuffer(this.target, this.handle);
             this.buffer.rewind();
             GLES20.glBufferSubData(this.target, 0, this.size, this.buffer);

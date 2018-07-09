@@ -68,6 +68,7 @@ public class PreviewToon extends PreviewPlugin {
         mViewSizeUniformHandle = mProgram.getUniformHandle(UNIFORM_VIEW_SIZE);
 
         mSquareImageBuffer = new GlBuffer<>(new GlBuffer.Chunk[]{mSquareImageVertChunk, mSquareImageFragChunk});
+        mSquareImageBuffer.commit();
     }
 
     @Override

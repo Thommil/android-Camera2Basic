@@ -22,7 +22,7 @@ public class GlTextureAtlas {
 
     private static final String TAG = "A_GO/GlTextureAtlas";
 
-    private final Map<String, Sprite> mSpriteMap = new HashMap<>();
+    private final Map<String, SpriteTemplate> mSpriteMap = new HashMap<>();
     private GlTexture mTexture;
 
     public GlTextureAtlas(final Context context, final int id){
@@ -45,8 +45,9 @@ public class GlTextureAtlas {
         return mTexture;
     }
 
-    public Sprite getSprite(final String name){
-        return mSpriteMap.get(name);
+    public Sprite createSprite(final String name, final int id){
+        final SpriteTemplate template = mSpriteMap.get(name);
+        return new Sprite(id, mTexture, template.x, template.y, template.width, template.height, 1f, 1f);
     }
 
     public void free(){
@@ -80,7 +81,7 @@ public class GlTextureAtlas {
                         final float pivotY = Float.parseFloat(parser.getAttributeValue(null, "pivotY"));
                         final Sprite sprite = new Sprite(name.hashCode(), mTexture, x, y, width, height);
                         sprite.setOrigin(width * pivotX, height * pivotY);
-                        mSpriteMap.put(name, sprite);
+                        mSpriteMap.put(name, new SpriteTemplate(name, x, y, width, height, pivotX, pivotY));
                     }
                 }
 
@@ -90,6 +91,26 @@ public class GlTextureAtlas {
             throw new RuntimeException("Failed to load xml atlas : " + ioe);
         }catch(XmlPullParserException xfpe){
             throw new RuntimeException("Failed to load xml atlas : " + xfpe);
+        }
+    }
+
+    private static class SpriteTemplate {
+        final public String name;
+        final public int x;
+        final public int y;
+        final public int width;
+        final public int height;
+        final public float pivotX;
+        final public float pivotY;
+
+        public SpriteTemplate(String name, int x, int y, int width, int height, float pivotX, float pivotY) {
+            this.name = name;
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+            this.pivotX = pivotX;
+            this.pivotY = pivotY;
         }
     }
 

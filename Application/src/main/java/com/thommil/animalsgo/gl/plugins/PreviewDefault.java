@@ -65,6 +65,7 @@ public class PreviewDefault extends PreviewPlugin {
         mTextureUniforHandle = mProgram.getUniformHandle(UNIFORM_TEXTURE);
 
         mSquareImageBuffer = new GlBuffer<>(new GlBuffer.Chunk[]{mSquareImageVertChunk, mSquareImageFragChunk});
+        mSquareImageBuffer.commit();
     }
 
     @Override

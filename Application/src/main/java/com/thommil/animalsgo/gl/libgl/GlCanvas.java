@@ -92,21 +92,93 @@ public class GlCanvas {
         }
     }
 
-    /*
-    mProgram.use().enableAttributes();
-        mCameraTexture.bind();
+    public static void drawElements(final GlProgram program, final GlBuffer data, final GlBuffer indices){
+        drawElements(program, data, indices, null);
+    }
 
-        mSquareImageBuffer.buffer.rewind();
-        GLES20.glVertexAttribPointer(mPositionAttributeHandle, mSquareImageBuffer.chunks[0].components,
-                mSquareImageBuffer.datatype, false, mSquareImageBuffer.stride, mSquareImageBuffer.buffer);
-        mSquareImageBuffer.buffer.position(mSquareImageBuffer.chunks[1].position);
-        GLES20.glVertexAttribPointer(mTextureCoordinatesAttributeHandle, mSquareImageBuffer.chunks[1].components,
-                mSquareImageBuffer.datatype, false, mSquareImageBuffer.stride, mSquareImageBuffer.buffer);
-        GLES20.glUniform1i(mTextureUniforHandle, 0);
-        GLES20.glUniform2f(mViewSizeUniformHandle, viewport.width(), viewport.height());
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, mSquareImageBuffer.count);
+    public static void drawElements(final GlProgram program, final GlBuffer data, final GlBuffer indices, final int[] attributes){
+        switch (data.mode){
+            case GlBuffer.MODE_VAO: {
+                data.bind();
+                indices.bind();
+                GLES20.glDrawElements(GLES20.GL_TRIANGLE_STRIP, data.count, indices.datatype, 0);
+                indices.unbind();
+                data.unbind();
+                break;
+            }
+            case GlBuffer.MODE_VBO: {
+                final boolean useAllAttributes = (attributes == null);
+                if (useAllAttributes) {
+                    program.enableAttributes();
+                } else {
+                    for (final int attribute : attributes) {
+                        program.enableAttribute(attribute);
+                    }
+                }
+                data.bind();
 
-        mCameraTexture.unbind();
-        mProgram.disableAttributes();
-     */
+                int chunkIndex = 0;
+                for(final GlBuffer.Chunk chunk : data.chunks){
+                    if (useAllAttributes) {
+                        GLES20.glVertexAttribPointer(chunk.handle, chunk.components,
+                                data.datatype, false, data.stride, chunk.offset);
+                    }
+                    else{
+                        GLES20.glVertexAttribPointer(attributes[chunkIndex], chunk.components,
+                                data.datatype, false, data.stride, chunk.offset);
+                    }
+                    chunkIndex++;
+                }
+
+                indices.bind();
+                GLES20.glDrawElements(GLES20.GL_TRIANGLE_STRIP, data.count, indices.datatype, 0);
+                indices.unbind();
+
+                data.unbind();
+                if (useAllAttributes) {
+                    program.disableAttributes();
+                } else {
+                    for (final int attribute : attributes) {
+                        program.disableAttribute(attribute);
+                    }
+                }
+                break;
+            }
+            default: {
+                final boolean useAllAttributes = (attributes == null);
+                if (useAllAttributes) {
+                    program.enableAttributes();
+                } else {
+                    for (final int attribute : attributes) {
+                        program.enableAttribute(attribute);
+                    }
+                }
+
+                int chunkIndex = 0;
+                for(final GlBuffer.Chunk chunk : data.chunks){
+                    data.buffer.position(chunk.position);
+                    if (useAllAttributes) {
+                        GLES20.glVertexAttribPointer(chunk.handle, chunk.components,
+                                data.datatype, false, data.stride, data.buffer);
+                    }
+                    else{
+                        GLES20.glVertexAttribPointer(attributes[chunkIndex], chunk.components,
+                                data.datatype, false, data.stride, data.buffer);
+                    }
+                    chunkIndex++;
+                }
+
+                indices.buffer.rewind();
+                GLES20.glDrawElements(GLES20.GL_TRIANGLE_STRIP, data.count, indices.datatype, indices.buffer);
+
+                if (useAllAttributes) {
+                    program.disableAttributes();
+                } else {
+                    for (final int attribute : attributes) {
+                        program.disableAttribute(attribute);
+                    }
+                }
+            }
+        }
+    }
 }

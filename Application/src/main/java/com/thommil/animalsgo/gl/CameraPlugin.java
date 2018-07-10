@@ -1,6 +1,7 @@
 package com.thommil.animalsgo.gl;
 
 import com.thommil.animalsgo.gl.libgl.GlBuffer;
+import com.thommil.animalsgo.gl.libgl.GlDrawableBuffer;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
 import com.thommil.animalsgo.gl.libgl.GlOperation;
 import com.thommil.animalsgo.gl.libgl.GlTexture;
@@ -32,7 +33,7 @@ public abstract class CameraPlugin extends Plugin{
                     1.0f,0.0f
             },2);
 
-    protected GlBuffer<float[]> mCameraPreviewBuffer;
+    protected GlDrawableBuffer<float[]> mCameraPreviewBuffer;
 
     protected float[] mCameraTransformMatrix;
 
@@ -52,7 +53,7 @@ public abstract class CameraPlugin extends Plugin{
         mCurrentZoom = 1.0f;
 
         //Buffer
-        mCameraPreviewBuffer = new GlBuffer<>(mVertChunk, mTextChunk);
+        mCameraPreviewBuffer = new GlDrawableBuffer<>(mVertChunk, mTextChunk);
         mCameraPreviewBuffer.commit();
         applyZoom();
     }

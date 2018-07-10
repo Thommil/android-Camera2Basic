@@ -5,7 +5,7 @@ import android.opengl.GLES20;
 import com.thommil.animalsgo.R;
 import com.thommil.animalsgo.gl.PreviewPlugin;
 import com.thommil.animalsgo.gl.libgl.GlBuffer;
-import com.thommil.animalsgo.gl.libgl.GlCanvas;
+import com.thommil.animalsgo.gl.libgl.GlDrawableBuffer;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
 
 
@@ -32,7 +32,7 @@ public class PreviewToon extends PreviewPlugin {
                     1.0f,0.0f
             },2);
 
-    protected GlBuffer<float[]> mPreviewBuffer;
+    protected GlDrawableBuffer<float[]> mPreviewBuffer;
 
     private int mTextureUniforHandle;
     private int mViewSizeUniformHandle;
@@ -62,13 +62,12 @@ public class PreviewToon extends PreviewPlugin {
         super.allocate();
 
         //Buffer
-        mPreviewBuffer = new GlBuffer<>(mVertChunk, mTextChunk);
+        mPreviewBuffer = new GlDrawableBuffer<>(mVertChunk, mTextChunk);
         mPreviewBuffer.commit();
 
         //Program
         mProgram.use();
-        mVertChunk.handle = mProgram.getAttributeHandle(ATTRIBUTE_POSITION);
-        mTextChunk.handle = mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD);
+        mPreviewBuffer.setVertexAttribHandles(mProgram.getAttributeHandle(ATTRIBUTE_POSITION), mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD));
         mTextureUniforHandle = mProgram.getUniformHandle(UNIFORM_TEXTURE);
         mViewSizeUniformHandle = mProgram.getUniformHandle(UNIFORM_VIEW_SIZE);
     }
@@ -84,7 +83,7 @@ public class PreviewToon extends PreviewPlugin {
         mSourceTexture.bind();
 
         //Draw
-        GlCanvas.drawArrays(mProgram, mPreviewBuffer);
+        mPreviewBuffer.draw(mProgram);
     }
 
     @Override

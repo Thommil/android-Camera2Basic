@@ -30,11 +30,7 @@ import android.opengl.GLES30;
  */
 public class GlBuffer<E>{
 
-    static{
-        System.loadLibrary("animals-go");
-    }
-
-	/**
+    /**
 	 * TAG log
 	 */
 	@SuppressWarnings("unused")
@@ -164,11 +160,16 @@ public class GlBuffer<E>{
      * Handle on server VAO
      */
     private int mVaoHandle = UNBIND_HANDLE;
-	
+
 	/**
-	 * Cache the list of chunk ids
+	 * Indicates if underlying buffer is managed by current instance
 	 */
-	private int[] indexCache;
+	protected boolean mManagedBuffer = false;
+
+    /**
+     * Can be used to store associated attribute handle
+     */
+    public int[] vertexAttribHandles;
 
 	/**
 	 * Constructor
@@ -176,6 +177,7 @@ public class GlBuffer<E>{
 	public GlBuffer(final Chunk<E> ...chunks){
 		//android.util.//Log.d(TAG,"NEW");
 		this.chunks = chunks;
+		mManagedBuffer = false;
 
 		//Init
 		if(this.chunks != null && this.chunks.length > 0) {
@@ -185,45 +187,51 @@ public class GlBuffer<E>{
 			this.datatype = this.chunks[0].datatype;
 			//Datasize
 			this.datasize = this.chunks[0].datasize;
-		} else {
-			throw new IllegalArgumentException("failed to build buffer : no data provided");
+
+            int currentPosition = 0;
+            int index=0;
+            //First pass -> size & position
+            for(Chunk<E> chunk : this.chunks){
+                //BufferSize
+                this.size += chunk.size;
+                //Position
+                chunk.offset = currentPosition;
+                chunk.position = currentPosition / chunk.datasize;
+                currentPosition += chunk.datasize * chunk.components;
+            }
+            //Stride
+            this.stride = currentPosition;
 		}
-		int currentPosition = 0;
-		int currentOffset = 0;
-		this.indexCache = new int[this.chunks.length];
-		int index=0;
-		//First pass -> size & position
-		for(Chunk<E> chunk : this.chunks){
-			//BufferSize
-			this.size += chunk.size;
-			//Position
-            chunk.offset = currentPosition;
-            chunk.position = currentPosition / chunk.datasize;
-			currentPosition += chunk.datasize * chunk.components;
-			//Index cache
-			this.indexCache[index] = index++;
-		}
-		//Stride
-		this.stride = currentPosition;
 	}
 	
 	/**
 	 * Bind current buffer to active buffer if GPU 
 	 */
 	public GlBuffer bind(){
-		//android.util.//Log.d(TAG,"bind()");
+		//Log.d(TAG,"bind()");
         if(mVaoHandle != UNBIND_HANDLE){
             GLES30.glBindVertexArray(mVaoHandle);
         }
         GLES20.glBindBuffer(this.target, this.handle);
 		return this;
 	}
+
+    /**
+     * Set the attribte pointers handles
+     *
+     * @param handles A list of handles from program
+     */
+	public GlBuffer setVertexAttribHandles(final int ...handles){
+        //Log.d(TAG,"setVertexAttribHandles("+vertexAttribHandle+")");
+        this.vertexAttribHandles = handles;
+        return this;
+    }
 	
 	/**
 	 * Unbind current buffer from active buffer if GPU 
 	 */
 	public GlBuffer unbind(){
-		//android.util.//Log.d(TAG,"unbind()");
+		//Log.d(TAG,"unbind()");
 		GLES20.glBindBuffer(this.target, this.UNBIND_HANDLE);
 		if(mVaoHandle != UNBIND_HANDLE){
             GLES30.glBindVertexArray(UNBIND_HANDLE);
@@ -269,55 +277,68 @@ public class GlBuffer<E>{
 	 */
 	public GlBuffer commit(final Chunk<E>[] chunks, boolean push){
 		//android.util.//Log.d(TAG,"update("+chunks+", "+commit+")");
+		int startPosition = 0;
+		int offset = this.stride;
 		switch(this.datatype){
 			case TYPE_FLOAT :
 				if(this.buffer == null){
 					this.buffer = ByteBufferPool.getInstance().getDirectFloatBuffer(this.size >> 2);
+					mManagedBuffer = true;
 				}
-				for(final Chunk<E> chunk : chunks){
-                    final int offset = this.stride >> 2;
-					for(int elementIndex=0, compIndex=0; elementIndex < this.count ; elementIndex++, compIndex+=chunk.components){
-						this.buffer.position(chunk.position + (elementIndex * offset));
-						((FloatBuffer)this.buffer).put(((float[])chunk.data),compIndex,chunk.components);
-					}
+				else if(mManagedBuffer){
+					this.buffer.position(0);
 				}
+				else{
+					startPosition = this.buffer.position();
+				}
+                offset = this.stride >> 2;
 				break;
             case TYPE_INT :
                 if(this.buffer == null){
                     this.buffer = ByteBufferPool.getInstance().getDirectIntBuffer(this.size >> 2);
-                }
-                for(final Chunk<E> chunk : chunks){
-                    final int offset = this.stride >> 2;
-                    for(int elementIndex=0, compIndex=0; elementIndex < this.count ; elementIndex++, compIndex+=chunk.components){
-                        this.buffer.position(chunk.position + (elementIndex * offset));
-                        ((IntBuffer)this.buffer).put(((int[])chunk.data),compIndex,chunk.components);
-                    }
-                }
+					mManagedBuffer = true;
+				}
+				else if(mManagedBuffer){
+					this.buffer.position(0);
+				}
+				else{
+					startPosition = this.buffer.position();
+				}
+                offset = this.stride >> 2;
                 break;
 			case TYPE_SHORT :
 				if(this.buffer == null){
 					this.buffer = ByteBufferPool.getInstance().getDirectShortBuffer(this.size >> 1);
+					mManagedBuffer = true;
 				}
-                for(final Chunk<E> chunk : chunks){
-                    final int offset = this.stride >> 1;
-					for(int elementIndex=0, compIndex=0; elementIndex < this.count ; elementIndex++, compIndex+=chunk.components){
-						this.buffer.position(chunk.position + (elementIndex * offset));
-						((ShortBuffer)this.buffer).put(((short[])chunk.data),compIndex,chunk.components);
-					}
+				else if(mManagedBuffer){
+					this.buffer.position(0);
 				}
+				else{
+					startPosition = this.buffer.position();
+				}
+                offset = this.stride >> 1;
 				break;
             default :
                 if(this.buffer == null){
                     this.buffer = ByteBufferPool.getInstance().getDirectByteBuffer(this.size);
-                }
-                for(final Chunk<E> chunk : chunks){
-                    for(int elementIndex=0, compIndex=0; elementIndex < this.count ; elementIndex++, compIndex+=chunk.components){
-                        this.buffer.position(chunk.position + (elementIndex * this.stride));
-                        ((ByteBuffer)this.buffer).put(((byte[])chunk.data),compIndex,chunk.components);
-                    }
-                }
+					mManagedBuffer = true;
+				}
+				else if(mManagedBuffer){
+					this.buffer.position(0);
+				}
+				else{
+					startPosition = this.buffer.position();
+				}
                 break;
 		}
+
+        for(final Chunk<E> chunk : chunks){
+            for(int elementIndex=0, compIndex=0; elementIndex < this.count ; elementIndex++, compIndex+=chunk.components){
+                this.buffer.position(startPosition + chunk.position + (elementIndex * offset));
+                ((FloatBuffer)this.buffer).put(((float[])chunk.data),compIndex,chunk.components);
+            }
+        }
 
         //Update server if needed
         if(push){
@@ -346,49 +367,68 @@ public class GlBuffer<E>{
      */
     public GlBuffer commit(final Chunk<E> chunk, boolean push){
         //Log.d(TAG,"update("+chunk+", "+commit+")");
+		int startPosition = 0;
+		int offset = this.stride;
         switch(this.datatype){
             case TYPE_FLOAT : {
                 if (this.buffer == null) {
                     this.buffer = ByteBufferPool.getInstance().getDirectFloatBuffer(this.size >> 2);
+					mManagedBuffer = true;
                 }
-                final int offset = this.stride >> 2;
-                for (int elementIndex = 0, compIndex = 0; elementIndex < this.count; elementIndex++, compIndex += chunk.components) {
-                    this.buffer.position(chunk.position + (elementIndex * offset));
-                    ((FloatBuffer) this.buffer).put(((float[]) chunk.data), compIndex, chunk.components);
-                }
+				else if(mManagedBuffer){
+					this.buffer.position(0);
+				}
+				else{
+					startPosition = this.buffer.position();
+				}
+                offset = this.stride >> 2;
                 break;
             }
             case TYPE_INT : {
                 if (this.buffer == null) {
                     this.buffer = ByteBufferPool.getInstance().getDirectIntBuffer(this.size >> 2);
-                }
-                final int offset = this.stride >> 2;
-                for (int elementIndex = 0, compIndex = 0; elementIndex < this.count; elementIndex++, compIndex += chunk.components) {
-                    this.buffer.position(chunk.position + (elementIndex * offset));
-                    ((IntBuffer) this.buffer).put(((int[]) chunk.data), compIndex, chunk.components);
-                }
+					mManagedBuffer = true;
+				}
+				else if(mManagedBuffer){
+					this.buffer.position(0);
+				}
+				else{
+					startPosition = this.buffer.position();
+				}
+                offset = this.stride >> 2;
                 break;
             }
             case TYPE_SHORT : {
                 if (this.buffer == null) {
                     this.buffer = ByteBufferPool.getInstance().getDirectShortBuffer(this.size >> 1);
-                }
-                final int offset = this.stride >> 1;
-                for (int elementIndex = 0, compIndex = 0; elementIndex < this.count; elementIndex++, compIndex += chunk.components) {
-                    this.buffer.position(chunk.position + (elementIndex * offset));
-                    ((ShortBuffer) this.buffer).put(((short[]) chunk.data), compIndex, chunk.components);
-                }
+					mManagedBuffer = true;
+				}
+				else if(mManagedBuffer){
+					this.buffer.position(0);
+				}
+				else{
+					startPosition = this.buffer.position();
+				}
+                offset = this.stride >> 1;
                 break;
             }
             default :
                 if(this.buffer == null){
                     this.buffer = ByteBufferPool.getInstance().getDirectByteBuffer(this.size);
-                }
-                for(int elementIndex=0, compIndex=0; elementIndex < this.count ; elementIndex++, compIndex+=chunk.components){
-                    this.buffer.position(chunk.position + (elementIndex * this.stride));
-                    ((ByteBuffer)this.buffer).put(((byte[])chunk.data),compIndex,chunk.components);
-                }
+					mManagedBuffer = true;
+				}
+				else if(mManagedBuffer){
+					this.buffer.position(0);
+				}
+				else{
+					startPosition = this.buffer.position();
+				}
                 break;
+        }
+
+        for (int elementIndex = 0, compIndex = 0; elementIndex < this.count; elementIndex++, compIndex += chunk.components) {
+            this.buffer.position(startPosition + chunk.position + (elementIndex * offset));
+            ((FloatBuffer) this.buffer).put(((float[]) chunk.data), compIndex, chunk.components);
         }
 
         //Update server if needed
@@ -445,26 +485,31 @@ public class GlBuffer<E>{
 			GlOperation.checkGlError(TAG, "glBufferData");
 
 			//Free local buffer is queried
-			if(freeLocal){
+			if(mManagedBuffer && freeLocal){
 				switch(this.datatype){
 					case TYPE_BYTE :
 						ByteBufferPool.getInstance().returnDirectBuffer((ByteBuffer)this.buffer);
+						mManagedBuffer = false;
 						break;
 					case TYPE_SHORT :
 						ByteBufferPool.getInstance().returnDirectBuffer((ShortBuffer)this.buffer);
+						mManagedBuffer = false;
 						break;
 					case TYPE_INT :
 						ByteBufferPool.getInstance().returnDirectBuffer((IntBuffer)this.buffer);
+						mManagedBuffer = false;
 						break;
 					default :
 						ByteBufferPool.getInstance().returnDirectBuffer((FloatBuffer)this.buffer);
+						mManagedBuffer = false;
 				}
 				this.buffer = null;
 			}
 
 			mode = MODE_VBO;
 
-            if(GlOperation.getVersion()[0] >= 3){
+            if(GlOperation.getVersion()[0] >= 3 && this.vertexAttribHandles != null
+                    && this.vertexAttribHandles.length > 0){
                 GLES30.glGenVertexArrays(1, handles, 0);
                 mVaoHandle = handles[0];
                 GlOperation.checkGlError(TAG, "glGenVertexArrays");
@@ -472,10 +517,10 @@ public class GlBuffer<E>{
                 GLES30.glBindVertexArray(mVaoHandle);
                 GLES20.glBindBuffer(target, this.handle);
 
-                for(final Chunk chunk : this.chunks){
-                    GLES20.glEnableVertexAttribArray(chunk.handle);
-                    GLES20.glVertexAttribPointer(chunk.handle, chunk.components,
-                            chunk.datatype, chunk.normalized, stride, chunk.offset);
+                for(int index=0; index < this.vertexAttribHandles.length; index++){
+                    GLES20.glEnableVertexAttribArray(this.vertexAttribHandles[index]);
+                    GLES20.glVertexAttribPointer(this.vertexAttribHandles[index], this.chunks[index].components,
+                            this.chunks[index].datatype, this.chunks[index].normalized, stride, this.chunks[index].offset);
                 }
                 GlOperation.checkGlError(TAG, "glVertexAttribPointer");
 
@@ -509,19 +554,23 @@ public class GlBuffer<E>{
             GlOperation.checkGlError(TAG, "glDeleteVertexArrays");
         }
 
-		if(this.buffer != null){
+		if(mManagedBuffer && this.buffer != null){
 			switch(this.datatype){
 				case TYPE_BYTE :
 					ByteBufferPool.getInstance().returnDirectBuffer((ByteBuffer)this.buffer);
+					mManagedBuffer = false;
 					break;
 				case TYPE_SHORT :
 					ByteBufferPool.getInstance().returnDirectBuffer((ShortBuffer)this.buffer);
+					mManagedBuffer = false;
 					break;
 				case TYPE_INT :
 					ByteBufferPool.getInstance().returnDirectBuffer((IntBuffer)this.buffer);
+					mManagedBuffer = false;
 					break;
 				default :
 					ByteBufferPool.getInstance().returnDirectBuffer((FloatBuffer)this.buffer);
+					mManagedBuffer = false;
 			}
 			this.buffer = null;
 		}
@@ -540,12 +589,6 @@ public class GlBuffer<E>{
 	 * @param <T> Should be of type byte[], short[], int[], float[]
 	 */
 	public static class Chunk<T> {
-
-
-		/**
-		 * Can be used to store associated attribute handle
-		 */
-		public int handle;
 
 		/**
 		 * The data contained in this chunk (set by Application)
@@ -597,7 +640,6 @@ public class GlBuffer<E>{
 			this.data = data;
 			this.components = components;
 			this.offset = 0;
-			this.handle = UNBIND_HANDLE;
 			this.normalized = false;
 
 			//Byte data

@@ -48,7 +48,10 @@ public class GlTextureAtlas {
 
     public GlSprite createSprite(final String name){
         final SpriteTemplate template = mSpriteMap.get(name);
-        return new GlSprite(mTexture, template.x, template.y, template.width, template.height);
+        if(template != null) {
+            return new GlSprite(mTexture, template.x, template.y, template.width, template.height);
+        }
+        return null;
     }
 
     public GlTextureAtlas free(){

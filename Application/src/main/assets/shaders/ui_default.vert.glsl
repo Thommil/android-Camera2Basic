@@ -1,6 +1,5 @@
 attribute vec2 positionAttr;
 attribute vec2 textCoordAttr;
-attribute vec4 colorAttr;
 
 varying vec2 vTextCoordAttr;
 

@@ -5,7 +5,6 @@ import android.opengl.GLES20;
 
 import com.thommil.animalsgo.R;
 import com.thommil.animalsgo.gl.CameraPlugin;
-import com.thommil.animalsgo.gl.libgl.GlCanvas;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
 import com.thommil.animalsgo.gl.libgl.GlTexture;
 
@@ -71,8 +70,7 @@ public class CameraDefault extends CameraPlugin {
 
         //Program
         mProgram.use();
-        mVertChunk.handle = mProgram.getAttributeHandle(ATTRIBUTE_POSITION);
-        mTextChunk.handle = mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD);
+        mCameraPreviewBuffer.setVertexAttribHandles(mProgram.getAttributeHandle(ATTRIBUTE_POSITION), mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD));
         mTextureUniforHandle = mProgram.getUniformHandle(UNIFORM_TEXTURE);
         mMvpMatrixNuniformHandle = mProgram.getUniformHandle(UNIFORM_MVP_MATRIX);
     }
@@ -90,7 +88,7 @@ public class CameraDefault extends CameraPlugin {
         mCameraTexture.bind();
 
         //Draw
-        GlCanvas.drawArrays(mProgram, mCameraPreviewBuffer);
+        mCameraPreviewBuffer.draw(mProgram);
     }
 
     @Override

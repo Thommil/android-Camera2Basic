@@ -83,14 +83,14 @@ public class UIDefault extends UIPlugin {
         mProgram.use();
         mSprite = mTextureAtlas.createSprite("small");
         mSprite.chunks[GlSprite.CHUNK_VERTEX_INDEX].handle = mProgram.getAttributeHandle(ATTRIBUTE_POSITION);
-        mSprite.chunks[GlSprite.CHUNK_COLOR_INDEX].handle = mProgram.getAttributeHandle(ATTRIBUTE_COLOR);
         mSprite.chunks[GlSprite.CHUNK_TEXTURE_INDEX].handle = mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD);
         mTextureUniforHandle = mProgram.getUniformHandle(UNIFORM_TEXTURE);
 
         //Scene
 
         //Buffers
-        mSprite.allocate(GlBuffer.USAGE_DYNAMIC_DRAW, GlBuffer.TARGET_ARRAY_BUFFER, false).commit(true);
+        //mSprite.allocate(GlBuffer.USAGE_DYNAMIC_DRAW, GlBuffer.TARGET_ARRAY_BUFFER, false).commit(true);
+        mSprite.commit();
 
         //Blend test (should be called each draw if another one is used)
         GlOperation.configureBlendTest(GlOperation.BLEND_FACTOR_SRC_ALPA, GlOperation.BLEND_FACTOR_ONE_MINUS_SRC_ALPA, GlOperation.BLEND_OPERATION_ADD, null);
@@ -102,7 +102,6 @@ public class UIDefault extends UIPlugin {
     public void draw(final GlIntRect viewport, final int orientation) {
         //Blend test
         GlOperation.setTestState(GlOperation.TEST_BLEND, true);
-        //mSprite.commit(true);
 
         //Program
         mProgram.use();

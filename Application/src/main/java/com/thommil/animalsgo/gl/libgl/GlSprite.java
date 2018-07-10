@@ -9,8 +9,7 @@ public class GlSprite extends GlBuffer<float[]> {
     private static final String TAG = "A_GO/GlSprite";
 
     public static final int CHUNK_VERTEX_INDEX = 0;
-    public static final int CHUNK_COLOR_INDEX = 1;
-    public static final int CHUNK_TEXTURE_INDEX = 2;
+    public static final int CHUNK_TEXTURE_INDEX = 1;
 
     private final GlTexture mTexture;
 
@@ -26,12 +25,6 @@ public class GlSprite extends GlBuffer<float[]> {
                         1.0f, -1.0f     // right bottom
                 },2),
                 new GlBuffer.Chunk<>(new float[]{
-                        GlColor.WHITE_FLOAT_BITS,   // left top
-                        GlColor.WHITE_FLOAT_BITS,   // left bottom
-                        GlColor.WHITE_FLOAT_BITS,   // right top
-                        GlColor.WHITE_FLOAT_BITS    // right bottom
-                },1),
-                new GlBuffer.Chunk<>(new float[]{
                         0.0f,0.0f,      // left top //Bitmap coords
                         0.0f,1.0f,      // left bottom //Bitmap coords
                         1.0f,0.0f,      // right top //Bitmap coords
@@ -39,10 +32,10 @@ public class GlSprite extends GlBuffer<float[]> {
                 },2));
 
         mTexture = texture;
-        buildTextCoord(srcX, srcY, srcWidth, srcHeight);
+        updateClip(srcX, srcY, srcWidth, srcHeight);
     }
 
-    private void buildTextCoord(final int srcX, final int srcY, final int srcWidth, final int srcHeight){
+    private void updateClip(final int srcX, final int srcY, final int srcWidth, final int srcHeight){
         //Log.d(TAG,"buildTextCoord("+srcX+", "+srcY+", "+srcWidth+", "+srcHeight+")");
         final float top = (float)srcY / mTexture.getHeight();
         final float left = (float)srcX / mTexture.getWidth();
@@ -72,25 +65,21 @@ public class GlSprite extends GlBuffer<float[]> {
         floatBuffer.position(0);
         floatBuffer.put(chunks[CHUNK_VERTEX_INDEX].data[0]);
         floatBuffer.put(chunks[CHUNK_VERTEX_INDEX].data[1]);
-        floatBuffer.put(chunks[CHUNK_COLOR_INDEX].data[0]);
         floatBuffer.put(chunks[CHUNK_TEXTURE_INDEX].data[0]);
         floatBuffer.put(chunks[CHUNK_TEXTURE_INDEX].data[1]);
 
         floatBuffer.put(chunks[CHUNK_VERTEX_INDEX].data[2]);
         floatBuffer.put(chunks[CHUNK_VERTEX_INDEX].data[3]);
-        floatBuffer.put(chunks[CHUNK_COLOR_INDEX].data[1]);
         floatBuffer.put(chunks[CHUNK_TEXTURE_INDEX].data[2]);
         floatBuffer.put(chunks[CHUNK_TEXTURE_INDEX].data[3]);
 
         floatBuffer.put(chunks[CHUNK_VERTEX_INDEX].data[4]);
         floatBuffer.put(chunks[CHUNK_VERTEX_INDEX].data[5]);
-        floatBuffer.put(chunks[CHUNK_COLOR_INDEX].data[2]);
         floatBuffer.put(chunks[CHUNK_TEXTURE_INDEX].data[4]);
         floatBuffer.put(chunks[CHUNK_TEXTURE_INDEX].data[5]);
 
         floatBuffer.put(chunks[CHUNK_VERTEX_INDEX].data[6]);
         floatBuffer.put(chunks[CHUNK_VERTEX_INDEX].data[7]);
-        floatBuffer.put(chunks[CHUNK_COLOR_INDEX].data[3]);
         floatBuffer.put(chunks[CHUNK_TEXTURE_INDEX].data[6]);
         floatBuffer.put(chunks[CHUNK_TEXTURE_INDEX].data[7]);
 

@@ -475,7 +475,7 @@ public class GlBuffer<E>{
                 for(final Chunk chunk : this.chunks){
                     GLES20.glEnableVertexAttribArray(chunk.handle);
                     GLES20.glVertexAttribPointer(chunk.handle, chunk.components,
-                            datatype, false, stride, chunk.offset);
+                            chunk.datatype, chunk.normalized, stride, chunk.offset);
                 }
                 GlOperation.checkGlError(TAG, "glVertexAttribPointer");
 
@@ -555,22 +555,22 @@ public class GlBuffer<E>{
 		/**
 		 * The number of components per data (set by Application)
 		 */
-		public final int components;
+		public int components;
 
 		/**
 		 * The size of a chunk element (set by GlBuffer)
 		 */
-		public final int datasize;
+		public int datasize;
 
 		/**
 		 * The type of data in GL constant (set by GlBuffer)
 		 */
-		public final int datatype;
+		public int datatype;
 
 		/**
 		 * The overall size of the chunk (set by GlBuffer)
 		 */
-		public final int size;
+		public int size;
 
 		/**
 		 * The start position in buffer, in elements (set by GlBuffer)
@@ -583,6 +583,11 @@ public class GlBuffer<E>{
         public int offset;
 
 		/**
+		 * Is normalized at attrib
+		 */
+		public boolean normalized = false;
+
+		/**
 		 * Default constructor
 		 *
 		 * @param data       The data elements in byte[], short[], int[], float[]
@@ -593,10 +598,10 @@ public class GlBuffer<E>{
 			this.components = components;
 			this.offset = 0;
 			this.handle = UNBIND_HANDLE;
+			this.normalized = false;
 
 			//Byte data
 			if (data instanceof byte[]) {
-
 				this.datatype = GlBuffer.TYPE_BYTE;
 				this.datasize = Byte.BYTES;
 				this.size = this.datasize * ((byte[]) this.data).length;

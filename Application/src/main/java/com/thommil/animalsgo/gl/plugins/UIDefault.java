@@ -90,12 +90,12 @@ public class UIDefault extends UIPlugin {
 
         //Buffers
         //mSprite.allocate(GlBuffer.USAGE_DYNAMIC_DRAW, GlBuffer.TARGET_ARRAY_BUFFER, false).commit(true);
-        mSprite.commit();
+        mSprite.size(0.5f,0.5f).commit();
+        //mSprite.commit();
 
         //Blend test (should be called each draw if another one is used)
         GlOperation.configureBlendTest(GlOperation.BLEND_FACTOR_SRC_ALPA, GlOperation.BLEND_FACTOR_ONE_MINUS_SRC_ALPA, GlOperation.BLEND_OPERATION_ADD, null);
     }
-
     //final GlBuffer<short[]> indices =  GlBufferGlBuffer.Chunk<short[]>(new short[]{0,1,2,3,3,0});
 
     @Override

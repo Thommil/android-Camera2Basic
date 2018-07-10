@@ -18,4 +18,6 @@ public abstract class PreviewPlugin extends Plugin {
     public void setSourceTexture(final GlTexture sourceTexture){
         mSourceTexture = sourceTexture;
     }
+
+
 }

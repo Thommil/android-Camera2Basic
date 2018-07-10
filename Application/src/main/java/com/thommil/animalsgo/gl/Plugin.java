@@ -54,8 +54,8 @@ public abstract class Plugin {
 
     public abstract int getType();
 
-    public void create(){
-        //Log.d(TAG, "create()");
+    public void allocate(){
+        //Log.d(TAG, "allocate()");
 
         if(mProgram == null) {
 
@@ -89,10 +89,7 @@ public abstract class Plugin {
 
     public void free(){
         //Log.d(TAG, "delete()");
-        if(mProgram != null){
-            mProgram.free();;
-            mProgram = null;
-        }
+        mProgram = null;
     }
 
     public GlProgram getProgram() {
@@ -103,7 +100,7 @@ public abstract class Plugin {
         mProgram = program;
     }
 
-    public abstract void draw(final GlIntRect viewport, final int orientation);
+    public abstract void draw(final GlIntRect viewport, final float ratio, final int orientation);
 
 
 

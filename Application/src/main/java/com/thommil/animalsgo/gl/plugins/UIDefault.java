@@ -1,11 +1,9 @@
 package com.thommil.animalsgo.gl.plugins;
 
-import android.opengl.GLES11Ext;
 import android.opengl.GLES20;
 
 import com.thommil.animalsgo.R;
 import com.thommil.animalsgo.gl.UIPlugin;
-import com.thommil.animalsgo.gl.libgl.GlBuffer;
 import com.thommil.animalsgo.gl.libgl.GlCanvas;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
 import com.thommil.animalsgo.gl.libgl.GlOperation;
@@ -17,7 +15,6 @@ import com.thommil.animalsgo.utils.ResourcesLoader;
 import org.json.JSONException;
 
 import java.io.IOException;
-import java.nio.FloatBuffer;
 
 public class UIDefault extends UIPlugin {
 
@@ -54,8 +51,8 @@ public class UIDefault extends UIPlugin {
     }
 
     @Override
-    public void create() {
-        super.create();
+    public void allocate() {
+        super.allocate();
 
         //Texture
         try {
@@ -72,16 +69,17 @@ public class UIDefault extends UIPlugin {
             });
 
             mTextureAtlas.parseJON(mContext, ResourcesLoader.jsonFromAsset(mContext, com.thommil.animalsgo.Settings.ASSETS_TEXTURES_PATH + ATLAS_FILE));
+            mTextureAtlas.allocate();
+
         }catch(IOException ioe){
             throw new RuntimeException("Failed to load texture atlas : " + ioe);
         }catch(JSONException je){
             throw new RuntimeException("Failed to load texture atlas : " + je);
         }
-        mTextureAtlas.allocate();
 
         //Program
         mProgram.use();
-        mSprite = mTextureAtlas.createSprite("small");
+        mSprite = mTextureAtlas.createSprite("big");
         mSprite.chunks[GlSprite.CHUNK_VERTEX_INDEX].handle = mProgram.getAttributeHandle(ATTRIBUTE_POSITION);
         mSprite.chunks[GlSprite.CHUNK_TEXTURE_INDEX].handle = mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD);
         mTextureUniforHandle = mProgram.getUniformHandle(UNIFORM_TEXTURE);
@@ -89,19 +87,21 @@ public class UIDefault extends UIPlugin {
         //Scene
 
         //Buffers
-        //mSprite.allocate(GlBuffer.USAGE_DYNAMIC_DRAW, GlBuffer.TARGET_ARRAY_BUFFER, false).commit(true);
-        mSprite.size(0.5f,0.5f).commit();
+        //mSprite.allocate(GlBuffer.USAGE_DYNAMIC_DRAW, GlBuffer.TARGET_ARRAY_BUFFER, false);
+        //mSprite.size(0.5f,0.5f).commit();
         //mSprite.commit();
 
         //Blend test (should be called each draw if another one is used)
         GlOperation.configureBlendTest(GlOperation.BLEND_FACTOR_SRC_ALPA, GlOperation.BLEND_FACTOR_ONE_MINUS_SRC_ALPA, GlOperation.BLEND_OPERATION_ADD, null);
     }
+    float size = 0.1f;
     //final GlBuffer<short[]> indices =  GlBufferGlBuffer.Chunk<short[]>(new short[]{0,1,2,3,3,0});
 
     @Override
-    public void draw(final GlIntRect viewport, final int orientation) {
+    public void draw(final GlIntRect viewport, final float ratio, final int orientation) {
         //Blend test
         GlOperation.setTestState(GlOperation.TEST_BLEND, true);
+        mSprite.size(1,ratio).commit();
 
         //Program
         mProgram.use();
@@ -117,6 +117,11 @@ public class UIDefault extends UIPlugin {
     @Override
     public void free() {
         super.free();
-        mTextureAtlas.free();
+        mSprite.free();
+
+        if(mTextureAtlas != null) {
+            mTextureAtlas.free();
+            mTextureAtlas = null;
+        }
     }
 }

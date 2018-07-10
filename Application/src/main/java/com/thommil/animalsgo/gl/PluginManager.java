@@ -1,7 +1,6 @@
 package com.thommil.animalsgo.gl;
 
 import android.content.Context;
-import android.util.Log;
 
 import com.thommil.animalsgo.R;
 import com.thommil.animalsgo.gl.libgl.GlProgram;
@@ -39,7 +38,7 @@ public class PluginManager {
     }
 
     private void loadPlugins(){
-        //Log.d(TAG, "initialize()");
+        //Log.d(TAG, "allocate()");
         try {
             for (final String pluginClassname : mContext.getResources().getStringArray(R.array.plugins_list)) {
                 final Class pluginClass = this.getClass().getClassLoader().loadClass(pluginClassname);
@@ -57,16 +56,16 @@ public class PluginManager {
         }
     }
 
-    public void initialize(final int filter){
+    public void allocate(final int filter){
         //Log.d(TAG, "destroy()");
         for(final Plugin plugin : mPluginsMap.values()){
             if((plugin.getType() & filter) > 0){
                 if(mProgramsMap.containsKey(plugin.getProgramId())){
                     plugin.setProgram(mProgramsMap.get(plugin.getProgramId()));
-                    plugin.create();
+                    plugin.allocate();
                 }
                 else{
-                    plugin.create();
+                    plugin.allocate();
                     mProgramsMap.put(plugin.getProgramId(), plugin.getProgram());
                 }
 

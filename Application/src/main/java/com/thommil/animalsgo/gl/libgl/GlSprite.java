@@ -20,6 +20,7 @@ public class GlSprite extends GlBuffer<float[]> {
     public static final int CHUNK_RIGHT_BOTTOM_X = 6;
     public static final int CHUNK_RIGHT_BOTTOM_Y = 7;
 
+    private boolean mMustUpdate = true;
 
     //Texture
     private final GlTexture mTexture;
@@ -31,25 +32,8 @@ public class GlSprite extends GlBuffer<float[]> {
     private static final int POSITION_HEIGHT = 3;
     private static final int POSITION_PIVOT_X = 4;
     private static final int POSITION_PIVOT_Y = 5;
-    private static final int POSITION_LEFT = 6;
-    private static final int POSITION_TOP = 7;
-    private static final int POSITION_RIGHT = 8;
-    private static final int POSITION_BOTTOM = 9;
 
-    private float[] mPosition = new float[10];
-
-    private boolean mMustUpdateVert = true;
-
-
-    //Clip
-    private static final int CLIP_LEFT = 0;
-    private static final int CLIP_TOP = 1;
-    private static final int CLIP_RIGHT = 2;
-    private static final int CLIP_BOTTOM = 3;
-
-    private final float[] mClip = new float[4];
-
-    private boolean mMustUpdateText = true;
+    private final float[] mPosition = new float[6];
 
 
     public GlSprite(final GlTexture texture) {
@@ -79,12 +63,42 @@ public class GlSprite extends GlBuffer<float[]> {
         //Log.d(TAG,"position("+x+", "+y+")");
         mPosition[POSITION_X] = x;
         mPosition[POSITION_Y] = y;
-        mPosition[POSITION_LEFT] = mPosition[POSITION_X] - mPosition[POSITION_PIVOT_X];
-        mPosition[POSITION_TOP] = mPosition[POSITION_Y] + mPosition[POSITION_PIVOT_Y];
-        mPosition[POSITION_RIGHT] = mPosition[POSITION_X] + mPosition[POSITION_PIVOT_X];
-        mPosition[POSITION_BOTTOM] = mPosition[POSITION_Y] - mPosition[POSITION_PIVOT_Y];
 
-        mMustUpdateVert = true;
+        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_X]
+                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_X] = mPosition[POSITION_X] - mPosition[POSITION_PIVOT_X];
+
+        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_Y]
+                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_Y] = mPosition[POSITION_Y] + mPosition[POSITION_PIVOT_Y];
+
+        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_X]
+                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_X] = mPosition[POSITION_X] + mPosition[POSITION_PIVOT_X];
+
+        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_Y]
+                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_Y] = mPosition[POSITION_Y] - mPosition[POSITION_PIVOT_Y];
+
+        mMustUpdate = true;
+
+        return this;
+    }
+
+    public GlSprite translate(final float dx, final float dy){
+        //Log.d(TAG,"position("+x+", "+y+")");
+        mPosition[POSITION_X] += dx;
+        mPosition[POSITION_Y] += dy;
+
+        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_X]
+                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_X] = mPosition[POSITION_X] - mPosition[POSITION_PIVOT_X];
+
+        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_Y]
+                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_Y] = mPosition[POSITION_Y] + mPosition[POSITION_PIVOT_Y];
+
+        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_X]
+                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_X] = mPosition[POSITION_X] + mPosition[POSITION_PIVOT_X];
+
+        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_Y]
+                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_Y] = mPosition[POSITION_Y] - mPosition[POSITION_PIVOT_Y];
+
+        mMustUpdate = true;
 
         return this;
     }
@@ -93,26 +107,95 @@ public class GlSprite extends GlBuffer<float[]> {
         //Log.d(TAG,"size("+x+", "+y+")");
         mPosition[POSITION_WIDTH] = width;
         mPosition[POSITION_HEIGHT] = height;
-        mPosition[POSITION_PIVOT_X] = width / 2;
-        mPosition[POSITION_PIVOT_Y] = height / 2;
-        mPosition[POSITION_LEFT] = mPosition[POSITION_X] - mPosition[POSITION_PIVOT_X];
-        mPosition[POSITION_TOP] = mPosition[POSITION_Y] + mPosition[POSITION_PIVOT_Y];
-        mPosition[POSITION_RIGHT] = mPosition[POSITION_X] + mPosition[POSITION_PIVOT_X];
-        mPosition[POSITION_BOTTOM] = mPosition[POSITION_Y] - mPosition[POSITION_PIVOT_Y];
+        mPosition[POSITION_PIVOT_X] = mPosition[POSITION_WIDTH] / 2;
+        mPosition[POSITION_PIVOT_Y] = mPosition[POSITION_HEIGHT] / 2;
 
-        mMustUpdateVert = true;
+        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_X]
+                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_X] = mPosition[POSITION_X] - mPosition[POSITION_PIVOT_X];
+
+        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_Y]
+                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_Y] = mPosition[POSITION_Y] + mPosition[POSITION_PIVOT_Y];
+
+        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_X]
+                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_X] = mPosition[POSITION_X] + mPosition[POSITION_PIVOT_X];
+
+        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_Y]
+                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_Y] = mPosition[POSITION_Y] - mPosition[POSITION_PIVOT_Y];
+
+        mMustUpdate = true;
+
+        return this;
+    }
+
+    public GlSprite scale(final float xFactor, final float yFactor){
+        //Log.d(TAG,"size("+x+", "+y+")");
+        mPosition[POSITION_WIDTH] = mPosition[POSITION_WIDTH] * xFactor;
+        mPosition[POSITION_HEIGHT] = mPosition[POSITION_HEIGHT] * yFactor;
+        mPosition[POSITION_PIVOT_X] = mPosition[POSITION_WIDTH] / 2;
+        mPosition[POSITION_PIVOT_Y] = mPosition[POSITION_HEIGHT] / 2;
+
+        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_X]
+                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_X] = mPosition[POSITION_X] - mPosition[POSITION_PIVOT_X];
+
+        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_Y]
+                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_Y] = mPosition[POSITION_Y] + mPosition[POSITION_PIVOT_Y];
+
+        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_X]
+                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_X] = mPosition[POSITION_X] + mPosition[POSITION_PIVOT_X];
+
+        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_Y]
+                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_Y] = mPosition[POSITION_Y] - mPosition[POSITION_PIVOT_Y];
+
+        mMustUpdate = true;
 
         return this;
     }
 
     public GlSprite clip(final int srcX, final int srcY, final int srcWidth, final int srcHeight){
         //Log.d(TAG,"clip("+srcX+", "+srcY+", "+srcWidth+", "+srcHeight+")");
-        mClip[CLIP_LEFT] = (float)srcX / mTexture.getWidth();
-        mClip[CLIP_TOP] = (float)srcY / mTexture.getHeight();
-        mClip[CLIP_RIGHT] = (float)(srcX + srcWidth) / mTexture.getWidth();
-        mClip[CLIP_BOTTOM] = (float)(srcY + srcHeight) / mTexture.getHeight();
+        chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_TOP_X]
+                = chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_BOTTOM_X] = (float)srcX / mTexture.getWidth();
 
-        mMustUpdateText = true;
+        chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_TOP_Y]
+                = chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_RIGHT_TOP_Y] = (float)srcY / mTexture.getHeight();
+
+        chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_RIGHT_TOP_X]
+                = chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_RIGHT_BOTTOM_X] = (float)(srcX + srcWidth) / mTexture.getWidth();
+
+        chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_BOTTOM_Y]
+                = chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_RIGHT_BOTTOM_Y] = (float)(srcY + srcHeight) / mTexture.getHeight();
+
+        mMustUpdate = true;
+
+        return this;
+    }
+
+    public GlSprite flip(final boolean flipX, final boolean flipY){
+        //Log.d(TAG,"size("+x+", "+y+")");
+        float tmpPos;
+        if(flipX){
+            tmpPos = chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_TOP_X];
+            chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_TOP_X]
+                    = chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_BOTTOM_X]
+                    = chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_RIGHT_TOP_X];
+
+            chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_RIGHT_TOP_X]
+                    = chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_RIGHT_BOTTOM_X]
+                    = tmpPos;
+        }
+        if(flipY){
+            tmpPos = chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_TOP_Y];
+            chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_TOP_Y]
+                    = chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_RIGHT_TOP_Y]
+                    = chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_BOTTOM_Y];
+
+            chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_BOTTOM_Y]
+                    = chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_RIGHT_BOTTOM_Y]
+                    = tmpPos;
+
+        }
+
+        mMustUpdate = true;
 
         return this;
     }
@@ -125,58 +208,33 @@ public class GlSprite extends GlBuffer<float[]> {
             this.buffer = ByteBufferPool.getInstance().getDirectFloatBuffer(20);
         }
 
-        if(mMustUpdateVert){
-            chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_X] = mPosition[POSITION_LEFT];
-            chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_Y] = mPosition[POSITION_TOP];
-            chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_X] = mPosition[POSITION_LEFT];
-            chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_Y] = mPosition[POSITION_BOTTOM];
-            chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_X] = mPosition[POSITION_RIGHT];
-            chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_Y] = mPosition[POSITION_TOP];
-            chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_X] = mPosition[POSITION_RIGHT];
-            chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_Y] = mPosition[POSITION_BOTTOM];
+        if(mMustUpdate) {
+            final FloatBuffer floatBuffer = (FloatBuffer) this.buffer;
+            floatBuffer.position(0);
+            floatBuffer.put(chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_X]);
+            floatBuffer.put(chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_Y]);
+            floatBuffer.put(chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_TOP_X]);
+            floatBuffer.put(chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_TOP_Y]);
 
-            mMustUpdateVert = false;
-        }
+            floatBuffer.put(chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_X]);
+            floatBuffer.put(chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_Y]);
+            floatBuffer.put(chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_BOTTOM_X]);
+            floatBuffer.put(chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_BOTTOM_Y]);
 
-        if(mMustUpdateText){
+            floatBuffer.put(chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_X]);
+            floatBuffer.put(chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_Y]);
+            floatBuffer.put(chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_RIGHT_TOP_X]);
+            floatBuffer.put(chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_RIGHT_TOP_Y]);
 
-            chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_TOP_X] = mClip[CLIP_LEFT];
-            chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_TOP_Y] = mClip[CLIP_TOP];
-            chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_BOTTOM_X] = mClip[CLIP_LEFT];
-            chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_BOTTOM_Y] = mClip[CLIP_BOTTOM];
-            chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_RIGHT_TOP_X] = mClip[CLIP_RIGHT];
-            chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_RIGHT_TOP_Y] = mClip[CLIP_TOP];
-            chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_RIGHT_BOTTOM_X] = mClip[CLIP_RIGHT];
-            chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_RIGHT_BOTTOM_Y] = mClip[CLIP_BOTTOM];
+            floatBuffer.put(chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_X]);
+            floatBuffer.put(chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_Y]);
+            floatBuffer.put(chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_RIGHT_BOTTOM_X]);
+            floatBuffer.put(chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_RIGHT_BOTTOM_Y]);
 
-            mMustUpdateText = false;
-        }
-
-        final FloatBuffer floatBuffer = (FloatBuffer)this.buffer;
-        floatBuffer.position(0);
-        floatBuffer.put(chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_X]);
-        floatBuffer.put(chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_Y]);
-        floatBuffer.put(chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_TOP_X]);
-        floatBuffer.put(chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_TOP_Y]);
-
-        floatBuffer.put(chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_X]);
-        floatBuffer.put(chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_Y]);
-        floatBuffer.put(chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_BOTTOM_X]);
-        floatBuffer.put(chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_BOTTOM_Y]);
-
-        floatBuffer.put(chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_X]);
-        floatBuffer.put(chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_Y]);
-        floatBuffer.put(chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_RIGHT_TOP_X]);
-        floatBuffer.put(chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_RIGHT_TOP_Y]);
-
-        floatBuffer.put(chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_X]);
-        floatBuffer.put(chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_Y]);
-        floatBuffer.put(chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_RIGHT_BOTTOM_X]);
-        floatBuffer.put(chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_RIGHT_BOTTOM_Y]);
-
-        //Update server if needed
-        if(push){
-            push();
+            //Update server if needed
+            if (push) {
+                push();
+            }
         }
 
         return this;

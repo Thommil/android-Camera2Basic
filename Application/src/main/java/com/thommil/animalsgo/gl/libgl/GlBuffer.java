@@ -232,10 +232,10 @@ public class GlBuffer<E>{
 	}
 
     /**
-     * Update local buffer with all chunks
+     * Update local/remote buffer with all chunks
      */
     public GlBuffer commit(){
-        return commit(false);
+        return commit(true);
     }
 
     /**
@@ -250,12 +250,12 @@ public class GlBuffer<E>{
     }
 
     /**
-     * Update local buffer with the list of chunks indicated.
+     * Update local/remote buffer with the list of chunks indicated.
      *
      * @param chunks The list of chunks index to update
      */
     public GlBuffer commit(final Chunk<E>[] chunks){
-        return commit(chunks, false);
+        return commit(chunks, true);
     }
 
 
@@ -328,12 +328,12 @@ public class GlBuffer<E>{
 	}
 
     /**
-     * Update local and remote buffer with the chunk indicated.
+     * Update local/remote and remote buffer with the chunk indicated.
      *
      * @param chunk The chunk to update
      */
     public GlBuffer commit(final Chunk<E> chunk){
-        return commit(chunk, false);
+        return commit(chunk, true);
     }
 
     /**

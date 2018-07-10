@@ -76,7 +76,7 @@ public final class EglCore {
         int[] version = new int[2];
         if (!EGL14.eglInitialize(mEGLDisplay, version, 0, version, 1)) {
             mEGLDisplay = null;
-            throw new RuntimeException("unable to initialize EGL14");
+            throw new RuntimeException("unable to allocate EGL14");
         }
 
         // Try to get a GLES3 context, if requested.
@@ -256,7 +256,7 @@ public final class EglCore {
      */
     public void makeCurrent(EGLSurface eglSurface) {
         if (mEGLDisplay == EGL14.EGL_NO_DISPLAY) {
-            // called makeCurrent() before create?
+            // called makeCurrent() before allocate?
             //Log.d(TAG, "NOTE: makeCurrent w/o display");
         }
         if (!EGL14.eglMakeCurrent(mEGLDisplay, eglSurface, eglSurface, mEGLContext)) {
@@ -269,7 +269,7 @@ public final class EglCore {
      */
     public void makeCurrent(EGLSurface drawSurface, EGLSurface readSurface) {
         if (mEGLDisplay == EGL14.EGL_NO_DISPLAY) {
-            // called makeCurrent() before create?
+            // called makeCurrent() before allocate?
             //Log.d(TAG, "NOTE: makeCurrent w/o display");
         }
         if (!EGL14.eglMakeCurrent(mEGLDisplay, drawSurface, readSurface, mEGLContext)) {

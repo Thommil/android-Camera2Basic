@@ -46,18 +46,19 @@ public abstract class CameraPlugin extends Plugin{
 
 
     @Override
-    public void create() {
-        super.create();
+    public void allocate() {
+        super.allocate();
         this.mZoomState = ZOOM_STATE_NONE;
         mCurrentZoom = 1.0f;
 
         //Buffer
         mCameraPreviewBuffer = new GlBuffer<>(mVertChunk, mTextChunk);
         mCameraPreviewBuffer.commit();
+        applyZoom();
     }
 
     @Override
-    public void draw(GlIntRect viewport, int orientation) {
+    public void draw(GlIntRect viewport, final float ratio, int orientation) {
         GlOperation.setTestState(GlOperation.TEST_BLEND, false);
 
         //TODO Transform matrix when android < 6 (using accelerometer)
@@ -92,7 +93,11 @@ public abstract class CameraPlugin extends Plugin{
     @Override
     public void free() {
         super.free();
-        mCameraPreviewBuffer.free();
+        mCurrentZoom = 1.0f;
+        if(mCameraPreviewBuffer != null) {
+            mCameraPreviewBuffer.free();
+            mCameraPreviewBuffer = null;
+        }
     }
 
     public abstract GlTexture getCameraTexture();

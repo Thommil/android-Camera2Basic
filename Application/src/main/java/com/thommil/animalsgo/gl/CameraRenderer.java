@@ -2,7 +2,6 @@ package com.thommil.animalsgo.gl;
 
 import android.content.Context;
 import android.graphics.SurfaceTexture;
-import android.opengl.GLES20;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Looper;
@@ -44,6 +43,9 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
     // Underlying surface dimensions
     private int mSurfaceWidth, mSurfaceHeight;
+
+    // Underlying surface ratio
+    private float mSurfaceRatio;
 
     // main texture for display, based on TextureView that is created in activity or fragment
     // and passed in after onSurfaceTextureAvailable is called, guaranteeing its existence.
@@ -111,6 +113,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
         mSurfaceWidth = width;
         mSurfaceHeight = height;
+        mSurfaceRatio = (float)width/height;
 
         mPluginManager = PluginManager.getInstance(context);
 
@@ -122,11 +125,11 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         //Log.d(TAG, "initGL()");
         mEglCore = new EglCore();
 
-        //create preview surface
+        //allocate preview surface
         mWindowSurface = new EglSurface(mEglCore, mSurface, true);
         mWindowSurface.makeCurrent();
 
-        mPluginManager.initialize(Plugin.TYPE_CAMERA | Plugin.TYPE_PREVIEW | Plugin.TYPE_UI);
+        mPluginManager.allocate(Plugin.TYPE_CAMERA | Plugin.TYPE_PREVIEW | Plugin.TYPE_UI);
 
         mCameraPlugin = (CameraPlugin) mPluginManager.getPlugin(Settings.getInstance().getString(Settings.PLUGIN_CAMERA));
         mCameraPlugin.setCameraTransformMatrix(mCameraTransformMatrix);
@@ -288,14 +291,14 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
         Looper.prepare();
 
-        //create handler for communication from UI
+        //allocate handler for communication from UI
         mHandler = new Handler(Looper.myLooper(), this);
         mMainHandler.sendMessage(mMainHandler.obtainMessage(Messaging.SYSTEM_CONNECT_RENDERER, mHandler));
 
         //Associated GL Thread to capture completion
         mCameraFragment.setRendererHandler(mHandler);
 
-        //initialize all GL on this context
+        //allocate all GL on this context
         initGL();
 
         //Loop
@@ -337,7 +340,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
                 //Camera draw
                 mCameraPreviewFBO.bind();
                 GlOperation.setViewport(0, 0, mViewport.width(), mViewport.height());
-                mCameraPlugin.draw(mViewport, mOrientation);
+                mCameraPlugin.draw(mViewport, mSurfaceRatio, mOrientation);
                 mCameraPreviewFBO.unbind();
 
                 //Capture
@@ -352,7 +355,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
                 //Preview draw
                 GlOperation.setViewport(mViewport.left, mViewport.bottom, mViewport.width(), mViewport.height());
-                mPreviewPlugin.draw(mViewport, mOrientation);
+                mPreviewPlugin.draw(mViewport, mSurfaceRatio, mOrientation);
 
                 //Check validation state -> next step
                 switch(mState){
@@ -366,7 +369,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
                 // UI draw
                 GlOperation.setViewport(0, 0, mSurfaceWidth, mSurfaceHeight);
-                mUIPlugin.draw(mViewport, mOrientation);
+                mUIPlugin.draw(mViewport, mSurfaceRatio, mOrientation);
                 break;
         }
 

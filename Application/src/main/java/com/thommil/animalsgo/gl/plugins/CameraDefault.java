@@ -7,7 +7,6 @@ import com.thommil.animalsgo.R;
 import com.thommil.animalsgo.gl.CameraPlugin;
 import com.thommil.animalsgo.gl.libgl.GlCanvas;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
-import com.thommil.animalsgo.gl.libgl.GlOperation;
 import com.thommil.animalsgo.gl.libgl.GlTexture;
 
 public class CameraDefault extends CameraPlugin {
@@ -48,8 +47,8 @@ public class CameraDefault extends CameraPlugin {
     }
 
     @Override
-    public void create() {
-        super.create();
+    public void allocate() {
+        super.allocate();
 
         //Texture
         mCameraTexture = new GlTexture() {
@@ -79,8 +78,8 @@ public class CameraDefault extends CameraPlugin {
     }
 
     @Override
-    public void draw(final GlIntRect viewport, final int orientation) {
-        super.draw(viewport, orientation);
+    public void draw(final GlIntRect viewport, final float ratio, final int orientation) {
+        super.draw(viewport, ratio, orientation);
 
         //Program
         mProgram.use();
@@ -97,6 +96,9 @@ public class CameraDefault extends CameraPlugin {
     @Override
     public void free() {
         super.free();
-        mCameraTexture.free();
+        if(mCameraTexture != null) {
+            mCameraTexture.free();
+            mCameraTexture = null;
+        }
     }
 }

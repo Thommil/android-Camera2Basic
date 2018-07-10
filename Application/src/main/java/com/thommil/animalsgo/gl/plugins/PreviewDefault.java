@@ -7,7 +7,6 @@ import com.thommil.animalsgo.gl.PreviewPlugin;
 import com.thommil.animalsgo.gl.libgl.GlBuffer;
 import com.thommil.animalsgo.gl.libgl.GlCanvas;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
-import com.thommil.animalsgo.gl.libgl.GlOperation;
 
 public class PreviewDefault extends PreviewPlugin {
 
@@ -57,8 +56,8 @@ public class PreviewDefault extends PreviewPlugin {
     }
 
     @Override
-    public void create() {
-        super.create();
+    public void allocate() {
+        super.allocate();
 
         //Buffer
         mPreviewBuffer = new GlBuffer<>(mVertChunk, mTextChunk);
@@ -72,7 +71,7 @@ public class PreviewDefault extends PreviewPlugin {
     }
 
     @Override
-    public void draw(final GlIntRect viewport, final int orientation) {
+    public void draw(final GlIntRect viewport, final float ratio, final int orientation) {
         //Program
         mProgram.use();
         GLES20.glUniform1i(mTextureUniforHandle, mSourceTexture.index);
@@ -87,6 +86,9 @@ public class PreviewDefault extends PreviewPlugin {
     @Override
     public void free() {
         super.free();
-        mPreviewBuffer.free();
+        if(mPreviewBuffer != null) {
+            mPreviewBuffer.free();
+            mPreviewBuffer = null;
+        }
     }
 }

@@ -30,10 +30,10 @@ public class GlSpriteColor extends GlSprite {
                         1.0f, 1.0f       // right bottom //Bitmap coords
                 }, 2),
                 new Chunk<>(new float[]{
-                        GlColor.WHITE_FLOAT_BITS,      // left top //Bitmap coords
-                        GlColor.WHITE_FLOAT_BITS,      // left bottom //Bitmap coords
-                        GlColor.WHITE_FLOAT_BITS,      // right top //Bitmap coords
-                        GlColor.WHITE_FLOAT_BITS       // right bottom //Bitmap coords
+                        GlColor.WHITE,      // left top //Bitmap coords
+                        GlColor.WHITE,      // left bottom //Bitmap coords
+                        GlColor.WHITE,      // right top //Bitmap coords
+                        GlColor.WHITE       // right bottom //Bitmap coords
                 }, 1));
 
         mTexture = texture;
@@ -90,6 +90,18 @@ public class GlSpriteColor extends GlSprite {
                 push();
             }
         }
+
+        return this;
+    }
+
+    public GlSpriteColor setColor(final float r, final float g, final float b, final float a){
+        final float fColor = GlColor.toFloatBits(r, g, b, a);
+        chunks[CHUNK_COLOR_INDEX].data[0] = fColor;
+        chunks[CHUNK_COLOR_INDEX].data[1] = fColor;
+        chunks[CHUNK_COLOR_INDEX].data[2] = fColor;
+        chunks[CHUNK_COLOR_INDEX].data[3] = fColor;
+
+        mMustUpdate = true;
 
         return this;
     }

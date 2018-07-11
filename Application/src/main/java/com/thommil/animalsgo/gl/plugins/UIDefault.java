@@ -5,10 +5,12 @@ import android.opengl.GLES20;
 import com.thommil.animalsgo.R;
 import com.thommil.animalsgo.gl.UIPlugin;
 import com.thommil.animalsgo.gl.libgl.GlBuffer;
+import com.thommil.animalsgo.gl.libgl.GlColor;
 import com.thommil.animalsgo.gl.libgl.GlDrawableBufferBatch;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
 import com.thommil.animalsgo.gl.libgl.GlOperation;
 import com.thommil.animalsgo.gl.libgl.GlSprite;
+import com.thommil.animalsgo.gl.libgl.GlSpriteColor;
 import com.thommil.animalsgo.gl.libgl.GlTexture;
 import com.thommil.animalsgo.gl.libgl.GlTextureAtlas;
 import com.thommil.animalsgo.utils.ResourcesLoader;
@@ -99,7 +101,7 @@ public class UIDefault extends UIPlugin {
         mLogo.size(0.2f, 0.2f).position(0f, 0.5f);
         batch = new GlDrawableBufferBatch(mBig, mSmall, mLogo);
         batch.setVertexAttribHandles(mProgram.getAttributeHandle(ATTRIBUTE_POSITION), mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD),mProgram.getAttributeHandle(ATTRIBUTE_COLOR));
-        //batch.allocate(GlBuffer.USAGE_DYNAMIC_DRAW, GlBuffer.TARGET_ARRAY_BUFFER, false);
+        batch.allocate(GlBuffer.USAGE_DYNAMIC_DRAW, GlBuffer.TARGET_ARRAY_BUFFER, false);
         batch.commit();
 
         //Blend test (should be called each draw if another one is used)
@@ -114,12 +116,15 @@ public class UIDefault extends UIPlugin {
     float size = 0.1f;
     //final GlBuffer<short[]> indices =  GlBufferGlBuffer.Chunk<short[]>(new short[]{0,1,2,3,3,0});
 
+    float color = 1f;
+
     @Override
     public void draw(final GlIntRect viewport, final float ratio, final int orientation) {
         //Blend test
         GlOperation.setTestState(GlOperation.TEST_BLEND, true);
+        color -= 0.001;
         mSmall.translate(0.001f, 0.001f);
-        mBig.scale(1.001f, 1.001f);
+        ((GlSpriteColor)mBig).setColor(color,color,color,color).scale(1.001f, 1.001f);
         mLogo.translate(-0.001f, -0.001f);
         batch.commit();
 

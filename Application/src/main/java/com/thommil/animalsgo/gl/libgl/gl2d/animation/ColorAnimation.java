@@ -10,7 +10,7 @@ import com.thommil.animalsgo.gl.libgl.gl2d.Interpolation;
  *
  * @author thommil on 4/19/16.
  */
-public class ColorAnimation extends Animation<GlColor> {
+public class ColorAnimation extends Animation<float[]> {
 
     protected int iteration = 0;
 
@@ -24,7 +24,7 @@ public class ColorAnimation extends Animation<GlColor> {
      * @param frameDuration the time between frames in seconds.
      * @param keyFrames     the objects representing the frames.
      */
-    public ColorAnimation(float frameDuration, GlColor... keyFrames) {
+    public ColorAnimation(float frameDuration, float[]... keyFrames) {
         super(frameDuration, keyFrames);
     }
 
@@ -35,7 +35,7 @@ public class ColorAnimation extends Animation<GlColor> {
      * @param playMode      The animation playmode
      * @param keyFrames     the objects representing the frames.
      */
-    public ColorAnimation(float frameDuration, PlayMode playMode, GlColor... keyFrames) {
+    public ColorAnimation(float frameDuration, PlayMode playMode, float[]... keyFrames) {
         super(frameDuration, playMode, keyFrames);
     }
 
@@ -46,7 +46,7 @@ public class ColorAnimation extends Animation<GlColor> {
      * @param interpolator  The interpolator to use
      * @param keyFrames     the objects representing the frames.
      */
-    public ColorAnimation(float frameDuration, Interpolation interpolator, GlColor... keyFrames) {
+    public ColorAnimation(float frameDuration, Interpolation interpolator, float[]... keyFrames) {
         super(frameDuration, interpolator, keyFrames);
     }
 
@@ -58,7 +58,7 @@ public class ColorAnimation extends Animation<GlColor> {
      * @param interpolator  The interpolator to use
      * @param keyFrames     the objects representing the frames.
      */
-    public ColorAnimation(float frameDuration, PlayMode playMode, Interpolation interpolator, GlColor... keyFrames) {
+    public ColorAnimation(float frameDuration, PlayMode playMode, Interpolation interpolator, float[]... keyFrames) {
         super(frameDuration, playMode, interpolator, keyFrames);
     }
 
@@ -75,7 +75,7 @@ public class ColorAnimation extends Animation<GlColor> {
      */
     @Override
     public void reset() {
-        this.tmpKeyFrame.set((this.playMode == PlayMode.LOOP_REVERSED || this.playMode == PlayMode.REVERSED) ? this.keyFrames[this.keyFrames.length - 1] : this.keyFrames[0]);
+        //this.tmpKeyFrame.set((this.playMode == PlayMode.LOOP_REVERSED || this.playMode == PlayMode.REVERSED) ? this.keyFrames[this.keyFrames.length - 1] : this.keyFrames[0]);
     }
 
     /**
@@ -85,8 +85,8 @@ public class ColorAnimation extends Animation<GlColor> {
      * @return the object state at the given time
      */
     @Override
-    public GlColor getKeyFrame(float stateTime) {
-        this.iteration = (int) (stateTime / this.animationDuration);
+    public float[] getKeyFrame(float stateTime) {
+        /*this.iteration = (int) (stateTime / this.animationDuration);
         final float interpolatedStateTime = this.interpolator.apply(0, this.animationDuration, (stateTime % this.animationDuration) / this.animationDuration);
 
         if (this.keyFrames.length == 1) return this.keyFrames[0];
@@ -144,6 +144,7 @@ public class ColorAnimation extends Animation<GlColor> {
             default:
                 throw new RuntimeException(this.playMode.toString() + " playmode not supported");
 
-        }
+        }*/
+        return null;
     }
 }

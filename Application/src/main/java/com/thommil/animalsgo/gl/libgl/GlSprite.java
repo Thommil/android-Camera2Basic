@@ -6,6 +6,7 @@ import com.thommil.animalsgo.utils.ByteBufferPool;
 
 import java.nio.FloatBuffer;
 
+//TODO rotate
 public class GlSprite extends GlDrawableBuffer<float[]> {
 
     private static final String TAG = "A_GO/GlSprite";

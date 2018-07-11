@@ -1,5 +1,11 @@
 package com.thommil.animalsgo.gl.libgl;
 
+import android.opengl.GLES20;
+import android.opengl.GLES30;
+import android.util.Log;
+
+import com.thommil.animalsgo.utils.ByteBufferPool;
+
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
@@ -9,26 +15,50 @@ import java.util.List;
 
 public class GlDrawableBufferBatch<T> extends GlDrawableBuffer<T>{
 
-    private static final String TAG = "A_GO/GlDrawableBufferBatch";
+    private static final String TAG = "A_GO/GlDraw...fferBatch";
 
-    private final List<GlDrawableBufferBatch<T>> mBuffers;
+    private final List<GlDrawableBuffer<T>> mBuffers;
 
-    public GlDrawableBufferBatch(final GlDrawableBufferBatch<T> ...buffers){
+    private GlBufferIndex mIndicesBuffer = null;
+
+    private int mPosition[];
+    private int mComponents[];
+    private int mDatatype[];
+    private boolean mNormalized[];
+    private int mOffset[];
+
+    public GlDrawableBufferBatch(final GlDrawableBuffer<T> ...buffers){
         super();
         mBuffers = new ArrayList<>();
         mManagedBuffer = true;
+        for(GlDrawableBuffer buffer : buffers){
+            addElement(buffer);
+        }
     }
 
-    public synchronized GlDrawableBufferBatch addElement(final GlDrawableBufferBatch<T> buffer){
+    public synchronized GlDrawableBufferBatch addElement(final GlDrawableBuffer<T> buffer){
         //Log.d(TAG, "addElement("+buffer+")");
         if(this.handle != UNBIND_HANDLE){
-            throw new IllegalStateException("Cannot add element in batch after allocate()");
+            throw new IllegalStateException("Cannot remove element in batch after allocate(), keep a fix amount of data using VBO/VAO");
         }
 
         if(mBuffers.isEmpty()){
             this.datatype = buffer.chunks[0].datatype;
             this.datasize = buffer.chunks[0].datasize;
             this.stride = buffer.stride;
+            mPosition = new int[buffer.chunks.length];
+            mComponents = new int[buffer.chunks.length];
+            mDatatype = new int[buffer.chunks.length];
+            mNormalized = new boolean[buffer.chunks.length];
+            mOffset = new int[buffer.chunks.length];
+
+            for(int index=0; index < buffer.chunks.length; index++){
+                mPosition[index] = buffer.chunks[index].position;
+                mComponents[index] = buffer.chunks[index].components;
+                mDatatype[index] = buffer.chunks[index].datatype;
+                mNormalized[index] = buffer.chunks[index].normalized;
+                mOffset[index] = buffer.chunks[index].offset;
+            }
         }
 
         if(mBuffers.add(buffer)) {
@@ -56,14 +86,22 @@ public class GlDrawableBufferBatch<T> extends GlDrawableBuffer<T>{
         return this;
     }
 
-    public synchronized GlDrawableBufferBatch removeElement(final GlDrawableBufferBatch<T> buffer){
+    public synchronized GlDrawableBufferBatch removeElement(final GlDrawableBuffer<T> buffer){
         //Log.d(TAG, "removeElement("+buffer+")");
         if(this.handle != UNBIND_HANDLE){
-            throw new IllegalStateException("Cannot remove element in batch after allocate()");
+            throw new IllegalStateException("Cannot remove element in batch after allocate(), keep a fix amount of data using VBO/VAO");
         }
         if(mBuffers.remove(buffer)){
             this.size -= buffer.size;
             this.count -= buffer.count;
+        }
+
+        if(mBuffers.isEmpty()){
+            mPosition = null;
+            mComponents = null;
+            mDatatype = null;
+            mNormalized = null;
+            mOffset = null;
         }
 
         if(this.buffer != null){
@@ -81,6 +119,82 @@ public class GlDrawableBufferBatch<T> extends GlDrawableBuffer<T>{
                     ByteBufferPool.getInstance().returnDirectBuffer((FloatBuffer)this.buffer);
             }
             this.buffer = null;
+        }
+
+        return this;
+    }
+
+    @Override
+    public GlBuffer allocate(final int usage, final int target, final boolean freeLocal){
+        //android.util.//Log.d(TAG,"createVBO("+usage+","+target+","+freeLocal+")");
+        if(this.handle == UNBIND_HANDLE){
+            final int[] handles = new int[1];
+
+            //Create buffer on server
+            GLES20.glGenBuffers(1, handles, 0);
+            this.handle = handles[0];
+            this.target = target;
+
+            GlOperation.checkGlError(TAG, "glGenBuffers");
+
+            //Bind it
+            GLES20.glBindBuffer(target, this.handle);
+            if(this.buffer == null){
+                this.commit(false);
+            }
+            //Push data into it
+            this.buffer.position(0);
+            GLES20.glBufferData(target, this.size, this.buffer, usage);
+            //Unbind it
+            GLES20.glBindBuffer(target, UNBIND_HANDLE);
+
+            //Check error on bind only
+            GlOperation.checkGlError(TAG, "glBufferData");
+
+            //Free local buffer is queried
+            if(mManagedBuffer && freeLocal){
+                switch(this.datatype){
+                    case TYPE_BYTE :
+                        ByteBufferPool.getInstance().returnDirectBuffer((ByteBuffer)this.buffer);
+                        break;
+                    case TYPE_SHORT :
+                        ByteBufferPool.getInstance().returnDirectBuffer((ShortBuffer)this.buffer);
+                        break;
+                    case TYPE_INT :
+                        ByteBufferPool.getInstance().returnDirectBuffer((IntBuffer)this.buffer);
+                        break;
+                    default :
+                        ByteBufferPool.getInstance().returnDirectBuffer((FloatBuffer)this.buffer);
+                }
+                this.buffer = null;
+            }
+
+            mode = MODE_VBO;
+
+            if(GlOperation.getVersion()[0] >= 3 && this.vertexAttribHandles != null
+                    && this.vertexAttribHandles.length > 0){
+                GLES30.glGenVertexArrays(1, handles, 0);
+                mVaoHandle = handles[0];
+                GlOperation.checkGlError(TAG, "glGenVertexArrays");
+
+                GLES30.glBindVertexArray(mVaoHandle);
+                GLES20.glBindBuffer(target, this.handle);
+
+                for(int index=0; index < this.vertexAttribHandles.length; index++){
+                    GLES20.glEnableVertexAttribArray(this.vertexAttribHandles[index]);
+                    GLES20.glVertexAttribPointer(this.vertexAttribHandles[index], mComponents[index],
+                            mDatatype[index], mNormalized[index], stride, mOffset[index]);
+                }
+                GlOperation.checkGlError(TAG, "glVertexAttribPointer");
+
+                GLES20.glBindBuffer(target, UNBIND_HANDLE);
+                GLES30.glBindVertexArray(UNBIND_HANDLE);
+
+                mode = MODE_VAO;
+            }
+        }
+        else{
+            Log.w(TAG, "multiple allocation detected !");
         }
 
         return this;
@@ -118,9 +232,23 @@ public class GlDrawableBufferBatch<T> extends GlDrawableBuffer<T>{
             }
         }
 
+        final int elementsCount = mBuffers.size();
+        if(elementsCount > 0) {
+            if (mIndicesBuffer == null) {
+                mIndicesBuffer = new GlBufferIndex(elementsCount, mBuffers.get(0).count);
+                mIndicesBuffer.allocate(this.usage);
+            } else {
+                if (elementsCount != mIndicesBuffer.getElementsCount()) {
+                    mIndicesBuffer.free();
+                    mIndicesBuffer = new GlBufferIndex(elementsCount, mBuffers.get(0).count);
+                    mIndicesBuffer.allocate(this.usage);
+                }
+            }
+        }
+
         this.buffer.position(0);
         for(final GlBuffer<T> element : mBuffers){
-            element.commit(push);
+            element.commit(false);
         }
 
         //Update server if needed
@@ -153,11 +281,13 @@ public class GlDrawableBufferBatch<T> extends GlDrawableBuffer<T>{
 
     @Override
     public void draw(GlProgram program) {
-        /*switch (this.mode){
+        switch (this.mode){
             case GlBuffer.MODE_VAO: {
                 bind();
 
-                GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, this.count);
+                mIndicesBuffer.bind();
+                GLES20.glDrawElements(GLES20.GL_TRIANGLE_STRIP, mIndicesBuffer.count, GLES20.GL_UNSIGNED_SHORT, 0);
+                mIndicesBuffer.unbind();
 
                 unbind();
                 break;
@@ -169,12 +299,14 @@ public class GlDrawableBufferBatch<T> extends GlDrawableBuffer<T>{
 
                 if(this.vertexAttribHandles != null) {
                     for (int index = 0; index < this.vertexAttribHandles.length; index++) {
-                        GLES20.glVertexAttribPointer(this.vertexAttribHandles[index], this.chunks[index].components,
-                                this.chunks[index].datatype, this.chsunks[index].normalized, this.stride, this.chunks[index].offset);
+                        GLES20.glVertexAttribPointer(this.vertexAttribHandles[index], mComponents[index],
+                                mDatatype[index], mNormalized[index], this.stride, mOffset[index]);
                     }
                 }
 
-                GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, this.count);
+                mIndicesBuffer.bind();
+                GLES20.glDrawElements(GLES20.GL_TRIANGLE_STRIP, mIndicesBuffer.count, GLES20.GL_UNSIGNED_SHORT, 0);
+                mIndicesBuffer.unbind();
 
                 unbind();
                 program.disableAttributes();
@@ -185,23 +317,30 @@ public class GlDrawableBufferBatch<T> extends GlDrawableBuffer<T>{
 
                 if(this.vertexAttribHandles != null) {
                     for (int index = 0; index < this.vertexAttribHandles.length; index++) {
-                        this.buffer.position(this.chunks[index].position);
-                        GLES20.glVertexAttribPointer(this.vertexAttribHandles[index], this.chunks[index].components,
-                                this.chunks[index].datatype, this.chunks[index].normalized, this.stride, this.buffer);
+                        this.buffer.position(mPosition[index]);
+                        GLES20.glVertexAttribPointer(this.vertexAttribHandles[index], mComponents[index],
+                                mDatatype[index], mNormalized[index], this.stride, this.buffer);
                     }
                 }
 
-                GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, this.count);
+                mIndicesBuffer.bind();
+                this.buffer.position(0);
+                GLES20.glDrawElements(GLES20.GL_TRIANGLE_STRIP, mIndicesBuffer.count, GLES20.GL_UNSIGNED_SHORT, 0);
+                mIndicesBuffer.unbind();
 
                 program.disableAttributes();
             }
-        }*/
+        }
     }
 
 
     @Override
     public GlBuffer free() {
         super.free();
+        if(mIndicesBuffer != null){
+            mIndicesBuffer.free();
+            mIndicesBuffer = null;
+        }
         mBuffers.clear();
         return this;
     }

@@ -4,6 +4,7 @@ import android.opengl.GLES20;
 
 import com.thommil.animalsgo.R;
 import com.thommil.animalsgo.gl.UIPlugin;
+import com.thommil.animalsgo.gl.libgl.GlBuffer;
 import com.thommil.animalsgo.gl.libgl.GlDrawableBufferBatch;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
 import com.thommil.animalsgo.gl.libgl.GlOperation;
@@ -78,9 +79,10 @@ public class UIDefault extends UIPlugin {
         //Program
         mProgram.use();
         mBig = mTextureAtlas.createSprite("big");
-        mBig.setVertexAttribHandles(mProgram.getAttributeHandle(ATTRIBUTE_POSITION), mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD));
+        //mBig.setVertexAttribHandles(mProgram.getAttributeHandle(ATTRIBUTE_POSITION), mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD));
         mSmall = mTextureAtlas.createSprite("small");
-        mSmall.setVertexAttribHandles(mProgram.getAttributeHandle(ATTRIBUTE_POSITION), mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD));
+        //mSmall.setVertexAttribHandles(mProgram.getAttributeHandle(ATTRIBUTE_POSITION), mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD));
+        mLogo = mTextureAtlas.createSprite("small");
         mTextureUniforHandle = mProgram.getUniformHandle(UNIFORM_TEXTURE);
 
         //Scene
@@ -90,12 +92,14 @@ public class UIDefault extends UIPlugin {
         //mSmall.allocate(GlBuffer.USAGE_DYNAMIC_DRAW, GlBuffer.TARGET_ARRAY_BUFFER, false);
         //mSprite.size(0.5f,0.5f).commit();
         //mSprite.commit();
-        mBig.size(0.2f, 0.2f).position(-0.5f, 0).commit();
-        mSmall.size(0.2f, 0.2f).position(0.5f, 0).commit();
-
-        //batch = new GlDrawableBufferBatch<>(mBig, mSmall);
-        //batch.setVertexAttribHandles(mProgram.getAttributeHandle(ATTRIBUTE_POSITION), mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD));
-        //batch.commit();
+        //mBig.size(0.2f, 0.2f).position(-0.5f, 0).commit();
+        mSmall.size(0.2f, 0.2f).position(-0.5f, 0);
+        mBig.size(0.2f, 0.2f);
+        mLogo.size(0.2f, 0.2f).position(0f, 0.5f);
+        batch = new GlDrawableBufferBatch(mBig, mSmall, mLogo);
+        batch.setVertexAttribHandles(mProgram.getAttributeHandle(ATTRIBUTE_POSITION), mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD));
+        //batch.allocate(GlBuffer.USAGE_DYNAMIC_DRAW, GlBuffer.TARGET_ARRAY_BUFFER, false);
+        batch.commit();
 
         //Blend test (should be called each draw if another one is used)
         GlOperation.configureBlendTest(GlOperation.BLEND_FACTOR_SRC_ALPA, GlOperation.BLEND_FACTOR_ONE_MINUS_SRC_ALPA, GlOperation.BLEND_OPERATION_ADD, null);
@@ -103,7 +107,8 @@ public class UIDefault extends UIPlugin {
 
     private GlSprite mSmall;
     private GlSprite mBig;
-    GlDrawableBufferBatch<float[]> batch;
+    private GlSprite mLogo;
+    GlDrawableBufferBatch batch;
 
     float size = 0.1f;
     //final GlBuffer<short[]> indices =  GlBufferGlBuffer.Chunk<short[]>(new short[]{0,1,2,3,3,0});
@@ -112,6 +117,10 @@ public class UIDefault extends UIPlugin {
     public void draw(final GlIntRect viewport, final float ratio, final int orientation) {
         //Blend test
         GlOperation.setTestState(GlOperation.TEST_BLEND, true);
+        mSmall.translate(0.001f, 0.001f);
+        mBig.scale(1.001f, 1.001f);
+        mLogo.translate(-0.001f, -0.001f);
+        batch.commit();
 
         //Program
         mProgram.use();
@@ -121,15 +130,15 @@ public class UIDefault extends UIPlugin {
         mTextureAtlas.getTexture().bind();
 
         //Draw
-        mBig.draw(mProgram);
-        mSmall.draw(mProgram);
-        //GlCanvas.draw(mProgram, batch);
+        //mBig.draw(mProgram);
+        //mSmall.draw(mProgram);
+        batch.draw(mProgram);
     }
 
     @Override
     public void free() {
         super.free();
-        //batch.free();
+        batch.free();
         mBig.free();
         mSmall.free();
 

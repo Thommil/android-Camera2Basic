@@ -5,7 +5,7 @@ import android.hardware.camera2.TotalCaptureResult;
 import android.hardware.camera2.params.Face;
 
 import com.thommil.animalsgo.data.Capture;
-import com.thommil.animalsgo.gl.libgl.ByteBufferPool;
+import com.thommil.animalsgo.utils.ByteBufferPool;
 
 /**
  * Decicated CameraCaptureSession.CaptureCallback used for QoS and event dispatch to Renderer

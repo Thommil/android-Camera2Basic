@@ -10,6 +10,9 @@ import java.nio.ShortBuffer;
 
 import android.opengl.GLES20;
 import android.opengl.GLES30;
+import android.util.Log;
+
+import com.thommil.animalsgo.utils.ByteBufferPool;
 
 /**
  * Buffer abstraction class :
@@ -159,7 +162,7 @@ public class GlBuffer<E>{
     /**
      * Handle on server VAO
      */
-    private int mVaoHandle = UNBIND_HANDLE;
+    protected int mVaoHandle = UNBIND_HANDLE;
 
 	/**
 	 * Indicates if underlying buffer is managed by current instance
@@ -292,6 +295,12 @@ public class GlBuffer<E>{
 					startPosition = this.buffer.position();
 				}
                 offset = this.stride >> 2;
+                for(final Chunk<E> chunk : chunks){
+                    for(int elementIndex=0, compIndex=0; elementIndex < this.count ; elementIndex++, compIndex+=chunk.components){
+                        this.buffer.position(startPosition + chunk.position + (elementIndex * offset));
+                        ((FloatBuffer)this.buffer).put(((float[])chunk.data),compIndex,chunk.components);
+                    }
+                }
 				break;
             case TYPE_INT :
                 if(this.buffer == null){
@@ -305,6 +314,12 @@ public class GlBuffer<E>{
 					startPosition = this.buffer.position();
 				}
                 offset = this.stride >> 2;
+                for(final Chunk<E> chunk : chunks){
+                    for(int elementIndex=0, compIndex=0; elementIndex < this.count ; elementIndex++, compIndex+=chunk.components){
+                        this.buffer.position(startPosition + chunk.position + (elementIndex * offset));
+                        ((IntBuffer)this.buffer).put(((int[])chunk.data),compIndex,chunk.components);
+                    }
+                }
                 break;
 			case TYPE_SHORT :
 				if(this.buffer == null){
@@ -318,6 +333,12 @@ public class GlBuffer<E>{
 					startPosition = this.buffer.position();
 				}
                 offset = this.stride >> 1;
+                for(final Chunk<E> chunk : chunks){
+                    for(int elementIndex=0, compIndex=0; elementIndex < this.count ; elementIndex++, compIndex+=chunk.components){
+                        this.buffer.position(startPosition + chunk.position + (elementIndex * offset));
+                        ((ShortBuffer)this.buffer).put(((short[])chunk.data),compIndex,chunk.components);
+                    }
+                }
 				break;
             default :
                 if(this.buffer == null){
@@ -330,15 +351,14 @@ public class GlBuffer<E>{
 				else{
 					startPosition = this.buffer.position();
 				}
+                for(final Chunk<E> chunk : chunks){
+                    for(int elementIndex=0, compIndex=0; elementIndex < this.count ; elementIndex++, compIndex+=chunk.components){
+                        this.buffer.position(startPosition + chunk.position + (elementIndex * offset));
+                        ((ByteBuffer)this.buffer).put(((byte[])chunk.data),compIndex,chunk.components);
+                    }
+                }
                 break;
 		}
-
-        for(final Chunk<E> chunk : chunks){
-            for(int elementIndex=0, compIndex=0; elementIndex < this.count ; elementIndex++, compIndex+=chunk.components){
-                this.buffer.position(startPosition + chunk.position + (elementIndex * offset));
-                ((FloatBuffer)this.buffer).put(((float[])chunk.data),compIndex,chunk.components);
-            }
-        }
 
         //Update server if needed
         if(push){
@@ -382,6 +402,10 @@ public class GlBuffer<E>{
 					startPosition = this.buffer.position();
 				}
                 offset = this.stride >> 2;
+                for (int elementIndex = 0, compIndex = 0; elementIndex < this.count; elementIndex++, compIndex += chunk.components) {
+                    this.buffer.position(startPosition + chunk.position + (elementIndex * offset));
+                    ((FloatBuffer) this.buffer).put(((float[]) chunk.data), compIndex, chunk.components);
+                }
                 break;
             }
             case TYPE_INT : {
@@ -396,6 +420,10 @@ public class GlBuffer<E>{
 					startPosition = this.buffer.position();
 				}
                 offset = this.stride >> 2;
+                for (int elementIndex = 0, compIndex = 0; elementIndex < this.count; elementIndex++, compIndex += chunk.components) {
+                    this.buffer.position(startPosition + chunk.position + (elementIndex * offset));
+                    ((IntBuffer) this.buffer).put(((int[]) chunk.data), compIndex, chunk.components);
+                }
                 break;
             }
             case TYPE_SHORT : {
@@ -410,6 +438,10 @@ public class GlBuffer<E>{
 					startPosition = this.buffer.position();
 				}
                 offset = this.stride >> 1;
+                for (int elementIndex = 0, compIndex = 0; elementIndex < this.count; elementIndex++, compIndex += chunk.components) {
+                    this.buffer.position(startPosition + chunk.position + (elementIndex * offset));
+                    ((ShortBuffer) this.buffer).put(((short[]) chunk.data), compIndex, chunk.components);
+                }
                 break;
             }
             default :
@@ -423,12 +455,11 @@ public class GlBuffer<E>{
 				else{
 					startPosition = this.buffer.position();
 				}
+                for (int elementIndex = 0, compIndex = 0; elementIndex < this.count; elementIndex++, compIndex += chunk.components) {
+                    this.buffer.position(startPosition + chunk.position + (elementIndex * offset));
+                    ((ByteBuffer) this.buffer).put(((byte[]) chunk.data), compIndex, chunk.components);
+                }
                 break;
-        }
-
-        for (int elementIndex = 0, compIndex = 0; elementIndex < this.count; elementIndex++, compIndex += chunk.components) {
-            this.buffer.position(startPosition + chunk.position + (elementIndex * offset));
-            ((FloatBuffer) this.buffer).put(((float[]) chunk.data), compIndex, chunk.components);
         }
 
         //Update server if needed
@@ -530,6 +561,9 @@ public class GlBuffer<E>{
                 mode = MODE_VAO;
             }
 		}
+		else{
+		    Log.w(TAG, "multiple allocation detected !");
+        }
 
 		return this;
 	}

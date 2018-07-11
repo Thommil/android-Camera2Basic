@@ -1,4 +1,4 @@
-package com.thommil.animalsgo.gl.libgl;
+package com.thommil.animalsgo.utils;
 
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;

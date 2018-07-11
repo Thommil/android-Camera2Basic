@@ -1,7 +1,8 @@
 package com.thommil.animalsgo.gl.libgl;
 
 import android.opengl.GLES20;
-import android.util.Log;
+
+import com.thommil.animalsgo.utils.ByteBufferPool;
 
 import java.nio.FloatBuffer;
 

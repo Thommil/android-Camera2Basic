@@ -24,7 +24,6 @@ public class UIDefault extends UIPlugin {
     private static final String ID = "ui/default";
     private static final String PROGRAM_ID = "ui_default";
 
-    private static final String SCENE_FILE = "scenes/ui_default.json";
     private static final String ATLAS_FILE = "textures/ui_default.json";
 
     private int mTextureUniforHandle;

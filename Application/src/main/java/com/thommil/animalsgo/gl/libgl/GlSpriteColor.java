@@ -30,13 +30,19 @@ public class GlSpriteColor extends GlSprite {
                         1.0f, 1.0f       // right bottom //Bitmap coords
                 }, 2),
                 new Chunk<>(new float[]{
-                        1.0f,      // left top //Bitmap coords
-                        1.0f,      // left bottom //Bitmap coords
-                        1.0f,      // right top //Bitmap coords
-                        1.0f       // right bottom //Bitmap coords
+                        GlColor.WHITE_FLOAT_BITS,      // left top //Bitmap coords
+                        GlColor.WHITE_FLOAT_BITS,      // left bottom //Bitmap coords
+                        GlColor.WHITE_FLOAT_BITS,      // right top //Bitmap coords
+                        GlColor.WHITE_FLOAT_BITS       // right bottom //Bitmap coords
                 }, 1));
 
         mTexture = texture;
+
+        //Hack to hide float behind vec4 bytes
+        chunks[2].datatype = TYPE_BYTE;
+        chunks[2].normalized = true;
+        chunks[2].components = 4;
+        chunks[2].offset = 16;
 
         clip(srcX, srcY, srcWidth, srcHeight);
     }
@@ -107,7 +113,7 @@ public class GlSpriteColor extends GlSprite {
                 if(this.vertexAttribHandles != null) {
                     GLES20.glVertexAttribPointer(this.vertexAttribHandles[CHUNK_VERTEX_INDEX], 2, GlBuffer.TYPE_FLOAT, false, 20, 0);
                     GLES20.glVertexAttribPointer(this.vertexAttribHandles[CHUNK_TEXTURE_INDEX], 2, GlBuffer.TYPE_FLOAT, false, 20, 8);
-                    GLES20.glVertexAttribPointer(this.vertexAttribHandles[CHUNK_COLOR_INDEX], 1, GlBuffer.TYPE_FLOAT, false, 20, 9);
+                    GLES20.glVertexAttribPointer(this.vertexAttribHandles[CHUNK_COLOR_INDEX], 4, GlBuffer.TYPE_BYTE, true, 20, 9);
                 }
 
                 GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
@@ -125,7 +131,7 @@ public class GlSpriteColor extends GlSprite {
                     this.buffer.position(2);
                     GLES20.glVertexAttribPointer(this.vertexAttribHandles[CHUNK_TEXTURE_INDEX], 2, GlBuffer.TYPE_FLOAT, false, 20, this.buffer);
                     this.buffer.position(4);
-                    GLES20.glVertexAttribPointer(this.vertexAttribHandles[CHUNK_TEXTURE_INDEX], 1, GlBuffer.TYPE_FLOAT, false, 20, this.buffer);
+                    GLES20.glVertexAttribPointer(this.vertexAttribHandles[CHUNK_COLOR_INDEX], 4, GlBuffer.TYPE_BYTE, true, 20, this.buffer);
                 }
 
                 this.buffer.position(0);

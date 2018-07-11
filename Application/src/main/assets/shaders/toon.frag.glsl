@@ -96,14 +96,14 @@ float nearestLevel(float col, int mode) {
 		    }
 		}
 	 }
-	if (mode==1) {
+	else if (mode==1) {
 		for (int i =0; i<SatLevCount-1; i++ ) {
 			if (col >= SatLevels[i] && col <= SatLevels[i+1]) {
 	          return SatLevels[i+1];
 	        }
 		}
 	}
-	if (mode==2) {
+	else if (mode==2) {
 		for (int i =0; i<ValLevCount-1; i++ ) {
 			if (col >= ValLevels[i] && col <= ValLevels[i+1]) {
 	          return ValLevels[i+1];

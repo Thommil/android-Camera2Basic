@@ -6,7 +6,7 @@
 #endif
 
 varying vec2 vTextCoordAttr;
-varying float vColorAttr;
+varying lowp vec4 vColorAttr;
 
 uniform sampler2D texture1i;
 

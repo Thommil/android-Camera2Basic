@@ -46,8 +46,8 @@ public class CameraDefault extends CameraPlugin {
     }
 
     @Override
-    public void allocate() {
-        super.allocate();
+    public void allocate(final float surfaceRatio) {
+        super.allocate(surfaceRatio);
 
         //Texture
         mCameraTexture = new GlTexture() {
@@ -76,8 +76,8 @@ public class CameraDefault extends CameraPlugin {
     }
 
     @Override
-    public void draw(final GlIntRect viewport, final float ratio, final int orientation) {
-        super.draw(viewport, ratio, orientation);
+    public void draw(final GlIntRect viewport, final int orientation) {
+        super.draw(viewport, orientation);
 
         //Program
         mProgram.use();

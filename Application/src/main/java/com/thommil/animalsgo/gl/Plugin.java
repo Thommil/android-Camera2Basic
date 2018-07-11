@@ -55,7 +55,7 @@ public abstract class Plugin {
 
     public abstract int getType();
 
-    public void allocate(){
+    public void allocate(final float surfaceRatio){
         //Log.d(TAG, "allocate()");
 
         if(mProgram == null) {
@@ -101,7 +101,7 @@ public abstract class Plugin {
         mProgram = program;
     }
 
-    public abstract void draw(final GlIntRect viewport, final float ratio, final int orientation);
+    public abstract void draw(final GlIntRect viewport, final int orientation);
 
 
 

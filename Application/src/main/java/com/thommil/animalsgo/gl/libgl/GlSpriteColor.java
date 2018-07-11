@@ -47,6 +47,17 @@ public class GlSpriteColor extends GlSprite {
         clip(srcX, srcY, srcWidth, srcHeight);
     }
 
+    public GlSpriteColor setColor(final float r, final float g, final float b, final float a){
+        final float fColor = GlColor.toFloatBits(r, g, b, a);
+        chunks[CHUNK_COLOR_INDEX].data[0] = fColor;
+        chunks[CHUNK_COLOR_INDEX].data[1] = fColor;
+        chunks[CHUNK_COLOR_INDEX].data[2] = fColor;
+        chunks[CHUNK_COLOR_INDEX].data[3] = fColor;
+
+        mMustUpdate = true;
+
+        return this;
+    }
 
     @Override
     public GlBuffer commit(boolean push) {
@@ -57,6 +68,18 @@ public class GlSpriteColor extends GlSprite {
         }
 
         if (mMustUpdate) {
+            chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_X]
+                    = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_X] = mPosition[POSITION_X] - mPosition[POSITION_PIVOT_X];
+
+            chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_Y]
+                    = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_Y] = mPosition[POSITION_Y] + mPosition[POSITION_PIVOT_Y];
+
+            chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_X]
+                    = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_X] = mPosition[POSITION_X] + mPosition[POSITION_PIVOT_X];
+
+            chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_Y]
+                    = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_Y] = mPosition[POSITION_Y] - mPosition[POSITION_PIVOT_Y];
+
             final FloatBuffer floatBuffer = (FloatBuffer) this.buffer;
             if(mManagedBuffer){
                 floatBuffer.position(0);
@@ -92,18 +115,6 @@ public class GlSpriteColor extends GlSprite {
 
             mMustUpdate = false;
         }
-
-        return this;
-    }
-
-    public GlSpriteColor setColor(final float r, final float g, final float b, final float a){
-        final float fColor = GlColor.toFloatBits(r, g, b, a);
-        chunks[CHUNK_COLOR_INDEX].data[0] = fColor;
-        chunks[CHUNK_COLOR_INDEX].data[1] = fColor;
-        chunks[CHUNK_COLOR_INDEX].data[2] = fColor;
-        chunks[CHUNK_COLOR_INDEX].data[3] = fColor;
-
-        mMustUpdate = true;
 
         return this;
     }

@@ -56,16 +56,16 @@ public class PluginManager {
         }
     }
 
-    public void allocate(final int filter){
+    public void allocate(final int filter, final float surfaceRatio){
         //Log.d(TAG, "destroy()");
         for(final Plugin plugin : mPluginsMap.values()){
             if((plugin.getType() & filter) > 0){
                 if(mProgramsMap.containsKey(plugin.getProgramId())){
                     plugin.setProgram(mProgramsMap.get(plugin.getProgramId()));
-                    plugin.allocate();
+                    plugin.allocate(surfaceRatio);
                 }
                 else{
-                    plugin.allocate();
+                    plugin.allocate(surfaceRatio);
                     mProgramsMap.put(plugin.getProgramId(), plugin.getProgram());
                 }
 

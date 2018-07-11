@@ -47,8 +47,8 @@ public abstract class CameraPlugin extends Plugin{
 
 
     @Override
-    public void allocate() {
-        super.allocate();
+    public void allocate(final float surfaceRatio) {
+        super.allocate(surfaceRatio);
         this.mZoomState = ZOOM_STATE_NONE;
         mCurrentZoom = 1.0f;
 
@@ -59,7 +59,7 @@ public abstract class CameraPlugin extends Plugin{
     }
 
     @Override
-    public void draw(GlIntRect viewport, final float ratio, int orientation) {
+    public void draw(GlIntRect viewport, int orientation) {
         GlOperation.setTestState(GlOperation.TEST_BLEND, false);
 
         //TODO Transform matrix when android < 6 (using accelerometer)

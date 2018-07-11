@@ -56,8 +56,8 @@ public class PreviewDefault extends PreviewPlugin {
     }
 
     @Override
-    public void allocate() {
-        super.allocate();
+    public void allocate(final float surfaceRatio) {
+        super.allocate(surfaceRatio);
 
         //Buffer
         mPreviewBuffer = new GlDrawableBuffer<>(mVertChunk, mTextChunk);
@@ -70,7 +70,7 @@ public class PreviewDefault extends PreviewPlugin {
     }
 
     @Override
-    public void draw(final GlIntRect viewport, final float ratio, final int orientation) {
+    public void draw(final GlIntRect viewport, final int orientation) {
         //Program
         mProgram.use();
         GLES20.glUniform1i(mTextureUniforHandle, mSourceTexture.index);

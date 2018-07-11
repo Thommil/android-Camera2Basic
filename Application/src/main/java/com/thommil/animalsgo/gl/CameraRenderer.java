@@ -129,7 +129,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
         mWindowSurface = new EglSurface(mEglCore, mSurface, true);
         mWindowSurface.makeCurrent();
 
-        mPluginManager.allocate(Plugin.TYPE_CAMERA | Plugin.TYPE_PREVIEW | Plugin.TYPE_UI);
+        mPluginManager.allocate(Plugin.TYPE_CAMERA | Plugin.TYPE_PREVIEW | Plugin.TYPE_UI, mSurfaceRatio);
 
         mCameraPlugin = (CameraPlugin) mPluginManager.getPlugin(Settings.getInstance().getString(Settings.PLUGIN_CAMERA));
         mCameraPlugin.setCameraTransformMatrix(mCameraTransformMatrix);
@@ -340,7 +340,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
                 //Camera draw
                 mCameraPreviewFBO.bind();
                 GlOperation.setViewport(0, 0, mViewport.width(), mViewport.height());
-                mCameraPlugin.draw(mViewport, mSurfaceRatio, mOrientation);
+                mCameraPlugin.draw(mViewport, mOrientation);
                 mCameraPreviewFBO.unbind();
 
                 //Capture
@@ -355,7 +355,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
                 //Preview draw
                 GlOperation.setViewport(mViewport.left, mViewport.bottom, mViewport.width(), mViewport.height());
-                mPreviewPlugin.draw(mViewport, mSurfaceRatio, mOrientation);
+                mPreviewPlugin.draw(mViewport, mOrientation);
 
                 //Check validation state -> next step
                 switch(mState){
@@ -369,7 +369,7 @@ public class CameraRenderer extends HandlerThread implements SurfaceTexture.OnFr
 
                 // UI draw
                 GlOperation.setViewport(0, 0, mSurfaceWidth, mSurfaceHeight);
-                mUIPlugin.draw(mViewport, mSurfaceRatio, mOrientation);
+                mUIPlugin.draw(mViewport, mOrientation);
                 break;
         }
 

@@ -38,34 +38,34 @@ public class GlDrawableBufferBatch<T> extends GlDrawableBuffer<T>{
         }
     }
 
-    public synchronized GlDrawableBufferBatch addElement(final GlDrawableBuffer<T> buffer){
+    public synchronized GlDrawableBufferBatch addElement(final GlDrawableBuffer<T> element){
         //Log.d(TAG, "addElement("+buffer+")");
         if(this.handle != UNBIND_HANDLE){
             throw new IllegalStateException("Cannot remove element in batch after allocate(), keep a fix amount of data using VBO/VAO");
         }
 
         if(mBuffers.isEmpty()){
-            this.datatype = buffer.chunks[0].datatype;
-            this.datasize = buffer.chunks[0].datasize;
-            this.stride = buffer.stride;
-            mPosition = new int[buffer.chunks.length];
-            mComponents = new int[buffer.chunks.length];
-            mDatatype = new int[buffer.chunks.length];
-            mNormalized = new boolean[buffer.chunks.length];
-            mOffset = new int[buffer.chunks.length];
+            this.datatype = element.chunks[0].datatype;
+            this.datasize = element.chunks[0].datasize;
+            this.stride = element.stride;
+            mPosition = new int[element.chunks.length];
+            mComponents = new int[element.chunks.length];
+            mDatatype = new int[element.chunks.length];
+            mNormalized = new boolean[element.chunks.length];
+            mOffset = new int[element.chunks.length];
 
-            for(int index=0; index < buffer.chunks.length; index++){
-                mPosition[index] = buffer.chunks[index].position;
-                mComponents[index] = buffer.chunks[index].components;
-                mDatatype[index] = buffer.chunks[index].datatype;
-                mNormalized[index] = buffer.chunks[index].normalized;
-                mOffset[index] = buffer.chunks[index].offset;
+            for(int index=0; index < element.chunks.length; index++){
+                mPosition[index] = element.chunks[index].position;
+                mComponents[index] = element.chunks[index].components;
+                mDatatype[index] = element.chunks[index].datatype;
+                mNormalized[index] = element.chunks[index].normalized;
+                mOffset[index] = element.chunks[index].offset;
             }
         }
 
-        if(mBuffers.add(buffer)) {
-            this.size += buffer.size;
-            this.count += buffer.count;
+        if(mBuffers.add(element)) {
+            this.size += element.size;
+            this.count += element.count;
             mCountPerBuffer = this.count / mBuffers.size();
         }
 

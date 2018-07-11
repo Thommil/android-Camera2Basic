@@ -58,8 +58,8 @@ public class UIDefault extends UIPlugin {
     }
 
     @Override
-    public void allocate() {
-        super.allocate();
+    public void allocate(final float surfaceRatio) {
+        super.allocate(surfaceRatio);
 
         //Scene
         try {
@@ -84,11 +84,6 @@ public class UIDefault extends UIPlugin {
             mSmall = new GlSpriteColor(mTextureAtlas.getTexture(), subTexture.x, subTexture.y, subTexture.width, subTexture.height);
             mBig = new GlSpriteColor(mTextureAtlas.getTexture(), subTexture.x, subTexture.y, subTexture.width, subTexture.height);
 
-            mLogo.size(0.2f,0.2f).position(0.0f, 0.5f);
-            mSmall.size(0.1f, 0.1f).position(-0.5f, 0);
-            mBig.size(0.5f, 0.5f).position(0.5f, 0);
-
-
         }catch(IOException ioe){
             throw new RuntimeException("Failed to load texture atlas : " + ioe);
         }catch(JSONException je){
@@ -103,8 +98,10 @@ public class UIDefault extends UIPlugin {
         mBatch = new GlDrawableBufferBatch(mLogo, mSmall, mBig);
         mBatch.setVertexAttribHandles(mProgram.getAttributeHandle(ATTRIBUTE_POSITION), mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD),mProgram.getAttributeHandle(ATTRIBUTE_COLOR));
         mBatch.allocate(GlBuffer.USAGE_DYNAMIC_DRAW, GlBuffer.TARGET_ARRAY_BUFFER, false);
+        mLogo.size(0.2f,0.2f * surfaceRatio).position(0.0f, 0.5f);
+        mSmall.size(0.1f, 0.1f).position(-0.5f, 0);
+        mBig.size(0.5f, 0.5f).position(0.5f, 0);
         mBatch.commit();
-
         //Blend test (should be called each draw if another one is used)
         GlOperation.configureBlendTest(GlOperation.BLEND_FACTOR_SRC_ALPA, GlOperation.BLEND_FACTOR_ONE_MINUS_SRC_ALPA, GlOperation.BLEND_OPERATION_ADD, null);
     }
@@ -113,7 +110,7 @@ public class UIDefault extends UIPlugin {
     float color = 0f;
 
     @Override
-    public void draw(final GlIntRect viewport, final float ratio, final int orientation) {
+    public void draw(final GlIntRect viewport, final int orientation) {
         //Blend test
         GlOperation.setTestState(GlOperation.TEST_BLEND, true);
         mLogo.setColor(1,1,1,1-color).scale(1.001f, 1.001f);

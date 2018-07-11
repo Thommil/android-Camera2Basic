@@ -71,18 +71,6 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
         mPosition[POSITION_X] = x;
         mPosition[POSITION_Y] = y;
 
-        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_X]
-                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_X] = mPosition[POSITION_X] - mPosition[POSITION_PIVOT_X];
-
-        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_Y]
-                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_Y] = mPosition[POSITION_Y] + mPosition[POSITION_PIVOT_Y];
-
-        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_X]
-                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_X] = mPosition[POSITION_X] + mPosition[POSITION_PIVOT_X];
-
-        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_Y]
-                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_Y] = mPosition[POSITION_Y] - mPosition[POSITION_PIVOT_Y];
-
         mMustUpdate = true;
 
         return this;
@@ -111,18 +99,6 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
         mPosition[POSITION_X] += dx;
         mPosition[POSITION_Y] += dy;
 
-        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_X]
-                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_X] = mPosition[POSITION_X] - mPosition[POSITION_PIVOT_X];
-
-        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_Y]
-                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_Y] = mPosition[POSITION_Y] + mPosition[POSITION_PIVOT_Y];
-
-        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_X]
-                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_X] = mPosition[POSITION_X] + mPosition[POSITION_PIVOT_X];
-
-        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_Y]
-                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_Y] = mPosition[POSITION_Y] - mPosition[POSITION_PIVOT_Y];
-
         mMustUpdate = true;
 
         return this;
@@ -135,18 +111,6 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
         mPosition[POSITION_PIVOT_X] = mPosition[POSITION_WIDTH] / 2;
         mPosition[POSITION_PIVOT_Y] = mPosition[POSITION_HEIGHT] / 2;
 
-        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_X]
-                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_X] = mPosition[POSITION_X] - mPosition[POSITION_PIVOT_X];
-
-        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_Y]
-                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_Y] = mPosition[POSITION_Y] + mPosition[POSITION_PIVOT_Y];
-
-        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_X]
-                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_X] = mPosition[POSITION_X] + mPosition[POSITION_PIVOT_X];
-
-        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_Y]
-                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_Y] = mPosition[POSITION_Y] - mPosition[POSITION_PIVOT_Y];
-
         mMustUpdate = true;
 
         return this;
@@ -158,18 +122,6 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
         mPosition[POSITION_HEIGHT] = mPosition[POSITION_HEIGHT] * yFactor;
         mPosition[POSITION_PIVOT_X] = mPosition[POSITION_WIDTH] / 2;
         mPosition[POSITION_PIVOT_Y] = mPosition[POSITION_HEIGHT] / 2;
-
-        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_X]
-                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_X] = mPosition[POSITION_X] - mPosition[POSITION_PIVOT_X];
-
-        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_Y]
-                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_Y] = mPosition[POSITION_Y] + mPosition[POSITION_PIVOT_Y];
-
-        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_X]
-                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_X] = mPosition[POSITION_X] + mPosition[POSITION_PIVOT_X];
-
-        chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_Y]
-                = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_Y] = mPosition[POSITION_Y] - mPosition[POSITION_PIVOT_Y];
 
         mMustUpdate = true;
 
@@ -227,7 +179,7 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
 
 
     @Override
-    public GlBuffer commit(boolean push) {
+    public synchronized GlBuffer commit(boolean push) {
         //Log.d(TAG,"commit("+push+")");
         if (this.buffer == null) {
             this.buffer = ByteBufferPool.getInstance().getDirectFloatBuffer(20);
@@ -235,6 +187,18 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
         }
 
         if (mMustUpdate) {
+            chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_X]
+                    = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_X] = mPosition[POSITION_X] - mPosition[POSITION_PIVOT_X];
+
+            chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_Y]
+                    = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_Y] = mPosition[POSITION_Y] + mPosition[POSITION_PIVOT_Y];
+
+            chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_X]
+                    = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_X] = mPosition[POSITION_X] + mPosition[POSITION_PIVOT_X];
+
+            chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_Y]
+                    = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_Y] = mPosition[POSITION_Y] - mPosition[POSITION_PIVOT_Y];
+
             final FloatBuffer floatBuffer = (FloatBuffer) this.buffer;
             if(mManagedBuffer){
                 floatBuffer.position(0);

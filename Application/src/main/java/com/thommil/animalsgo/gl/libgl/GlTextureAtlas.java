@@ -5,14 +5,11 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.util.Log;
 
-import com.thommil.animalsgo.Settings;
-
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -21,7 +18,7 @@ public class GlTextureAtlas {
 
     private static final String TAG = "A_GO/GlTextureAtlas";
 
-    private final Map<String, SpriteTemplate> mSpriteMap = new HashMap<>();
+    private final Map<String, SubTexture> mSubTextureMap = new HashMap<>();
     private GlTexture mTexture;
     private GlTexture mGlTextureTemplate;
 
@@ -44,23 +41,6 @@ public class GlTextureAtlas {
 
     public GlTexture getTexture() {
         return mTexture;
-    }
-
-    public GlSprite createSprite(final String name) {
-        return createSprite(name, false);
-    }
-
-    public GlSprite createSprite(final String name, final boolean colorSupport){
-        final SpriteTemplate template = mSpriteMap.get(name);
-        if(template != null) {
-            if(colorSupport) {
-                return new GlSpriteColor(mTexture, template.x, template.y, template.width, template.height);
-            }
-            else{
-                return new GlSprite(mTexture, template.x, template.y, template.width, template.height);
-            }
-        }
-        return null;
     }
 
     public GlTextureAtlas free(){
@@ -86,26 +66,10 @@ public class GlTextureAtlas {
             final int y = frame.getInt("y");
             final int width = frame.getInt("w");
             final int height = frame.getInt("h");
-            mSpriteMap.put(name, new SpriteTemplate(name, x, y, width, height));
+            mSubTextureMap.put(name, new SubTexture(name, x, y, width, height));
         }
 
         return this;
-    }
-
-    private static class SpriteTemplate {
-        final public String name;
-        final public int x;
-        final public int y;
-        final public int width;
-        final public int height;
-
-        public SpriteTemplate(String name, int x, int y, int width, int height) {
-            this.name = name;
-            this.x = x;
-            this.y = y;
-            this.width = width;
-            this.height = height;
-        }
     }
 
     private void generateTexture(final Context context, final String textureFile) {
@@ -134,6 +98,25 @@ public class GlTextureAtlas {
         }
     }
 
+    public SubTexture getSubTexture(final String name){
+        return mSubTextureMap.get(name);
+    }
+
+    public static class SubTexture {
+        final public String name;
+        final public int x;
+        final public int y;
+        final public int width;
+        final public int height;
+
+        public SubTexture(String name, int x, int y, int width, int height) {
+            this.name = name;
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+        }
+    }
 
     private static class GLTextureDecorator extends GlTexture{
 

@@ -32,6 +32,11 @@ public class UIDefault extends UIPlugin {
 
     private GlTextureAtlas mTextureAtlas;
 
+    private GlSpriteColor mSmall;
+    private GlSpriteColor mBig;
+    private GlSpriteColor mLogo;
+    GlDrawableBufferBatch mBatch;
+
     @Override
     public String getId() {
         return ID;
@@ -56,7 +61,7 @@ public class UIDefault extends UIPlugin {
     public void allocate() {
         super.allocate();
 
-        //Texture
+        //Scene
         try {
             mTextureAtlas = new GlTextureAtlas(new GlTexture() {
                 @Override
@@ -73,6 +78,17 @@ public class UIDefault extends UIPlugin {
             mTextureAtlas.parseJON(mContext, ResourcesLoader.jsonFromAsset(mContext, ATLAS_FILE));
             mTextureAtlas.allocate();
 
+            GlTextureAtlas.SubTexture subTexture = mTextureAtlas.getSubTexture("big");
+            mLogo = new GlSpriteColor(mTextureAtlas.getTexture(), subTexture.x, subTexture.y, subTexture.width, subTexture.height);
+            subTexture = mTextureAtlas.getSubTexture("small");
+            mSmall = new GlSpriteColor(mTextureAtlas.getTexture(), subTexture.x, subTexture.y, subTexture.width, subTexture.height);
+            mBig = new GlSpriteColor(mTextureAtlas.getTexture(), subTexture.x, subTexture.y, subTexture.width, subTexture.height);
+
+            mLogo.size(0.2f,0.2f).position(0.0f, 0.5f);
+            mSmall.size(0.1f, 0.1f).position(-0.5f, 0);
+            mBig.size(0.5f, 0.5f).position(0.5f, 0);
+
+
         }catch(IOException ioe){
             throw new RuntimeException("Failed to load texture atlas : " + ioe);
         }catch(JSONException je){
@@ -81,52 +97,30 @@ public class UIDefault extends UIPlugin {
 
         //Program
         mProgram.use();
-        mBig = mTextureAtlas.createSprite("big", true);
-        //mBig.setVertexAttribHandles(mProgram.getAttributeHandle(ATTRIBUTE_POSITION), mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD));
-        mSmall = mTextureAtlas.createSprite("small",true);
-        //mSmall.setVertexAttribHandles(mProgram.getAttributeHandle(ATTRIBUTE_POSITION), mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD));
-        mLogo = mTextureAtlas.createSprite("small", true);
         mTextureUniforHandle = mProgram.getUniformHandle(UNIFORM_TEXTURE);
 
-        //Scene
-
-        //Buffers
-        //mBig.allocate(GlBuffer.USAGE_DYNAMIC_DRAW, GlBuffer.TARGET_ARRAY_BUFFER, false);
-        //mSmall.allocate(GlBuffer.USAGE_DYNAMIC_DRAW, GlBuffer.TARGET_ARRAY_BUFFER, false);
-        //mSprite.size(0.5f,0.5f).commit();
-        //mSprite.commit();
-        //mBig.size(0.2f, 0.2f).position(-0.5f, 0).commit();
-        mSmall.size(0.2f, 0.2f).position(-0.5f, 0);
-        mBig.size(0.2f, 0.2f);
-        mLogo.size(0.2f, 0.2f).position(0f, 0.5f);
-        batch = new GlDrawableBufferBatch(mBig, mSmall, mLogo);
-        batch.setVertexAttribHandles(mProgram.getAttributeHandle(ATTRIBUTE_POSITION), mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD),mProgram.getAttributeHandle(ATTRIBUTE_COLOR));
-        batch.allocate(GlBuffer.USAGE_DYNAMIC_DRAW, GlBuffer.TARGET_ARRAY_BUFFER, false);
-        batch.commit();
+        //Buffer & Batch
+        mBatch = new GlDrawableBufferBatch(mLogo, mSmall, mBig);
+        mBatch.setVertexAttribHandles(mProgram.getAttributeHandle(ATTRIBUTE_POSITION), mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD),mProgram.getAttributeHandle(ATTRIBUTE_COLOR));
+        mBatch.allocate(GlBuffer.USAGE_DYNAMIC_DRAW, GlBuffer.TARGET_ARRAY_BUFFER, false);
+        mBatch.commit();
 
         //Blend test (should be called each draw if another one is used)
         GlOperation.configureBlendTest(GlOperation.BLEND_FACTOR_SRC_ALPA, GlOperation.BLEND_FACTOR_ONE_MINUS_SRC_ALPA, GlOperation.BLEND_OPERATION_ADD, null);
     }
 
-    private GlSprite mSmall;
-    private GlSprite mBig;
-    private GlSprite mLogo;
-    GlDrawableBufferBatch batch;
 
-    float size = 0.1f;
-    //final GlBuffer<short[]> indices =  GlBufferGlBuffer.Chunk<short[]>(new short[]{0,1,2,3,3,0});
-
-    float color = 1f;
+    float color = 0f;
 
     @Override
     public void draw(final GlIntRect viewport, final float ratio, final int orientation) {
         //Blend test
         GlOperation.setTestState(GlOperation.TEST_BLEND, true);
-        color -= 0.001;
-        mSmall.translate(0.001f, 0.001f);
-        ((GlSpriteColor)mBig).setColor(color,color,color,color).scale(1.001f, 1.001f);
-        mLogo.translate(-0.001f, -0.001f);
-        batch.commit();
+        mLogo.setColor(1,1,1,1-color).scale(1.001f, 1.001f);
+        color += 0.001;
+        mBig.translate(0.000f, 0.001f);
+        mSmall.translate(0.000f, -0.001f);
+        mBatch.commit();
 
         //Program
         mProgram.use();
@@ -136,15 +130,14 @@ public class UIDefault extends UIPlugin {
         mTextureAtlas.getTexture().bind();
 
         //Draw
-        //mBig.draw(mProgram);
-        //mSmall.draw(mProgram);
-        batch.draw(mProgram);
+        mBatch.draw(mProgram);
     }
 
     @Override
     public void free() {
         super.free();
-        batch.free();
+        mBatch.free();
+        mLogo.free();
         mBig.free();
         mSmall.free();
 

@@ -89,6 +89,8 @@ public class GlSpriteColor extends GlSprite {
             if (push) {
                 push();
             }
+
+            mMustUpdate = false;
         }
 
         return this;

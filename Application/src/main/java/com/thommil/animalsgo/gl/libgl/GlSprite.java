@@ -263,6 +263,8 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
             if (push) {
                 push();
             }
+
+            mMustUpdate = false;
         }
 
         return this;

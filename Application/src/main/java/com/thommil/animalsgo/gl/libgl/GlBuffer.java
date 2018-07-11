@@ -19,7 +19,7 @@ import com.thommil.animalsgo.utils.ByteBufferPool;
  * 		<ul>
  * 			<li>build underlying buffer based on array of Chunks</li>
  * 			<li>fill the buffer using interleaves and stride</li>
- *  		<li>allows to upload buffer content to VBOs</li>
+ *  		<li>allows to upload buffer content to VBOs & VAOs</li>
  *  		<li>underlined pools for preformances</li>
  *  		<li>not thread safe !</li>
  *  	</ul>

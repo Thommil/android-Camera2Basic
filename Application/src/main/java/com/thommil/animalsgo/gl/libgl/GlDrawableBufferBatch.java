@@ -27,6 +27,8 @@ public class GlDrawableBufferBatch<T> extends GlDrawableBuffer<T>{
     private boolean mNormalized[];
     private int mOffset[];
 
+    private int mCountPerBuffer;
+
     public GlDrawableBufferBatch(final GlDrawableBuffer<T> ...buffers){
         super();
         mBuffers = new ArrayList<>();
@@ -64,6 +66,7 @@ public class GlDrawableBufferBatch<T> extends GlDrawableBuffer<T>{
         if(mBuffers.add(buffer)) {
             this.size += buffer.size;
             this.count += buffer.count;
+            mCountPerBuffer = this.count / mBuffers.size();
         }
 
         if(this.buffer != null){
@@ -246,9 +249,11 @@ public class GlDrawableBufferBatch<T> extends GlDrawableBuffer<T>{
             }
         }
 
-        this.buffer.position(0);
+        int bufferIndex = 0;
         for(final GlBuffer<T> element : mBuffers){
+            this.buffer.position(bufferIndex * element.stride);
             element.commit(false);
+            bufferIndex++;
         }
 
         //Update server if needed

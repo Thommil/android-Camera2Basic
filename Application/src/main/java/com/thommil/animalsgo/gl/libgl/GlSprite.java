@@ -10,32 +10,32 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
 
     private static final String TAG = "A_GO/GlSprite";
 
-    public static final int CHUNK_VERTEX_INDEX = 0;
-    public static final int CHUNK_TEXTURE_INDEX = 1;
+    protected static final int CHUNK_VERTEX_INDEX = 0;
+    protected static final int CHUNK_TEXTURE_INDEX = 1;
 
-    public static final int CHUNK_LEFT_TOP_X = 0;
-    public static final int CHUNK_LEFT_TOP_Y = 1;
-    public static final int CHUNK_LEFT_BOTTOM_X = 2;
-    public static final int CHUNK_LEFT_BOTTOM_Y = 3;
-    public static final int CHUNK_RIGHT_TOP_X = 4;
-    public static final int CHUNK_RIGHT_TOP_Y = 5;
-    public static final int CHUNK_RIGHT_BOTTOM_X = 6;
-    public static final int CHUNK_RIGHT_BOTTOM_Y = 7;
+    protected static final int CHUNK_LEFT_TOP_X = 0;
+    protected static final int CHUNK_LEFT_TOP_Y = 1;
+    protected static final int CHUNK_LEFT_BOTTOM_X = 2;
+    protected static final int CHUNK_LEFT_BOTTOM_Y = 3;
+    protected static final int CHUNK_RIGHT_TOP_X = 4;
+    protected static final int CHUNK_RIGHT_TOP_Y = 5;
+    protected static final int CHUNK_RIGHT_BOTTOM_X = 6;
+    protected static final int CHUNK_RIGHT_BOTTOM_Y = 7;
 
-    private boolean mMustUpdate = true;
+    protected boolean mMustUpdate = true;
 
     //Texture
-    private final GlTexture mTexture;
+    protected GlTexture mTexture;
 
     //Position
-    private static final int POSITION_X = 0;
-    private static final int POSITION_Y = 1;
-    private static final int POSITION_WIDTH = 2;
-    private static final int POSITION_HEIGHT = 3;
-    private static final int POSITION_PIVOT_X = 4;
-    private static final int POSITION_PIVOT_Y = 5;
+    protected static final int POSITION_X = 0;
+    protected static final int POSITION_Y = 1;
+    protected static final int POSITION_WIDTH = 2;
+    protected static final int POSITION_HEIGHT = 3;
+    protected static final int POSITION_PIVOT_X = 4;
+    protected static final int POSITION_PIVOT_Y = 5;
 
-    private final float[] mPosition = new float[6];
+    protected final float[] mPosition = new float[6];
 
 
     public GlSprite(final GlTexture texture) {
@@ -59,6 +59,10 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
         mTexture = texture;
 
         clip(srcX, srcY, srcWidth, srcHeight);
+    }
+
+    protected GlSprite(Chunk<float[]> ...chunks){
+        super(chunks);
     }
 
     public GlSprite position(final float x, final float y) {
@@ -263,7 +267,7 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
         return this;
     }
 
-    @Override
+   @Override
     public void draw(GlProgram program) {
         switch (this.mode){
             case GlBuffer.MODE_VAO: {
@@ -280,8 +284,8 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
                 this.bind();
 
                 if(this.vertexAttribHandles != null) {
-                    GLES20.glVertexAttribPointer(this.vertexAttribHandles[0], 2, GlBuffer.TYPE_FLOAT, false, 16, 0);
-                    GLES20.glVertexAttribPointer(this.vertexAttribHandles[1], 2, GlBuffer.TYPE_FLOAT, false, 16, 8);
+                    GLES20.glVertexAttribPointer(this.vertexAttribHandles[CHUNK_VERTEX_INDEX], 2, GlBuffer.TYPE_FLOAT, false, 16, 0);
+                    GLES20.glVertexAttribPointer(this.vertexAttribHandles[CHUNK_TEXTURE_INDEX], 2, GlBuffer.TYPE_FLOAT, false, 16, 8);
                 }
 
                 GLES20.glDrawArrays(GLES20.GL_TRIANGLE_STRIP, 0, 4);
@@ -295,9 +299,9 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
 
                 if(this.vertexAttribHandles != null) {
                     this.buffer.position(0);
-                    GLES20.glVertexAttribPointer(this.vertexAttribHandles[0], 2, GlBuffer.TYPE_FLOAT, false, 16, this.buffer);
+                    GLES20.glVertexAttribPointer(this.vertexAttribHandles[CHUNK_VERTEX_INDEX], 2, GlBuffer.TYPE_FLOAT, false, 16, this.buffer);
                     this.buffer.position(2);
-                    GLES20.glVertexAttribPointer(this.vertexAttribHandles[1], 2, GlBuffer.TYPE_FLOAT, false, 16, this.buffer);
+                    GLES20.glVertexAttribPointer(this.vertexAttribHandles[CHUNK_TEXTURE_INDEX], 2, GlBuffer.TYPE_FLOAT, false, 16, this.buffer);
                 }
 
                 this.buffer.position(0);

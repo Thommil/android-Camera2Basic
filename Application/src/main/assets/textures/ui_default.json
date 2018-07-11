@@ -19,7 +19,7 @@
 "meta": {
 	"app": "Adobe Animate",
 	"version": "16.0.1.119",
-	"image": "ui_default.png",
+	"image": "textures/ui_default.png",
 	"format": "RGBA8888",
 	"size": {"w":128,"h":128},
 	"scale": "1"

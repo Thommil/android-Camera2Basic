@@ -43,6 +43,9 @@ public class Settings {
     // Textures path in assets
     public static final String ASSETS_TEXTURES_PATH = "textures/";
 
+    // Scenes path in assets
+    public static final String ASSETS_SCENES_PATH = "scenes/";
+
 
     // Settings keys & values
     public static final String CAMERA_QUALITY_AUTO = "prefs_camera_quality_auto";

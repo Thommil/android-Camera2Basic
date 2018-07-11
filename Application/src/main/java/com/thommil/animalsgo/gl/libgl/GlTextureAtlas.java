@@ -46,10 +46,19 @@ public class GlTextureAtlas {
         return mTexture;
     }
 
-    public GlSprite createSprite(final String name){
+    public GlSprite createSprite(final String name) {
+        return createSprite(name, false);
+    }
+
+    public GlSprite createSprite(final String name, final boolean colorSupport){
         final SpriteTemplate template = mSpriteMap.get(name);
         if(template != null) {
-            return new GlSprite(mTexture, template.x, template.y, template.width, template.height);
+            if(colorSupport) {
+                return new GlSpriteColor(mTexture, template.x, template.y, template.width, template.height);
+            }
+            else{
+                return new GlSprite(mTexture, template.x, template.y, template.width, template.height);
+            }
         }
         return null;
     }
@@ -109,7 +118,7 @@ public class GlTextureAtlas {
                 mTexture = new GLTextureDecorator(mGlTextureTemplate);
             }
             else {
-                in = context.getResources().getAssets().open(Settings.ASSETS_TEXTURES_PATH + textureFile);
+                in = context.getResources().getAssets().open(textureFile);
                 mTexture = new GLTextureDecorator(BitmapFactory.decodeStream(in, null, options), mGlTextureTemplate);
             }
         }catch(IOException ioe){

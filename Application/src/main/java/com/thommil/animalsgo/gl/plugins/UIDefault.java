@@ -23,7 +23,9 @@ public class UIDefault extends UIPlugin {
 
     private static final String ID = "ui/default";
     private static final String PROGRAM_ID = "ui_default";
-    private static final String ATLAS_FILE = "ui_default.json";
+
+    private static final String SCENE_FILE = "scenes/ui_default.json";
+    private static final String ATLAS_FILE = "textures/ui_default.json";
 
     private int mTextureUniforHandle;
 
@@ -67,7 +69,7 @@ public class UIDefault extends UIPlugin {
                 }
             });
 
-            mTextureAtlas.parseJON(mContext, ResourcesLoader.jsonFromAsset(mContext, com.thommil.animalsgo.Settings.ASSETS_TEXTURES_PATH + ATLAS_FILE));
+            mTextureAtlas.parseJON(mContext, ResourcesLoader.jsonFromAsset(mContext, ATLAS_FILE));
             mTextureAtlas.allocate();
 
         }catch(IOException ioe){
@@ -78,11 +80,11 @@ public class UIDefault extends UIPlugin {
 
         //Program
         mProgram.use();
-        mBig = mTextureAtlas.createSprite("big");
+        mBig = mTextureAtlas.createSprite("big", true);
         //mBig.setVertexAttribHandles(mProgram.getAttributeHandle(ATTRIBUTE_POSITION), mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD));
-        mSmall = mTextureAtlas.createSprite("small");
+        mSmall = mTextureAtlas.createSprite("small",true);
         //mSmall.setVertexAttribHandles(mProgram.getAttributeHandle(ATTRIBUTE_POSITION), mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD));
-        mLogo = mTextureAtlas.createSprite("small");
+        mLogo = mTextureAtlas.createSprite("small", true);
         mTextureUniforHandle = mProgram.getUniformHandle(UNIFORM_TEXTURE);
 
         //Scene
@@ -97,7 +99,7 @@ public class UIDefault extends UIPlugin {
         mBig.size(0.2f, 0.2f);
         mLogo.size(0.2f, 0.2f).position(0f, 0.5f);
         batch = new GlDrawableBufferBatch(mBig, mSmall, mLogo);
-        batch.setVertexAttribHandles(mProgram.getAttributeHandle(ATTRIBUTE_POSITION), mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD));
+        batch.setVertexAttribHandles(mProgram.getAttributeHandle(ATTRIBUTE_POSITION), mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD),mProgram.getAttributeHandle(ATTRIBUTE_COLOR));
         //batch.allocate(GlBuffer.USAGE_DYNAMIC_DRAW, GlBuffer.TARGET_ARRAY_BUFFER, false);
         batch.commit();
 

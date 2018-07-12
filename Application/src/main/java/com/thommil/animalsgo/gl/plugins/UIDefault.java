@@ -98,9 +98,9 @@ public class UIDefault extends UIPlugin {
         mBatch = new GlDrawableBufferBatch(mLogo, mSmall, mBig);
         mBatch.setVertexAttribHandles(mProgram.getAttributeHandle(ATTRIBUTE_POSITION), mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD),mProgram.getAttributeHandle(ATTRIBUTE_COLOR));
         mBatch.allocate(GlBuffer.USAGE_DYNAMIC_DRAW, GlBuffer.TARGET_ARRAY_BUFFER, false);
-        mLogo.size(0.2f,0.2f * surfaceRatio).position(0.0f, 0.5f);
-        mSmall.size(0.1f, 0.1f).position(-0.5f, 0);
-        mBig.size(0.5f, 0.5f).position(0.5f, 0);
+        mLogo.size(0.5f,0.5f).position(0.0f, 0.0f);
+        mSmall.size(0.19f, 0.30f).position(-0.5f, 0);
+        mBig.size(0.39f, 0.6f).position(0.5f, 0);
         mBatch.commit();
         //Blend test (should be called each draw if another one is used)
         GlOperation.configureBlendTest(GlOperation.BLEND_FACTOR_SRC_ALPA, GlOperation.BLEND_FACTOR_ONE_MINUS_SRC_ALPA, GlOperation.BLEND_OPERATION_ADD, null);
@@ -113,8 +113,8 @@ public class UIDefault extends UIPlugin {
     public void draw(final GlIntRect viewport, final int orientation) {
         //Blend test
         GlOperation.setTestState(GlOperation.TEST_BLEND, true);
-        mLogo.setColor(1,1,1,1-color).scale(1.001f, 1.001f);
-        color += 0.001;
+        mLogo.rotate(0.1f);
+        //color += 0.001;
         mBig.translate(0.000f, 0.001f);
         mSmall.translate(0.000f, -0.001f);
         mBatch.commit();

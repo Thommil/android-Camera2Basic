@@ -3,6 +3,7 @@ package com.thommil.animalsgo.gl.libgl;
 import android.opengl.GLES20;
 
 import com.thommil.animalsgo.utils.ByteBufferPool;
+import com.thommil.animalsgo.utils.MathUtils;
 
 import java.nio.FloatBuffer;
 
@@ -13,6 +14,11 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
 
     protected static final int CHUNK_VERTEX_INDEX = 0;
     protected static final int CHUNK_TEXTURE_INDEX = 1;
+
+    protected static final int CHUNK_LEFT_TOP = 0;
+    protected static final int CHUNK_LEFT_BOTTOM = 1;
+    protected static final int CHUNK_RIGHT_TOP = 2;
+    protected static final int CHUNK_RIGHT_BOTTOM = 3;
 
     protected static final int CHUNK_LEFT_TOP_X = 0;
     protected static final int CHUNK_LEFT_TOP_Y = 1;
@@ -29,14 +35,16 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
     protected GlTexture mTexture;
 
     //Position
-    protected static final int POSITION_X = 0;
-    protected static final int POSITION_Y = 1;
-    protected static final int POSITION_WIDTH = 2;
-    protected static final int POSITION_HEIGHT = 3;
-    protected static final int POSITION_PIVOT_X = 4;
-    protected static final int POSITION_PIVOT_Y = 5;
+    public float x;
+    public float y;
 
-    protected final float[] mPosition = new float[6];
+    public float width;
+    public float height;
+
+    public float pivotX;
+    public float pivotY;
+
+    public float rotation = 0f;
 
 
     public GlSprite(final GlTexture texture) {
@@ -68,8 +76,8 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
 
     public GlSprite position(final float x, final float y) {
         //Log.d(TAG,"position("+x+", "+y+")");
-        mPosition[POSITION_X] = x;
-        mPosition[POSITION_Y] = y;
+        this.x = x;
+        this.y = y;
 
         mMustUpdate = true;
 
@@ -78,7 +86,7 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
 
     public GlSprite rotation(final float deg) {
         //Log.d(TAG,"rotation("+deg+")");
-
+        rotation = deg;
 
         mMustUpdate = true;
 
@@ -87,7 +95,7 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
 
     public GlSprite rotate(final float deg) {
         //Log.d(TAG,"rotate("+deg+")");
-
+        rotation += deg;
 
         mMustUpdate = true;
 
@@ -96,8 +104,8 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
 
     public GlSprite translate(final float dx, final float dy) {
         //Log.d(TAG,"translate("+dx+", "+dy+")");
-        mPosition[POSITION_X] += dx;
-        mPosition[POSITION_Y] += dy;
+        this.x += dx;
+        this.y += dy;
 
         mMustUpdate = true;
 
@@ -106,10 +114,10 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
 
     public GlSprite size(final float width, final float height) {
         //Log.d(TAG,"size("+x+", "+y+")");
-        mPosition[POSITION_WIDTH] = width;
-        mPosition[POSITION_HEIGHT] = height;
-        mPosition[POSITION_PIVOT_X] = mPosition[POSITION_WIDTH] / 2;
-        mPosition[POSITION_PIVOT_Y] = mPosition[POSITION_HEIGHT] / 2;
+        this.width = width;
+        this.height = height;
+        this.pivotX = this.width / 2;
+        this.pivotY = this.height / 2;
 
         mMustUpdate = true;
 
@@ -118,10 +126,10 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
 
     public GlSprite scale(final float xFactor, final float yFactor) {
         //Log.d(TAG,"scale("+xFactor+", "+yFactor+")");
-        mPosition[POSITION_WIDTH] = mPosition[POSITION_WIDTH] * xFactor;
-        mPosition[POSITION_HEIGHT] = mPosition[POSITION_HEIGHT] * yFactor;
-        mPosition[POSITION_PIVOT_X] = mPosition[POSITION_WIDTH] / 2;
-        mPosition[POSITION_PIVOT_Y] = mPosition[POSITION_HEIGHT] / 2;
+        this.width = this.width * xFactor;
+        this.height = this.height * yFactor;
+        this.pivotX = this.width / 2;
+        this.pivotY = this.height / 2;
 
         mMustUpdate = true;
 
@@ -187,17 +195,51 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
         }
 
         if (mMustUpdate) {
-            chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_X]
-                    = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_X] = mPosition[POSITION_X] - mPosition[POSITION_PIVOT_X];
+            if(rotation != 0){
+                final float localX = -this.pivotX;
+                final float localY = -this.pivotY;
+                final float localX2 = localX + this.width;
+                final float localY2 = localY + this.height;
 
-            chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_Y]
-                    = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_Y] = mPosition[POSITION_Y] + mPosition[POSITION_PIVOT_Y];
+                final float cos = MathUtils.cosDeg(rotation);
+                final float sin = MathUtils.sinDeg(rotation);
+                final float localXCos = localX * cos;
+                final float localXSin = localX * sin;
+                final float localYCos = localY * cos;
+                final float localYSin = localY * sin;
+                final float localX2Cos = localX2 * cos;
+                final float localX2Sin = localX2 * sin;
+                final float localY2Cos = localY2 * cos;
+                final float localY2Sin = localY2 * sin;
 
-            chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_X]
-                    = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_X] = mPosition[POSITION_X] + mPosition[POSITION_PIVOT_X];
+                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_X] = localXCos - localYSin;
+                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_Y] = localXSin + localYCos;
 
-            chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_Y]
-                    = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_Y] = mPosition[POSITION_Y] - mPosition[POSITION_PIVOT_Y];
+                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_X] = localXCos - localY2Sin;
+                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_Y] = localXSin + localY2Cos;
+
+                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_X] = localX2Cos - localYSin;
+                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_Y] = localX2Sin + localYCos;
+
+                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_X] = localX2Cos - localY2Sin;
+                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_Y] = localX2Sin + localY2Cos;
+
+
+            }
+            else{
+                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_X]
+                        = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_X] = this.x - this.pivotX; //left
+
+                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_Y]
+                        = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_Y] = this.y + this.pivotY; //top
+
+                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_X]
+                        = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_X] = this.x + this.pivotX; //right
+
+                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_Y]
+                        = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_Y] = this.y - this.pivotY; //bottom
+            }
+
 
             final FloatBuffer floatBuffer = (FloatBuffer) this.buffer;
             if(mManagedBuffer){

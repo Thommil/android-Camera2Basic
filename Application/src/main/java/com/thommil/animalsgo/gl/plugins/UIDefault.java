@@ -5,11 +5,9 @@ import android.opengl.GLES20;
 import com.thommil.animalsgo.R;
 import com.thommil.animalsgo.gl.UIPlugin;
 import com.thommil.animalsgo.gl.libgl.GlBuffer;
-import com.thommil.animalsgo.gl.libgl.GlColor;
 import com.thommil.animalsgo.gl.libgl.GlDrawableBufferBatch;
 import com.thommil.animalsgo.gl.libgl.GlIntRect;
 import com.thommil.animalsgo.gl.libgl.GlOperation;
-import com.thommil.animalsgo.gl.libgl.GlSprite;
 import com.thommil.animalsgo.gl.libgl.GlSpriteColor;
 import com.thommil.animalsgo.gl.libgl.GlTexture;
 import com.thommil.animalsgo.gl.libgl.GlTextureAtlas;
@@ -29,6 +27,7 @@ public class UIDefault extends UIPlugin {
     private static final String ATLAS_FILE = "textures/ui_default.json";
 
     private int mTextureUniforHandle;
+    private int mScreenRatioUniformHandle;
 
     private GlTextureAtlas mTextureAtlas;
 
@@ -36,6 +35,8 @@ public class UIDefault extends UIPlugin {
     private GlSpriteColor mBig;
     private GlSpriteColor mLogo;
     GlDrawableBufferBatch mBatch;
+
+    private final float[] mScreenRatio = new float[]{1f,1f};
 
     @Override
     public String getId() {
@@ -60,6 +61,17 @@ public class UIDefault extends UIPlugin {
     @Override
     public void allocate(final float surfaceRatio) {
         super.allocate(surfaceRatio);
+
+        //Screen
+        if(surfaceRatio < 1){
+            mScreenRatio[0] = 1f;
+            mScreenRatio[1] = surfaceRatio;
+        }
+        else if(surfaceRatio > 1){
+            mScreenRatio[0] = surfaceRatio;
+            mScreenRatio[1] = 1f;
+        }
+
 
         //Scene
         try {
@@ -93,6 +105,7 @@ public class UIDefault extends UIPlugin {
         //Program
         mProgram.use();
         mTextureUniforHandle = mProgram.getUniformHandle(UNIFORM_TEXTURE);
+        mScreenRatioUniformHandle = mProgram.getUniformHandle(UNIFORM_SCREEN_RATIO);
 
         //Buffer & Batch
         mBatch = new GlDrawableBufferBatch(mLogo, mSmall, mBig);
@@ -107,22 +120,22 @@ public class UIDefault extends UIPlugin {
     }
 
 
-    float color = 0f;
+    float alpha = 1f;
 
     @Override
     public void draw(final GlIntRect viewport, final int orientation) {
         //Blend test
         GlOperation.setTestState(GlOperation.TEST_BLEND, true);
-        //mLogo.rotate(0.1f);
-        //color += 0.001;
-        mLogo.rotate(2);
-        mBig.translate(0.000f, 0.001f);
-        mSmall.translate(0.000f, -0.001f);
+        alpha -= 0.001;
+        mLogo.rotate(5).scale(1.001f, 1.001f);
+        mBig.setAlpha(alpha).translate(0.000f, 0.001f).rotate(-1);
+        mSmall.setAlpha(alpha).translate(0.000f, -0.001f).rotate(-1);
         mBatch.commit();
 
         //Program
         mProgram.use();
         GLES20.glUniform1i(mTextureUniforHandle, mTextureAtlas.getTexture().index);
+        GLES20.glUniform2f(mScreenRatioUniformHandle, mScreenRatio[0], mScreenRatio[1]);
 
         //Texture
         mTextureAtlas.getTexture().bind();
@@ -134,6 +147,7 @@ public class UIDefault extends UIPlugin {
     @Override
     public void free() {
         super.free();
+        alpha = 1;
         mBatch.free();
         mLogo.free();
         mBig.free();

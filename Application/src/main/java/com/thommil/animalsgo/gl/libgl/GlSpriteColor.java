@@ -13,7 +13,7 @@ public class GlSpriteColor extends GlSprite {
 
     public static final int CHUNK_COLOR_INDEX = 2;
 
-    public float color = GlColor.WHITE;
+    public float color;
 
     public GlSpriteColor(final GlTexture texture) {
         this(texture, 0, 0, texture.getWidth(), texture.getHeight());
@@ -33,12 +33,14 @@ public class GlSpriteColor extends GlSprite {
                         1.0f, 1.0f       // right bottom //Bitmap coords
                 }, 2),
                 new Chunk<>(new float[]{
-                        GlColor.WHITE,      // left top //Bitmap coords
-                        GlColor.WHITE,      // left bottom //Bitmap coords
-                        GlColor.WHITE,      // right top //Bitmap coords
-                        GlColor.WHITE       // right bottom //Bitmap coords
+                        1,      // left top //Bitmap coords
+                        1,      // left bottom //Bitmap coords
+                        1,      // right top //Bitmap coords
+                        1       // right bottom //Bitmap coords
                 }, 1));
 
+        setColor(chunks[CHUNK_COLOR_INDEX].data[0],chunks[CHUNK_COLOR_INDEX].data[1],
+                    chunks[CHUNK_COLOR_INDEX].data[2],chunks[CHUNK_COLOR_INDEX].data[3]);
         mTexture = texture;
 
         //Hack to hide float behind vec4 bytes
@@ -51,7 +53,27 @@ public class GlSpriteColor extends GlSprite {
     }
 
     public GlSpriteColor setColor(final float r, final float g, final float b, final float a){
-        this.color = GlColor.toFloatBits(r, g, b, a);
+        int intColor = ((int)(255 * a) << 24) | ((int)(255 * b) << 16) | ((int)(255 * g) << 8) | ((int)(255 * r));
+        this.color = Float.intBitsToFloat(intColor & 0xfeffffff);
+        chunks[CHUNK_COLOR_INDEX].data[CHUNK_LEFT_TOP] = this.color;
+        chunks[CHUNK_COLOR_INDEX].data[CHUNK_LEFT_BOTTOM] = this.color;
+        chunks[CHUNK_COLOR_INDEX].data[CHUNK_RIGHT_TOP] = this.color;
+        chunks[CHUNK_COLOR_INDEX].data[CHUNK_RIGHT_BOTTOM] = this.color;
+
+        mMustUpdate = true;
+
+        return this;
+    }
+
+    public GlSpriteColor setAlpha (float a) {
+        int intBits = Float.floatToRawIntBits(this.color);
+        int alphaBits = (int)(255 * a) << 24;
+
+        // clear alpha on original color
+        intBits = intBits & 0x00FFFFFF;
+        // write new alpha
+        intBits = intBits | alphaBits;
+        this.color = Float.intBitsToFloat(intBits & 0xfeffffff);
         chunks[CHUNK_COLOR_INDEX].data[CHUNK_LEFT_TOP] = this.color;
         chunks[CHUNK_COLOR_INDEX].data[CHUNK_LEFT_BOTTOM] = this.color;
         chunks[CHUNK_COLOR_INDEX].data[CHUNK_RIGHT_TOP] = this.color;

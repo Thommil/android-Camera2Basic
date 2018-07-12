@@ -35,7 +35,7 @@ public abstract class Plugin {
     public static final String UNIFORM_TEXTURE = "texture1i";
     public static final String UNIFORM_MVP_MATRIX = "mvpMatrix4fv";
     public static final String UNIFORM_VIEW_SIZE = "viewSize2f";
-
+    public static final String UNIFORM_SCREEN_RATIO = "screenRatio2f";
 
     protected Context mContext;
 

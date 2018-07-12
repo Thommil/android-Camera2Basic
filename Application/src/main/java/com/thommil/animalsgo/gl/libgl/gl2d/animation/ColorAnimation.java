@@ -1,6 +1,5 @@
 package com.thommil.animalsgo.gl.libgl.gl2d.animation;
 
-import com.thommil.animalsgo.gl.libgl.GlColor;
 import com.thommil.animalsgo.gl.libgl.gl2d.Interpolation;
 
 /**
@@ -13,8 +12,6 @@ import com.thommil.animalsgo.gl.libgl.gl2d.Interpolation;
 public class ColorAnimation extends Animation<float[]> {
 
     protected int iteration = 0;
-
-    private GlColor tmpKeyFrame;
 
     protected int lastIteration=0;
 
@@ -67,7 +64,7 @@ public class ColorAnimation extends Animation<float[]> {
      */
     @Override
     public void initialize() {
-        this.tmpKeyFrame = new GlColor();
+
     }
 
     /**

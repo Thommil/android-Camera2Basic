@@ -87,6 +87,9 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
     public GlSprite rotation(final float deg) {
         //Log.d(TAG,"rotation("+deg+")");
         rotation = deg;
+        if(rotation > 360){
+            rotation -= 360f;
+        }
 
         mMustUpdate = true;
 
@@ -96,6 +99,9 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
     public GlSprite rotate(final float deg) {
         //Log.d(TAG,"rotate("+deg+")");
         rotation += deg;
+        if(rotation > 360){
+            rotation -= 360f;
+        }
 
         mMustUpdate = true;
 
@@ -185,6 +191,100 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
         return this;
     }
 
+    protected void commitVertices(){
+        final float left = this.x - this.pivotX;
+        final float top = this.y + this.pivotY;
+        final float right = this.x + this.pivotX;
+        final float bottom = this.y - this.pivotY;
+
+        if(rotation != 0){
+            switch((int)rotation){
+                case 90:
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_X] = left;
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_Y] = bottom;
+
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_X] = right;
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_Y] = bottom;
+
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_X] = left;
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_Y] = top;
+
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_X] = right;
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_Y] = top;
+                    break;
+                case 180:
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_X] = right;
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_Y] = bottom;
+
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_X] = top;
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_Y] = right;
+
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_X] = left;
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_Y] = bottom;
+
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_X] = left;
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_Y] = top;
+                    break;
+                case 270:
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_X] = right;
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_Y] = top;
+
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_X] = left;
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_Y] = top;
+
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_X] = right;
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_Y] = bottom;
+
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_X] = left;
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_Y] = bottom;
+                    break;
+                case 360:
+                    //PASS
+                    break;
+                default:
+                    final float localX = -this.pivotX;
+                    final float localY = this.pivotY;
+                    final float localX2 = localX + this.width;
+                    final float localY2 = localY - this.height;
+
+                    final float cos = MathUtils.cosDeg(rotation);
+                    final float sin = MathUtils.sinDeg(rotation);
+                    final float localXCos = localX * cos;
+                    final float localXSin = localX * sin;
+                    final float localYCos = localY * cos;
+                    final float localYSin = localY * sin;
+                    final float localX2Cos = localX2 * cos;
+                    final float localX2Sin = localX2 * sin;
+                    final float localY2Cos = localY2 * cos;
+                    final float localY2Sin = localY2 * sin;
+
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_X] = localXCos - localYSin;
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_Y] = localXSin + localYCos;
+
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_X] = localXCos - localY2Sin;
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_Y] = localXSin + localY2Cos;
+
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_X] = localX2Cos - localYSin;
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_Y] = localX2Sin + localYCos;
+
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_X] = localX2Cos - localY2Sin;
+                    chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_Y] = localX2Sin + localY2Cos;
+            }
+        }
+        else{
+            chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_X]
+                    = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_X] = left;
+
+            chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_Y]
+                    = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_Y] = top;
+
+            chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_X]
+                    = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_X] = right;
+
+            chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_Y]
+                    = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_Y] = bottom;
+        }
+    }
 
     @Override
     public synchronized GlBuffer commit(boolean push) {
@@ -195,51 +295,7 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
         }
 
         if (mMustUpdate) {
-            if(rotation != 0){
-                final float localX = -this.pivotX;
-                final float localY = -this.pivotY;
-                final float localX2 = localX + this.width;
-                final float localY2 = localY + this.height;
-
-                final float cos = MathUtils.cosDeg(rotation);
-                final float sin = MathUtils.sinDeg(rotation);
-                final float localXCos = localX * cos;
-                final float localXSin = localX * sin;
-                final float localYCos = localY * cos;
-                final float localYSin = localY * sin;
-                final float localX2Cos = localX2 * cos;
-                final float localX2Sin = localX2 * sin;
-                final float localY2Cos = localY2 * cos;
-                final float localY2Sin = localY2 * sin;
-
-                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_X] = localXCos - localYSin;
-                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_Y] = localXSin + localYCos;
-
-                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_X] = localXCos - localY2Sin;
-                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_Y] = localXSin + localY2Cos;
-
-                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_X] = localX2Cos - localYSin;
-                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_Y] = localX2Sin + localYCos;
-
-                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_X] = localX2Cos - localY2Sin;
-                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_Y] = localX2Sin + localY2Cos;
-
-
-            }
-            else{
-                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_X]
-                        = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_X] = this.x - this.pivotX; //left
-
-                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_Y]
-                        = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_Y] = this.y + this.pivotY; //top
-
-                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_X]
-                        = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_X] = this.x + this.pivotX; //right
-
-                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_Y]
-                        = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_Y] = this.y - this.pivotY; //bottom
-            }
-
+            commitVertices();
 
             final FloatBuffer floatBuffer = (FloatBuffer) this.buffer;
             if(mManagedBuffer){
@@ -269,8 +325,6 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
             if (push) {
                 push();
             }
-
-            mMustUpdate = false;
         }
 
         return this;

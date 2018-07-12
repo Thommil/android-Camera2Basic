@@ -113,8 +113,9 @@ public class UIDefault extends UIPlugin {
     public void draw(final GlIntRect viewport, final int orientation) {
         //Blend test
         GlOperation.setTestState(GlOperation.TEST_BLEND, true);
-        mLogo.rotate(0.1f);
+        //mLogo.rotate(0.1f);
         //color += 0.001;
+        mLogo.rotate(2);
         mBig.translate(0.000f, 0.001f);
         mSmall.translate(0.000f, -0.001f);
         mBatch.commit();

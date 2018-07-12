@@ -71,50 +71,7 @@ public class GlSpriteColor extends GlSprite {
         }
 
         if (mMustUpdate) {
-            if(rotation != 0){
-                final float localX = -this.pivotX;
-                final float localY = this.pivotY;
-                final float localX2 = localX + this.width;
-                final float localY2 = localY - this.height;
-
-                final float cos = MathUtils.cosDeg(rotation);
-                final float sin = MathUtils.sinDeg(rotation);
-                final float localXCos = localX * cos;
-                final float localXSin = localX * sin;
-                final float localYCos = localY * cos;
-                final float localYSin = localY * sin;
-                final float localX2Cos = localX2 * cos;
-                final float localX2Sin = localX2 * sin;
-                final float localY2Cos = localY2 * cos;
-                final float localY2Sin = localY2 * sin;
-
-                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_X] = localXCos - localYSin;
-                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_Y] = localXSin + localYCos;
-
-                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_X] = localXCos - localY2Sin;
-                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_Y] = localXSin + localY2Cos;
-
-                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_X] = localX2Cos - localYSin;
-                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_Y] = localX2Sin + localYCos;
-
-                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_X] = localX2Cos - localY2Sin;
-                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_Y] = localX2Sin + localY2Cos;
-
-
-            }
-            else{
-                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_X]
-                        = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_X] = this.x - this.pivotX; //left
-
-                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_TOP_Y]
-                        = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_Y] = this.y + this.pivotY; //top
-
-                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_TOP_X]
-                        = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_X] = this.x + this.pivotX; //right
-
-                chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_Y]
-                        = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_Y] = this.y - this.pivotY; //bottom
-            }
+            commitVertices();
 
             final FloatBuffer floatBuffer = (FloatBuffer) this.buffer;
             if(mManagedBuffer){

@@ -110,7 +110,7 @@ public class UIDefault extends UIPlugin {
         //Buffer & Batch
         mBatch = new GlDrawableBufferBatch(mLogo, mSmall, mBig);
         mBatch.setVertexAttribHandles(mProgram.getAttributeHandle(ATTRIBUTE_POSITION), mProgram.getAttributeHandle(ATTRIBUTE_TEXTCOORD),mProgram.getAttributeHandle(ATTRIBUTE_COLOR));
-        mBatch.allocate(GlBuffer.USAGE_DYNAMIC_DRAW, GlBuffer.TARGET_ARRAY_BUFFER, false);
+        //mBatch.allocate(GlBuffer.USAGE_DYNAMIC_DRAW, GlBuffer.TARGET_ARRAY_BUFFER, false);
         mLogo.size(0.5f,0.5f).position(0.0f, 0.0f);
         mSmall.size(0.19f, 0.30f).position(-0.5f, 0);
         mBig.size(0.39f, 0.6f).position(0.5f, 0);

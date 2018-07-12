@@ -52,7 +52,7 @@ public class GlSpriteColor extends GlSprite {
         clip(srcX, srcY, srcWidth, srcHeight);
     }
 
-    public GlSpriteColor setColor(final float r, final float g, final float b, final float a){
+    public synchronized GlSpriteColor setColor(final float r, final float g, final float b, final float a){
         int intColor = ((int)(255 * a) << 24) | ((int)(255 * b) << 16) | ((int)(255 * g) << 8) | ((int)(255 * r));
         this.color = Float.intBitsToFloat(intColor & 0xfeffffff);
         chunks[CHUNK_COLOR_INDEX].data[CHUNK_LEFT_TOP] = this.color;
@@ -65,7 +65,7 @@ public class GlSpriteColor extends GlSprite {
         return this;
     }
 
-    public GlSpriteColor setAlpha (float a) {
+    public synchronized GlSpriteColor setAlpha (float a) {
         int intBits = Float.floatToRawIntBits(this.color);
         int alphaBits = (int)(255 * a) << 24;
 
@@ -93,7 +93,12 @@ public class GlSpriteColor extends GlSprite {
         }
 
         if (mMustUpdate) {
-            commitVertices();
+            if(mMustUpdateVertices) {
+                updateVertices();
+            }
+            if(mMustUpdateSubTexture) {
+                updateSubTexture();
+            }
 
             final FloatBuffer floatBuffer = (FloatBuffer) this.buffer;
             if(mManagedBuffer){

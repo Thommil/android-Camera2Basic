@@ -1,5 +1,6 @@
 package com.thommil.animalsgo.gl.libgl;
 
+import android.graphics.Rect;
 import android.opengl.GLES20;
 
 import com.thommil.animalsgo.utils.ByteBufferPool;
@@ -30,11 +31,14 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
     protected static final int CHUNK_RIGHT_BOTTOM_Y = 7;
 
     protected boolean mMustUpdate = true;
+    protected boolean mMustUpdateVertices = true;
+    protected boolean mMustUpdateSubTexture = true;
 
     //Texture
     protected GlTexture mTexture;
+    public final Rect subTexture = new Rect();
 
-    //Position
+    //Position & scale
     public float x;
     public float y;
 
@@ -44,6 +48,7 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
     public float pivotX;
     public float pivotY;
 
+    //Rotation
     public float rotation = 0f;
 
 
@@ -79,6 +84,7 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
         this.x = x;
         this.y = y;
 
+        mMustUpdateVertices = true;
         mMustUpdate = true;
 
         return this;
@@ -91,6 +97,7 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
             rotation = 360 - deg;
         }
 
+        mMustUpdateVertices = true;
         mMustUpdate = true;
 
         return this;
@@ -103,6 +110,7 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
             rotation = 360 - deg;
         }
 
+        mMustUpdateVertices = true;
         mMustUpdate = true;
 
         return this;
@@ -113,6 +121,7 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
         this.x += dx;
         this.y += dy;
 
+        mMustUpdateVertices = true;
         mMustUpdate = true;
 
         return this;
@@ -125,6 +134,7 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
         this.pivotX = this.width / 2;
         this.pivotY = this.height / 2;
 
+        mMustUpdateVertices = true;
         mMustUpdate = true;
 
         return this;
@@ -137,6 +147,7 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
         this.pivotX = this.width / 2;
         this.pivotY = this.height / 2;
 
+        mMustUpdateVertices = true;
         mMustUpdate = true;
 
         return this;
@@ -144,18 +155,25 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
 
     public GlSprite clip(final int srcX, final int srcY, final int srcWidth, final int srcHeight) {
         //Log.d(TAG,"clip("+srcX+", "+srcY+", "+srcWidth+", "+srcHeight+")");
-        chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_TOP_X]
-                = chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_BOTTOM_X] = (float) srcX / mTexture.getWidth();
+        this.subTexture.left  = srcX;
+        this.subTexture.top  = srcY;
+        this.subTexture.right  = srcX + srcWidth;
+        this.subTexture.bottom  = srcY + srcHeight;
 
-        chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_TOP_Y]
-                = chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_RIGHT_TOP_Y] = (float) srcY / mTexture.getHeight();
+        mMustUpdateSubTexture = true;
+        mMustUpdate = true;
 
-        chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_RIGHT_TOP_X]
-                = chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_RIGHT_BOTTOM_X] = (float) (srcX + srcWidth) / mTexture.getWidth();
+        return this;
+    }
 
-        chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_BOTTOM_Y]
-                = chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_RIGHT_BOTTOM_Y] = (float) (srcY + srcHeight) / mTexture.getHeight();
+    public GlSprite scroll(final int dX, final int dY) {
+        //Log.d(TAG,"scroll("+dX+", "+dY+")");
+        this.subTexture.left  += dX;
+        this.subTexture.top  += dY;
+        this.subTexture.right  += dX;
+        this.subTexture.bottom  += dY;
 
+        mMustUpdateSubTexture = true;
         mMustUpdate = true;
 
         return this;
@@ -186,12 +204,13 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
 
         }
 
+        mMustUpdateSubTexture = true;
         mMustUpdate = true;
 
         return this;
     }
 
-    protected void commitVertices(){
+    protected synchronized void updateVertices(){
         if(rotation != 0){
             final float localX = -this.pivotX;
             final float localY = this.pivotY;
@@ -239,6 +258,23 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
             chunks[CHUNK_VERTEX_INDEX].data[CHUNK_LEFT_BOTTOM_Y]
                     = chunks[CHUNK_VERTEX_INDEX].data[CHUNK_RIGHT_BOTTOM_Y] = bottom;
         }
+        mMustUpdateVertices = false;
+    }
+
+    protected synchronized void updateSubTexture(){
+        chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_TOP_X]
+                = chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_BOTTOM_X] = (float) this.subTexture.left / mTexture.getWidth();
+
+        chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_TOP_Y]
+                = chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_RIGHT_TOP_Y] = (float) this.subTexture.top / mTexture.getHeight();
+
+        chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_RIGHT_TOP_X]
+                = chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_RIGHT_BOTTOM_X] = (float) this.subTexture.right / mTexture.getWidth();
+
+        chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_LEFT_BOTTOM_Y]
+                = chunks[CHUNK_TEXTURE_INDEX].data[CHUNK_RIGHT_BOTTOM_Y] = (float) this.subTexture.bottom / mTexture.getHeight();
+
+        mMustUpdateSubTexture = false;
     }
 
     @Override
@@ -250,7 +286,12 @@ public class GlSprite extends GlDrawableBuffer<float[]> {
         }
 
         if (mMustUpdate) {
-            commitVertices();
+            if(mMustUpdateVertices) {
+                updateVertices();
+            }
+            if(mMustUpdateSubTexture) {
+                updateSubTexture();
+            }
 
             final FloatBuffer floatBuffer = (FloatBuffer) this.buffer;
             if(mManagedBuffer){
